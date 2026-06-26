@@ -8,9 +8,9 @@ Repositorio:
 
 ## Estado
 
-Version actual: `v0.3.0`
+Version actual: `v0.4.0`
 
-La version `v0.3.0` convierte cada juego en una vista independiente tipo pestana interna (`#semillas`, `#rio`, `#fracciones`, `#datos`, `#azar`, `#barras`, `#patrones`). Cada vista tiene su propio tablero, dificultad, historial, progreso y panel de ayuda.
+La version `v0.4.0` mantiene cada juego como vista independiente (`#semillas`, `#rio`, `#fracciones`, `#datos`, `#azar`, `#barras`, `#patrones`) y agrega una capa mas jugable: temporizador visual, bonus por rapidez, sonido opcional, atajos de teclado, herramientas especificas por juego y distractores mas cercanos a la respuesta correcta.
 
 Arquitectura:
 
@@ -45,6 +45,17 @@ Incluye:
 * historial local por vista;
 * retos generados dinamicamente;
 * retroalimentacion inmediata;
+* barra de tiempo por reto;
+* bonus veloz por respuestas rapidas;
+* sonido opcional sin depender de archivos externos;
+* atajos `1` a `4` para responder, `Enter` para nuevo reto y `Backspace` para deshacer en el rio;
+* herramientas por juego:
+  * deshacer piedra;
+  * limpiar huerta;
+  * ordenar datos;
+  * girar rueda;
+  * resaltar extremos del grafico;
+  * marcar ritmo de patrones;
 * puntos, racha, estrellas e insignias;
 * mision diaria y misiones por nivel;
 * control local para reducir animaciones;
@@ -53,6 +64,18 @@ Incluye:
 * funcionamiento offline basico despues de la primera carga;
 * diseno responsive para celular, aula y proyector;
 * soporte `prefers-reduced-motion`.
+
+## Ideas tomadas de repositorios Git
+
+La version `v0.4.0` se inspiro en patrones observados en repositorios publicos de juegos educativos:
+
+* `d-tamang/hungry-brain`: objetivo activo, respuesta correcta como objeto de juego, puntos y perdida por error.
+* `kapaha/math-castle`: dificultad, historial, puntaje y animaciones como capa de motivacion.
+* `Carton/tica-math`: enfoque de misiones, logros, PWA y razonamiento matematico.
+* `shadowandy/Multiplication-Wizard`: distractores inteligentes y feedback sonoro.
+* `lancesnider/math-monsters-game`: tension amable mediante temporizador y recompensa por velocidad.
+
+No se copio codigo externo. Se adaptaron ideas de interaccion a una app estatica propia, mantenible y alineada al contenido de Carlitos.
 
 ## Uso local
 

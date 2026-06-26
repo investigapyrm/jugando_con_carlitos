@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.3.0";
+const APP_VERSION = "v0.4.0";
 const BUILD_DATE = "2026-06-26";
 const STORAGE_KEY = "jugando-carlitos:progress:v2";
 const LEGACY_STORAGE_KEY = "jugando-carlitos:progress:v1";
@@ -15,6 +15,7 @@ const DIFFICULTIES = {
     range: [2, 10],
     target: 4,
     bonus: 0,
+    timeLimit: 24000,
   },
   desafio: {
     label: "Desafio",
@@ -22,6 +23,7 @@ const DIFFICULTIES = {
     range: [5, 24],
     target: 6,
     bonus: 3,
+    timeLimit: 17000,
   },
   experto: {
     label: "Experto",
@@ -29,6 +31,7 @@ const DIFFICULTIES = {
     range: [9, 48],
     target: 8,
     bonus: 6,
+    timeLimit: 12000,
   },
 };
 
@@ -113,6 +116,7 @@ const GAMES = [
 ];
 
 const app = document.querySelector("#app");
+let challengeTimer = null;
 
 const state = {
   route: "inicio",
@@ -136,6 +140,7 @@ function initApp() {
     syncRoute();
     renderApp();
   });
+  window.addEventListener("keydown", handleKeyboard);
 }
 
 function syncRoute() {
@@ -179,6 +184,7 @@ function renderApp() {
           <span class="score-pill">Puntos: ${state.progress.score}</span>
           <span class="level-pill">Racha: ${state.progress.streak}</span>
           <span class="mode-pill">Estrellas: ${totalStars}/${GAMES.length * 3}</span>
+          <button type="button" class="reset-button" id="toggleSound">Sonido: ${state.progress.soundOn ? "Si" : "No"}</button>
           <button type="button" class="reset-button" id="toggleMotion">Animaciones: ${state.progress.motionOff ? "No" : "Si"}</button>
           <button type="button" class="reset-button" id="resetProgress">Reiniciar</button>
         </div>
@@ -327,6 +333,7 @@ function renderGameView() {
             <div><strong>${stats.correct}</strong><span>aciertos</span></div>
             <div><strong>${gameStars(active.id)}</strong><span>estrellas</span></div>
             <div><strong>${difficulty.short}</strong><span>dificultad</span></div>
+            <div><strong>${stats.bestSpeed || 0}</strong><span>bonus veloz</span></div>
           </div>
         </header>
 
@@ -390,8 +397,12 @@ function renderChallenge() {
   const challenge = state.challenge;
 
   return `
+    <div class="challenge-clock" aria-label="Tiempo del reto">
+      <span style="animation-duration:${challenge.timeLimit}ms"></span>
+    </div>
     <div class="challenge">${escapeHtml(challenge.prompt)}</div>
     <div class="board">${renderBoard(gameId, challenge)}</div>
+    ${renderChallengeTools(gameId, challenge)}
     ${renderChoices(challenge)}
     ${renderFeedback()}
     <div class="stage-footer">
@@ -418,13 +429,67 @@ function renderChoices(challenge) {
 
   return `
     <div class="choice-grid">
-      ${challenge.options.map((option) => `
+      ${challenge.options.map((option, index) => `
         <button type="button" data-answer="${escapeAttribute(option.value)}">
-          ${escapeHtml(option.label)}
+          <kbd>${index + 1}</kbd>
+          <span>${escapeHtml(option.label)}</span>
         </button>
       `).join("")}
     </div>
   `;
+}
+
+function renderChallengeTools(gameId, challenge) {
+  if (gameId === "rio") {
+    return `
+      <div class="challenge-tools">
+        <button type="button" data-undo-pick>Deshacer piedra</button>
+      </div>
+    `;
+  }
+
+  if (gameId === "fracciones") {
+    return `
+      <div class="challenge-tools">
+        <button type="button" data-clear-pieces>Limpiar huerta</button>
+      </div>
+    `;
+  }
+
+  if (gameId === "datos") {
+    return `
+      <div class="challenge-tools">
+        <button type="button" data-sort-data>${challenge.sorted ? "Ver registro original" : "Ordenar datos"}</button>
+      </div>
+    `;
+  }
+
+  if (gameId === "azar") {
+    return `
+      <div class="challenge-tools">
+        <button type="button" data-spin-wheel>Girar una vez</button>
+        ${challenge.spinResult ? `<span>Salio: <strong>${escapeHtml(challenge.spinResult)}</strong></span>` : "<span>Gira para observar un resultado posible.</span>"}
+      </div>
+    `;
+  }
+
+  if (gameId === "barras") {
+    return `
+      <div class="challenge-tools">
+        <button type="button" data-highlight-bars>${challenge.highlight ? "Ocultar pistas" : "Resaltar extremos"}</button>
+      </div>
+    `;
+  }
+
+  if (gameId === "patrones") {
+    return `
+      <div class="challenge-tools">
+        <button type="button" data-play-pattern>${challenge.playing ? "Ritmo marcado" : "Marcar ritmo"}</button>
+      </div>
+    `;
+  }
+
+  return "";
 }
 
 function renderFeedback() {
@@ -449,6 +514,12 @@ function bindEvents() {
 
   document.querySelector("#toggleMotion")?.addEventListener("click", () => {
     state.progress.motionOff = !state.progress.motionOff;
+    writeProgress();
+    renderApp();
+  });
+
+  document.querySelector("#toggleSound")?.addEventListener("click", () => {
+    state.progress.soundOn = !state.progress.soundOn;
     writeProgress();
     renderApp();
   });
@@ -483,10 +554,38 @@ function bindEvents() {
   document.querySelector("#checkInteractive")?.addEventListener("click", checkInteractive);
   document.querySelector("#nextChallenge")?.addEventListener("click", newChallenge);
   document.querySelector("#nextChallengeSide")?.addEventListener("click", newChallenge);
+  document.querySelector("[data-undo-pick]")?.addEventListener("click", () => {
+    state.picked = state.picked.slice(0, -1);
+    renderApp();
+  });
+  document.querySelector("[data-clear-pieces]")?.addEventListener("click", () => {
+    state.picked = [];
+    renderApp();
+  });
+  document.querySelector("[data-sort-data]")?.addEventListener("click", () => {
+    state.challenge.sorted = !state.challenge.sorted;
+    renderApp();
+  });
+  document.querySelector("[data-spin-wheel]")?.addEventListener("click", () => {
+    state.challenge.spinResult = weightedChance(state.challenge.colors);
+    state.challenge.spinning = true;
+    renderApp();
+  });
+  document.querySelector("[data-highlight-bars]")?.addEventListener("click", () => {
+    state.challenge.highlight = !state.challenge.highlight;
+    renderApp();
+  });
+  document.querySelector("[data-play-pattern]")?.addEventListener("click", () => {
+    state.challenge.playing = true;
+    renderApp();
+  });
+
+  scheduleChallengeTimeout();
 }
 
 function newChallenge() {
   if (state.route !== "game") return;
+  clearChallengeTimer();
   state.challenge = createChallenge(state.activeGame);
   state.feedback = null;
   state.answered = false;
@@ -495,13 +594,24 @@ function newChallenge() {
 }
 
 function createChallenge(gameId) {
-  if (gameId === "semillas") return createSeedChallenge();
-  if (gameId === "rio") return createRiverChallenge();
-  if (gameId === "fracciones") return createFractionChallenge();
-  if (gameId === "datos") return createDataChallenge();
-  if (gameId === "azar") return createChanceChallenge();
-  if (gameId === "barras") return createBarChallenge();
-  return createPatternChallenge();
+  let challenge;
+  if (gameId === "semillas") challenge = createSeedChallenge();
+  else if (gameId === "rio") challenge = createRiverChallenge();
+  else if (gameId === "fracciones") challenge = createFractionChallenge();
+  else if (gameId === "datos") challenge = createDataChallenge();
+  else if (gameId === "azar") challenge = createChanceChallenge();
+  else if (gameId === "barras") challenge = createBarChallenge();
+  else challenge = createPatternChallenge();
+  return withChallengeMeta(challenge);
+}
+
+function withChallengeMeta(challenge) {
+  const difficulty = DIFFICULTIES[state.progress.difficulty] || DIFFICULTIES.desafio;
+  return {
+    ...challenge,
+    startedAt: Date.now(),
+    timeLimit: difficulty.timeLimit,
+  };
 }
 
 function difficultyRange() {
@@ -629,11 +739,12 @@ function createDataChallenge() {
 }
 
 function renderDataBoard(challenge) {
+  const values = challenge.sorted ? [...challenge.data].sort((a, b) => a - b) : challenge.data;
   return `
-    <div class="data-row">
-      ${challenge.data.map((value, index) => `
+    <div class="data-row${challenge.sorted ? " sorted" : ""}">
+      ${values.map((value, index) => `
         <div class="data-card">
-          <span>Dia ${index + 1}</span>
+          <span>${challenge.sorted ? "Orden" : "Dia"} ${index + 1}</span>
           <strong>${value}</strong>
         </div>
       `).join("")}
@@ -649,6 +760,7 @@ function createChanceChallenge() {
     { name: "coral", count: rand(1, spread), color: "#e26d5a" },
     { name: "azul", count: rand(1, spread), color: "#63b7d0" },
   ];
+  ensureUniqueWinner(colors);
   const answer = [...colors].sort((a, b) => b.count - a.count)[0].name;
   return {
     prompt: "La rueda tiene sectores de colores. Que color tiene mas probabilidad de salir?",
@@ -663,7 +775,7 @@ function createChanceChallenge() {
 function renderChanceBoard(challenge) {
   return `
     <div class="spinner-wrap">
-      <div class="spinner" aria-label="Rueda de probabilidad"></div>
+      <div class="spinner${challenge.spinning ? " spinning-fast" : ""}" aria-label="Rueda de probabilidad"></div>
       <div class="legend">
         ${challenge.colors.map((entry) => `
           <div class="legend-row">
@@ -700,10 +812,11 @@ function createBarChallenge() {
 
 function renderBarBoard(challenge) {
   const max = Math.max(...challenge.data.map((entry) => entry.value));
+  const min = Math.min(...challenge.data.map((entry) => entry.value));
   return `
     <div class="bar-chart">
       ${challenge.data.map((entry) => `
-        <div class="bar-item">
+        <div class="bar-item${challenge.highlight && entry.value === max ? " max-bar" : ""}${challenge.highlight && entry.value === min ? " min-bar" : ""}">
           <div class="bar" style="height:${Math.max(36, (entry.value / max) * 210)}px">${entry.value}</div>
           <div class="bar-label">${escapeHtml(entry.label)}</div>
         </div>
@@ -741,7 +854,7 @@ function createPatternChallenge() {
 
 function renderPatternBoard(challenge) {
   return `
-    <div class="pattern-board">
+    <div class="pattern-board${challenge.playing ? " playing" : ""}">
       <div class="pattern-name">${escapeHtml(challenge.name)}</div>
       <div class="beat-track">
         ${challenge.sequence.map((value, index) => `
@@ -800,9 +913,12 @@ function checkInteractive() {
 }
 
 function scoreResult(ok, selectedValue) {
+  clearChallengeTimer();
   const game = getGame(state.activeGame);
   const stats = getGameStats(game.id);
   const difficulty = DIFFICULTIES[state.progress.difficulty] || DIFFICULTIES.desafio;
+  const elapsedMs = Date.now() - (state.challenge.startedAt || Date.now());
+  const speedBonus = ok ? Math.max(0, Math.ceil((1 - Math.min(1, elapsedMs / state.challenge.timeLimit)) * 5)) : 0;
   state.progress.played += 1;
   stats.played += 1;
 
@@ -811,19 +927,24 @@ function scoreResult(ok, selectedValue) {
     stats.correct += 1;
     state.progress.streak += 1;
     stats.bestStreak = Math.max(stats.bestStreak || 0, state.progress.streak);
-    const points = 10 + difficulty.bonus + Math.min(8, state.progress.streak);
+    stats.bestSpeed = Math.max(stats.bestSpeed || 0, speedBonus);
+    const points = 10 + difficulty.bonus + Math.min(8, state.progress.streak) + speedBonus;
     state.progress.score += points;
     state.feedback = {
       ok: true,
-      message: `Excelente. +${points} puntos, racha ${state.progress.streak}.`,
+      message: `Excelente. +${points} puntos, racha ${state.progress.streak}, bonus veloz ${speedBonus}.`,
     };
   } else {
+    if (selectedValue === "tiempo") stats.timeouts = (stats.timeouts || 0) + 1;
     state.progress.streak = 0;
     state.feedback = {
       ok: false,
-      message: `Casi. La respuesta correcta era ${state.challenge.answer}. ${state.challenge.explain || "Probemos otro reto."}`,
+      message: selectedValue === "tiempo"
+        ? `Se escapo el reto. La respuesta era ${state.challenge.answer}.`
+        : `Casi. La respuesta correcta era ${state.challenge.answer}. ${state.challenge.explain || "Probemos otro reto."}`,
     };
   }
+  playTone(ok);
 
   state.progress.completed[game.id] = gameStars(game.id) > 0 || ok;
   pushHistory(game.id, {
@@ -831,6 +952,8 @@ function scoreResult(ok, selectedValue) {
     prompt: state.challenge.summary || state.challenge.prompt,
     selected: selectedValue || "",
     answer: state.challenge.answer,
+    elapsed: Math.round(elapsedMs / 1000),
+    speedBonus,
   });
 
   writeProgress();
@@ -849,7 +972,7 @@ function renderHistory(gameId) {
         <div class="history-item ${item.ok ? "correct" : "incorrect"}">
           <strong>${item.ok ? "OK" : "Revisar"}</strong>
           <span>${escapeHtml(item.prompt)}</span>
-          <small>Respuesta: ${escapeHtml(item.selected || "-")} | Correcta: ${escapeHtml(item.answer)}</small>
+          <small>Respuesta: ${escapeHtml(item.selected || "-")} | Correcta: ${escapeHtml(item.answer)} | ${escapeHtml(item.elapsed || "-")}s</small>
         </div>
       `).join("")}
     </div>
@@ -905,6 +1028,7 @@ function defaultProgress() {
     correct: 0,
     completed: {},
     motionOff: false,
+    soundOn: false,
     difficulty: "desafio",
     lastGame: "semillas",
     statsByGame: {},
@@ -923,6 +1047,7 @@ function readProgress() {
       ...parsed,
       completed: parsed.completed || {},
       motionOff: Boolean(parsed.motionOff),
+      soundOn: Boolean(parsed.soundOn),
       difficulty: DIFFICULTIES[parsed.difficulty] ? parsed.difficulty : "desafio",
       statsByGame: parsed.statsByGame || {},
       historyByGame: parsed.historyByGame || {},
@@ -941,16 +1066,108 @@ function writeProgress() {
   }
 }
 
+function scheduleChallengeTimeout() {
+  clearChallengeTimer();
+  if (state.route !== "game" || !state.challenge || state.answered) return;
+  if (prefersReducedMotion()) return;
+
+  const remaining = Math.max(0, state.challenge.timeLimit - (Date.now() - state.challenge.startedAt));
+  const startedAt = state.challenge.startedAt;
+  challengeTimer = window.setTimeout(() => {
+    if (!state.challenge || state.challenge.startedAt !== startedAt || state.answered) return;
+    state.answered = true;
+    scoreResult(false, "tiempo");
+  }, remaining + 200);
+}
+
+function clearChallengeTimer() {
+  if (challengeTimer) window.clearTimeout(challengeTimer);
+  challengeTimer = null;
+}
+
+function weightedChance(colors) {
+  const total = sum(colors.map((entry) => entry.count));
+  let pick = rand(1, total);
+  for (const entry of colors) {
+    pick -= entry.count;
+    if (pick <= 0) return entry.name;
+  }
+  return colors[0].name;
+}
+
+function handleKeyboard(event) {
+  if (state.route !== "game") return;
+  if (event.key >= "1" && event.key <= "4") {
+    const button = document.querySelectorAll("[data-answer]")[Number(event.key) - 1];
+    if (button) {
+      event.preventDefault();
+      button.click();
+    }
+  }
+  if (event.key === "Enter") {
+    event.preventDefault();
+    newChallenge();
+  }
+  if (event.key === "Backspace" && state.activeGame === "rio") {
+    event.preventDefault();
+    state.picked = state.picked.slice(0, -1);
+    renderApp();
+  }
+}
+
+function playTone(ok) {
+  if (!state.progress.soundOn) return;
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const context = new AudioContext();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = ok ? "triangle" : "sawtooth";
+    oscillator.frequency.value = ok ? 660 : 180;
+    gain.gain.setValueAtTime(0.05, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.18);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.18);
+  } catch (error) {
+    // El sonido es opcional; la app no debe fallar si el navegador lo bloquea.
+  }
+}
+
 function makeNumberOptions(answer, count, min, max) {
-  const values = new Set([answer]);
+  const numericAnswer = Number(answer);
+  const values = new Set([normalizeAnswer(answer)]);
+  const preferredOffsets = [1, -1, 2, -2, 3, -3, 5, -5, 10, -10];
+
+  for (const offset of preferredOffsets) {
+    if (values.size >= count || !Number.isFinite(numericAnswer)) break;
+    const candidate = clampOption(numericAnswer + offset, min, max);
+    values.add(normalizeAnswer(candidate));
+  }
+
   while (values.size < count) {
     const offset = rand(-6, 6) || 1;
-    const candidate = Math.max(min, Math.min(max, Math.round(Number(answer) + offset)));
-    values.add(candidate);
+    const candidate = Number.isFinite(numericAnswer)
+      ? clampOption(numericAnswer + offset, min, max)
+      : rand(min, max);
+    values.add(normalizeAnswer(candidate));
   }
+
   return [...values]
     .sort(() => Math.random() - 0.5)
-    .map((value) => ({ label: String(value), value: String(value) }));
+    .map((value) => ({ label: value, value }));
+}
+
+function clampOption(value, min, max) {
+  const rounded = Math.round(Number(value) * 10) / 10;
+  return Math.max(min, Math.min(max, rounded));
+}
+
+function ensureUniqueWinner(colors) {
+  const sorted = [...colors].sort((a, b) => b.count - a.count);
+  if (sorted[0].count === sorted[1].count) {
+    sorted[0].count += 1;
+  }
 }
 
 function uniqueNumbers(count, min, max) {

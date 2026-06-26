@@ -934,6 +934,24 @@ h3 {
   padding: 1.2rem;
 }
 
+.challenge-clock {
+  background: rgba(5, 39, 25, 0.12);
+  border: 2px solid rgba(5, 39, 25, 0.18);
+  border-radius: 999px;
+  height: 18px;
+  overflow: hidden;
+  position: relative;
+}
+
+.challenge-clock span {
+  animation: timeDrain linear forwards;
+  background: linear-gradient(90deg, var(--green-700), var(--yellow), var(--coral-strong));
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
 .challenge {
   background: linear-gradient(90deg, var(--cream), var(--mint));
   border: 2px solid rgba(5, 39, 25, 0.14);
@@ -960,11 +978,34 @@ h3 {
 }
 
 .choice-grid button {
+  align-items: center;
   background: var(--white);
   border: 2px solid rgba(5, 39, 25, 0.16);
   color: var(--ink);
+  display: grid;
   font-size: 1.12rem;
+  gap: 0.45rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-items: start;
   min-height: 54px;
+  text-align: left;
+}
+
+.choice-grid kbd {
+  background: var(--green-950);
+  border-radius: 6px;
+  box-shadow: 2px 2px 0 rgba(5, 39, 25, 0.16);
+  color: var(--yellow);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 900;
+  min-width: 30px;
+  padding: 0.12rem 0.38rem;
+  text-align: center;
+}
+
+.choice-grid span {
+  overflow-wrap: anywhere;
 }
 
 .choice-grid button:hover {
@@ -1016,6 +1057,29 @@ h3 {
   background: rgba(11, 93, 59, 0.1);
   border: 2px solid rgba(11, 93, 59, 0.18);
   color: var(--green-900);
+}
+
+.challenge-tools {
+  align-items: center;
+  background: var(--theme-soft);
+  border: 2px solid rgba(5, 39, 25, 0.12);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding: 0.7rem;
+}
+
+.challenge-tools button {
+  background: var(--white);
+  color: var(--green-950);
+  min-height: 38px;
+  padding: 0.42rem 0.7rem;
+}
+
+.challenge-tools span {
+  color: var(--green-950);
+  font-weight: 900;
 }
 
 .fall-lane {
@@ -1158,6 +1222,12 @@ h3 {
   font-size: 2rem;
 }
 
+.data-row.sorted .data-card {
+  animation: popIn 240ms ease both;
+  background: linear-gradient(180deg, #f0edf7, var(--white));
+  border-color: rgba(99, 83, 128, 0.28);
+}
+
 .spinner-wrap {
   align-items: center;
   display: grid;
@@ -1187,6 +1257,11 @@ h3 {
   top: 50%;
   transform: translate(-50%, -50%);
   width: 34px;
+}
+
+.spinner.spinning-fast {
+  animation-duration: 780ms;
+  box-shadow: 0 0 0 8px rgba(255, 210, 63, 0.32), 8px 8px 0 rgba(5, 39, 25, 0.18);
 }
 
 .legend {
@@ -1234,10 +1309,25 @@ h3 {
   padding-top: 0.35rem;
 }
 
+.bar-item.max-bar .bar {
+  background: linear-gradient(180deg, var(--yellow), var(--coral-strong));
+  outline: 4px solid rgba(255, 210, 63, 0.38);
+}
+
+.bar-item.min-bar .bar {
+  background: linear-gradient(180deg, var(--sky-strong), var(--green-700));
+  outline: 4px solid rgba(99, 183, 208, 0.28);
+}
+
 .pattern-board {
   display: grid;
   gap: 1rem;
   place-items: center;
+}
+
+.pattern-board.playing .beat-step {
+  animation-duration: 360ms;
+  box-shadow: 0 0 0 6px rgba(255, 210, 63, 0.26), 5px 5px 0 rgba(5, 39, 25, 0.2);
 }
 
 .pattern-name {
@@ -1452,6 +1542,17 @@ h3 {
   }
   to {
     transform: translateY(12px) rotate(1deg);
+  }
+}
+
+@keyframes timeDrain {
+  from {
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+  to {
+    transform: scaleX(0);
+    transform-origin: left center;
   }
 }
 

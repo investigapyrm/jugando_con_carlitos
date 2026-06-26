@@ -469,3 +469,145 @@
 
 * Mantener el patron de vistas independientes para nuevos juegos.
 * Evitar que todos los juegos compartan la misma estructura visual; cada vista debe tener una mecanica propia.
+
+## 2026-06-26 05:38
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / FACEN / investigapyrm
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL local verificada: `http://127.0.0.1:8790/`
+* Responsable: Codex, a solicitud de Diego
+* Version: `v0.4.0`
+
+### Objetivo de la intervencion
+
+* Buscar ideas en repositorios GitHub de juegos educativos para hacer los juegos de Carlitos mucho mas interesantes e interactivos.
+
+### Diagnostico inicial
+
+* La version `v0.3.0` ya tenia vistas independientes por juego, pero todavia necesitaba una capa mas ludica:
+  * tension amable;
+  * accion rapida;
+  * herramientas dentro de cada juego;
+  * feedback sonoro opcional;
+  * mejores distractores;
+  * validacion por interaccion real.
+
+### Repositorios e ideas revisadas
+
+* `https://github.com/d-tamang/hungry-brain`: respuestas activas, puntos, perdida por error y objetivo de atrapar/capturar la respuesta correcta.
+* `https://github.com/kapaha/math-castle`: dificultad, historial, sistema de puntos y animaciones como parte de la motivacion.
+* `https://github.com/Carton/tica-math`: enfoque de misiones, logros, PWA y razonamiento matematico.
+* `https://github.com/shadowandy/Multiplication-Wizard`: distractores inteligentes y feedback auditivo.
+* `https://github.com/lancesnider/math-monsters-game`: temporizador y recompensa por velocidad para crear urgencia positiva.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.4.0`.
+* Se agrego barra de tiempo por reto, con limites segun dificultad.
+* Se agrego bonus veloz por respuestas correctas antes de agotar el tiempo.
+* Se agrego boton de sonido opcional y feedback sonoro generado con Web Audio.
+* Se agregaron atajos:
+  * `1` a `4` para responder;
+  * `Enter` para nuevo reto;
+  * `Backspace` para deshacer en `Rio de numeros`.
+* Se agregaron herramientas por vista:
+  * `Deshacer piedra`;
+  * `Limpiar huerta`;
+  * `Ordenar datos`;
+  * `Girar una vez`;
+  * `Resaltar extremos`;
+  * `Marcar ritmo`.
+* Se mejoro la generacion de opciones para que los distractores esten mas cerca de la respuesta correcta.
+* Se evito empate injusto en `Rueda del azar`, asegurando un color ganador unico.
+* Se actualizo cache-busting en `index.html` y `service-worker.js`.
+* Se actualizo el README con la nueva version y la inspiracion tomada de repositorios Git.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+* `G:\Mi unidad\MANUAL_MAESTRO_FORMATOS_FUNCIONES_APPWEB\APRENDIZAJE_CARLITOS_APPWEB_JUEGOS_MATEMATICOS_ESTADISTICOS_2026-06-25.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `git diff --check`
+* `python -m http.server 8790 --bind 127.0.0.1`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/app.js?v=0.4.0`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/styles.css?v=0.4.0`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/service-worker.js`
+* `npx --yes playwright screenshot --full-page http://127.0.0.1:8790/#semillas _preview_v040_semillas.png`
+* `npx --yes playwright screenshot --full-page http://127.0.0.1:8790/#azar _preview_v040_azar.png`
+* `npx --yes playwright screenshot --viewport-size="390,1200" --full-page http://127.0.0.1:8790/#patrones _preview_v040_mobile_patrones.png`
+* Prueba funcional headless `_tmp_v040_interactive_check.js`.
+
+### Resultados verificados
+
+* HTTP local responde `200`.
+* `app.js?v=0.4.0` responde `200`.
+* `styles.css?v=0.4.0` responde `200`.
+* `service-worker.js` responde `200`.
+* `app.js` y `service-worker.js` no presentan errores de sintaxis.
+* `git diff --check` no detecto errores de whitespace.
+* La prueba funcional resulto `jugando v0.4.0 interactive arcade check OK`.
+* Capturas desktop y movil revisadas visualmente:
+  * `#semillas` con barra de tiempo, atajos y tablero sin solapes;
+  * `#azar` con herramienta de giro visible;
+  * `#patrones` en movil sin solapes criticos.
+
+### Pruebas realizadas
+
+* Validacion de sintaxis.
+* Validacion HTTP local.
+* Prueba automatizada con Playwright para:
+  * responder con teclado;
+  * ordenar datos;
+  * girar rueda;
+  * deshacer piedra;
+  * resaltar barras;
+  * marcar ritmo;
+  * crear nuevo reto con `Enter`.
+* Revision visual de capturas desktop y movil.
+
+### Errores o incidentes
+
+* No se detectaron errores funcionales en la prueba headless.
+* Persisten advertencias normales de Git por LF/CRLF en Windows.
+
+### Soluciones aplicadas
+
+* Se mantuvo la arquitectura estatica apta para GitHub Pages.
+* Se mantuvo el progreso en `localStorage` sin datos personales.
+* Se agrego sonido como opcion local desactivada por defecto.
+* Se respeto `prefers-reduced-motion`: si el usuario reduce animaciones, no se aplica temporizador automatico.
+
+### Pendientes
+
+* Activar o verificar GitHub Pages si la URL publica sigue sin responder.
+* Integrar imagenes finales especificas por juego.
+* Evaluar modo docente con objetivos, niveles sugeridos y actividades offline.
+* Eventualmente crear seguimiento GAS/Sheets solo con reglas de privacidad y consentimiento.
+
+### Riesgos
+
+* El temporizador puede no ser adecuado para todos los ninos; por eso se desactiva con reduccion de movimiento y puede ajustarse por dificultad.
+* El sonido debe mantenerse opcional.
+* La figura de Carlitos requiere autorizacion formal antes de publicacion final.
+* El progreso local no debe interpretarse como evaluacion institucional formal.
+
+### Recomendaciones
+
+* Mantener microinteracciones por juego: cada vista debe ofrecer al menos una accion propia adicional al boton de responder.
+* No copiar codigo de repositorios externos; adaptar patrones pedagogicos y ludicos.
+* Para nuevos juegos, exigir prueba headless que confirme que cada herramienta cambia estado real en pantalla.
