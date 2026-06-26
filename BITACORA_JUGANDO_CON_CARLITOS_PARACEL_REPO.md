@@ -270,3 +270,200 @@
 * Mantener el estilo de aventura y misiones en proximas iteraciones.
 * Si se agregan nuevos juegos, conservar retos cortos y feedback inmediato.
 * No agregar registro nominal de ninos sin diseno previo de privacidad, consentimiento y roles.
+
+## 2026-06-26 05:09
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / FACEN / investigapyrm
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* Responsable: Codex, a solicitud de Diego
+
+### Objetivo de la intervencion
+
+* Generar texto de instrucciones para solicitar a GPT Imagenes en linea al menos 10 imagenes de Carlitos para la app de juegos matematicos y estadisticos, orientada a ninos y adolescentes de 8 a 15 anos.
+
+### Diagnostico inicial
+
+* La app ya cuenta con juegos de suma, orden, fracciones, estadistica, probabilidad, graficos de barras y patrones.
+* Faltaba un instructivo visual especifico para imagenes de esta app, distinto del instructivo ambiental de `libros_de_carlitos`.
+
+### Acciones realizadas
+
+* Se creo un documento de instrucciones para GPT Imagenes con:
+  * advertencia editorial y legal;
+  * modo seguro si no existe autorizacion formal de Carlitos;
+  * objetivo visual;
+  * prompt maestro;
+  * 12 prompts principales;
+  * nombres recomendados de archivos;
+  * control de calidad.
+
+### Archivos modificados
+
+* `docs/INSTRUCCIONES_IMAGENES_CARLITOS_JUEGOS_MATEMATICOS_ESTADISTICOS_2026-06-26.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `Get-ChildItem -Force docs`
+* `Get-Content -Tail 80 BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+* `Get-Date -Format 'yyyy-MM-dd HH:mm'`
+
+### Resultados verificados
+
+* Documento creado en `docs/`.
+* Incluye 12 escenas, superando el minimo solicitado de 10 imagenes.
+* Los conceptos cubren la franja 8 a 15 anos: suma, orden, fracciones, promedio, mediana, moda, probabilidad, graficos, patrones y trabajo colaborativo.
+
+### Pendientes
+
+* Generar imagenes en GPT Imagenes.
+* Revisar consistencia visual entre imagenes.
+* Integrar imagenes finales en la app.
+* Confirmar autorizacion de uso de Carlitos antes de publicacion final.
+
+### Riesgos
+
+* No usar imagenes del personaje real sin autorizacion formal.
+* Evitar texto o numeros legibles dentro de las imagenes para prevenir errores visuales generados por IA.
+
+### Recomendaciones
+
+* Generar primero hoja de personaje y hero como referencia.
+* Luego generar las escenas de juegos usando esas imagenes como guia visual.
+
+## 2026-06-26 05:21
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / FACEN / investigapyrm
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL local verificada: `http://127.0.0.1:8790/`
+* Responsable: Codex, a solicitud de Diego
+* Version: `v0.3.0`
+
+### Objetivo de la intervencion
+
+* Aprovechar nuevas ideas de una app HTML tipo MultiMath para lograr que la appweb sea mas interesante y que cada juego funcione como una vista nueva, similar a otra pestana, sin depender necesariamente de los demas juegos.
+
+### Diagnostico inicial
+
+* La version `v0.2.0` tenia un mapa de aventura y un escenario central, pero los juegos compartian una misma estructura visual.
+* La referencia aportada tenia elementos utiles:
+  * pestanas por operacion;
+  * dificultad;
+  * panel de controles;
+  * historial;
+  * progreso;
+  * tarjeta de operacion tipo elemento activo.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.3.0`.
+* Se reestructuro la app para usar rutas hash independientes:
+  * `#inicio`;
+  * `#semillas`;
+  * `#rio`;
+  * `#fracciones`;
+  * `#datos`;
+  * `#azar`;
+  * `#barras`;
+  * `#patrones`.
+* Cada juego ahora renderiza una vista propia con:
+  * cabecera del juego;
+  * HUD local;
+  * tablero del reto;
+  * selector de dificultad;
+  * progreso de la vista;
+  * historial local;
+  * panel `Carlitos explica`.
+* Se agrego dificultad `Explorar`, `Desafio` y `Experto`.
+* Se agrego historial por juego en `localStorage`.
+* Se adapto el juego `Semillas veloces` para incorporar una tarjeta de operacion flotante, inspirada en la referencia de elementos activos.
+* Se actualizo `README.md`, cache-busting de `index.html` y `service-worker.js`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `Get-Content -Raw app.js`
+* `Get-Content -Raw styles.css`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/app.js?v=0.3.0`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/styles.css?v=0.3.0`
+* `npx --yes playwright screenshot --full-page http://127.0.0.1:8790/ _preview_v030_inicio.png`
+* `npx --yes playwright screenshot --full-page http://127.0.0.1:8790/#semillas _preview_v030_semillas.png`
+* `npx --yes playwright screenshot --viewport-size="390,1200" --full-page http://127.0.0.1:8790/#patrones _preview_v030_mobile_patrones.png`
+* Prueba funcional headless con Chromium y rutas hash.
+
+### Resultados verificados
+
+* HTTP local responde `200`.
+* `app.js?v=0.3.0` responde `200`.
+* `styles.css?v=0.3.0` responde `200`.
+* `app.js` y `service-worker.js` no presentan errores de sintaxis.
+* Capturas desktop y movil generadas y revisadas visualmente.
+* Prueba funcional headless resulto `jugando v0.3.0 route check OK`.
+* Las siete rutas de juego renderizan su propia vista.
+* El selector de dificultad funciona.
+* El feedback y el historial local aparecen despues de responder.
+
+### Pruebas realizadas
+
+* Validacion de sintaxis con Node.
+* Validacion HTTP local.
+* Capturas Playwright:
+  * inicio;
+  * vista `#semillas`;
+  * vista movil `#patrones`.
+* Recorrido automatizado de rutas:
+  * `#semillas`;
+  * `#rio`;
+  * `#fracciones`;
+  * `#datos`;
+  * `#azar`;
+  * `#barras`;
+  * `#patrones`.
+
+### Errores o incidentes
+
+* No se detectaron errores funcionales en la prueba headless.
+* Los archivos temporales de prueba y capturas fueron eliminados despues de validar.
+
+### Soluciones aplicadas
+
+* Se mantuvo app estatica apta para GitHub Pages.
+* Se mantuvo progreso local sin datos personales.
+* Se agrego versionado de almacenamiento `jugando-carlitos:progress:v2`, preservando lectura del almacenamiento anterior `v1`.
+
+### Pendientes
+
+* Integrar imagenes finales especificas para cada juego.
+* Activar/verificar GitHub Pages si todavia no esta activo.
+* Decidir si se agregara un modo docente mas completo.
+
+### Riesgos
+
+* El progreso sigue siendo local; no debe tratarse como evaluacion institucional.
+* La figura de Carlitos requiere autorizacion formal antes de publicacion final.
+
+### Recomendaciones
+
+* Mantener el patron de vistas independientes para nuevos juegos.
+* Evitar que todos los juegos compartan la misma estructura visual; cada vista debe tener una mecanica propia.

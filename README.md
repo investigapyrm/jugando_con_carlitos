@@ -8,9 +8,9 @@ Repositorio:
 
 ## Estado
 
-Version actual: `v0.2.0`
+Version actual: `v0.3.0`
 
-La version `v0.2.0` refuerza la experiencia infantil tipo aventura: mapa de misiones, tarjetas con estilo arcade, estrellas, rachas, mision diaria y un nuevo juego de patrones numericos inspirado en dinamicas de ritmo.
+La version `v0.3.0` convierte cada juego en una vista independiente tipo pestana interna (`#semillas`, `#rio`, `#fracciones`, `#datos`, `#azar`, `#barras`, `#patrones`). Cada vista tiene su propio tablero, dificultad, historial, progreso y panel de ayuda.
 
 Arquitectura:
 
@@ -40,6 +40,9 @@ La app abre directamente en la experiencia jugable. No usa landing page ni pasos
 Incluye:
 
 * seleccion de juegos;
+* vistas independientes por juego mediante rutas hash;
+* dificultad por juego: `Explorar`, `Desafio`, `Experto`;
+* historial local por vista;
 * retos generados dinamicamente;
 * retroalimentacion inmediata;
 * puntos, racha, estrellas e insignias;
@@ -60,6 +63,19 @@ python -m http.server 8790 --bind 127.0.0.1
 URL local:
 
 `http://127.0.0.1:8790/`
+
+Rutas utiles:
+
+```text
+http://127.0.0.1:8790/#inicio
+http://127.0.0.1:8790/#semillas
+http://127.0.0.1:8790/#rio
+http://127.0.0.1:8790/#fracciones
+http://127.0.0.1:8790/#datos
+http://127.0.0.1:8790/#azar
+http://127.0.0.1:8790/#barras
+http://127.0.0.1:8790/#patrones
+```
 
 ## Publicacion
 

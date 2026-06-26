@@ -1,10 +1,35 @@
-const APP_VERSION = "v0.2.0";
-const BUILD_DATE = "2026-06-25";
-const STORAGE_KEY = "jugando-carlitos:progress:v1";
+const APP_VERSION = "v0.3.0";
+const BUILD_DATE = "2026-06-26";
+const STORAGE_KEY = "jugando-carlitos:progress:v2";
+const LEGACY_STORAGE_KEY = "jugando-carlitos:progress:v1";
 
 const ASSETS = {
   hero: "assets/generated/hero_jugando_con_carlitos.png",
   mascot: "assets/generated/carlitos_character_sheet_v01.png",
+};
+
+const DIFFICULTIES = {
+  explorar: {
+    label: "Explorar",
+    short: "Calmo",
+    range: [2, 10],
+    target: 4,
+    bonus: 0,
+  },
+  desafio: {
+    label: "Desafio",
+    short: "Activo",
+    range: [5, 24],
+    target: 6,
+    bonus: 3,
+  },
+  experto: {
+    label: "Experto",
+    short: "Rapido",
+    range: [9, 48],
+    target: 8,
+    bonus: 6,
+  },
 };
 
 const GAMES = [
@@ -12,70 +37,85 @@ const GAMES = [
     id: "semillas",
     title: "Semillas veloces",
     concept: "Suma y conteo",
-    short: "Cuenta dos grupos, activa la racha y encuentra el total.",
+    short: "Cuenta dos grupos y encuentra el total antes de perder la racha.",
     badge: "Explorador de sumas",
     level: "Nivel 1",
     mission: "Reunir semillas para abrir la huerta matematica.",
+    color: "gold",
+    mechanic: "El reto aparece como una tarjeta de operacion. Mira los dos grupos, suma y toca la respuesta correcta.",
   },
   {
     id: "rio",
     title: "Rio de numeros",
     concept: "Orden y comparacion",
-    short: "Ordena piedras numeradas antes de que cambie la corriente.",
+    short: "Construye una ruta ordenada de menor a mayor.",
     badge: "Guia del orden",
     level: "Nivel 2",
-    mission: "Cruzar el rio construyendo una ruta de menor a mayor.",
+    mission: "Cruzar el rio construyendo una ruta numerica segura.",
+    color: "sky",
+    mechanic: "Toca las piedras en orden ascendente y luego pulsa comprobar.",
   },
   {
     id: "fracciones",
     title: "Huerta partida",
     concept: "Fracciones",
-    short: "Pinta partes iguales y arma huertas justas.",
+    short: "Selecciona partes iguales para representar una fraccion.",
     badge: "Constructor de fracciones",
     level: "Nivel 3",
     mission: "Repartir una huerta en partes iguales sin perder el todo.",
+    color: "green",
+    mechanic: "Pinta la cantidad de partes pedidas y comprueba la fraccion.",
   },
   {
     id: "datos",
     title: "Datos del vivero",
     concept: "Promedio, mediana y moda",
-    short: "Lee datos, encuentra pistas y responde como investigador.",
+    short: "Ordena mentalmente los datos y encuentra la medida solicitada.",
     badge: "Investigador de datos",
     level: "Nivel 4",
     mission: "Ayudar al vivero a entender sus registros diarios.",
+    color: "plum",
+    mechanic: "Mira las tarjetas de datos y responde promedio, mediana o moda.",
   },
   {
     id: "azar",
     title: "Rueda del azar",
     concept: "Probabilidad",
-    short: "Observa la rueda y predice que resultado tiene mas caminos.",
+    short: "Compara sectores y predice que resultado tiene mas caminos.",
     badge: "Detective del azar",
     level: "Nivel 5",
     mission: "Descubrir que opcion tiene mas oportunidades de aparecer.",
+    color: "coral",
+    mechanic: "Observa cuantos sectores tiene cada color y elige el mas probable.",
   },
   {
     id: "barras",
     title: "Grafico reciclador",
     concept: "Graficos de barras",
-    short: "Interpreta barras y transforma numeros en decisiones.",
+    short: "Lee barras y convierte datos visuales en respuestas.",
     badge: "Lector de graficos",
     level: "Nivel 6",
     mission: "Leer un reporte visual de materiales recuperados.",
+    color: "green",
+    mechanic: "Compara las barras para hallar total o diferencia.",
   },
   {
     id: "patrones",
     title: "Ritmo de patrones",
     concept: "Secuencias",
-    short: "Sigue el ritmo de los numeros y completa el siguiente pulso.",
+    short: "Sigue el ritmo numerico y completa el siguiente pulso.",
     badge: "Maestro de patrones",
     level: "Nivel 7",
     mission: "Escuchar la regla secreta de una secuencia numerica.",
+    color: "navy",
+    mechanic: "Busca la regla: sumar, restar, duplicar o crecer por cuadrados.",
   },
 ];
 
 const app = document.querySelector("#app");
 
 const state = {
+  route: "inicio",
   activeGame: "semillas",
   challenge: null,
   answered: false,
@@ -84,20 +124,57 @@ const state = {
   progress: readProgress(),
 };
 
-renderApp();
-newChallenge();
-registerServiceWorker();
+initApp();
+
+function initApp() {
+  state.activeGame = state.progress.lastGame || "semillas";
+  syncRoute();
+  renderApp();
+  registerServiceWorker();
+
+  window.addEventListener("hashchange", () => {
+    syncRoute();
+    renderApp();
+  });
+}
+
+function syncRoute() {
+  const hash = decodeURIComponent(window.location.hash.replace(/^#/, "") || "inicio");
+  const clean = hash.replace(/^juego-/, "");
+  const game = getGame(clean);
+
+  if (game && clean !== "inicio") {
+    state.route = "game";
+    if (state.activeGame !== game.id || !state.challenge) {
+      state.activeGame = game.id;
+      state.challenge = createChallenge(game.id);
+      state.answered = false;
+      state.feedback = null;
+      state.picked = [];
+    }
+    state.progress.lastGame = game.id;
+    writeProgress();
+    return;
+  }
+
+  state.route = "inicio";
+}
 
 function renderApp() {
   document.body.classList.toggle("motion-off", prefersReducedMotion());
-  const active = getGame(state.activeGame);
-  const unlockedBadges = GAMES.filter((game) => state.progress.completed[game.id]).length;
-  const totalStars = unlockedBadges * 3;
+  const totalStars = GAMES.reduce((total, game) => total + gameStars(game.id), 0);
 
   app.innerHTML = `
     <header class="app-top">
       <div class="top-inner">
-        <a class="brand" href="#juegos">Jugando con Carlitos</a>
+        <a class="brand" href="#inicio">Jugando con Carlitos</a>
+        <nav class="top-game-tabs" aria-label="Pestanas de juegos">
+          ${GAMES.map((game) => `
+            <a href="#${game.id}" class="${state.route === "game" && state.activeGame === game.id ? "active" : ""}">
+              ${escapeHtml(game.title)}
+            </a>
+          `).join("")}
+        </nav>
         <div class="top-actions">
           <span class="score-pill">Puntos: ${state.progress.score}</span>
           <span class="level-pill">Racha: ${state.progress.streak}</span>
@@ -108,107 +185,7 @@ function renderApp() {
       </div>
     </header>
 
-    <section class="hero" style="--hero-image: url('${ASSETS.hero}')">
-      <div class="hero-inner">
-        <div class="hero-copy">
-          <p class="eyebrow">Matematicas y estadistica jugando</p>
-          <h1>Jugando con Carlitos</h1>
-          <p>Carlitos abre una aventura de misiones cortas: contar semillas, cruzar rios de numeros, leer datos, vencer la rueda del azar y descubrir patrones como si fueran ritmos escondidos.</p>
-          <div class="hero-actions">
-            <button type="button" data-scroll-target="juegos">Jugar ahora</button>
-            <button type="button" class="secondary" data-scroll-target="progreso">Ver progreso</button>
-          </div>
-        </div>
-        <aside class="player-card" aria-label="Perfil local del jugador">
-          <div class="player-head">
-            <div class="mascot">
-              <img src="${ASSETS.mascot}" alt="Carlitos">
-            </div>
-            <div>
-              <p class="eyebrow">Jugador local</p>
-              <h2>${escapeHtml(state.progress.name || "Equipo Carlitos")}</h2>
-              <p>Los avances se guardan solo en este navegador.</p>
-            </div>
-          </div>
-          <div class="name-row">
-            <input id="playerName" maxlength="32" value="${escapeAttribute(state.progress.name)}" aria-label="Nombre del jugador" placeholder="Nombre del equipo">
-            <button type="button" id="saveName">Guardar</button>
-          </div>
-          <div class="stats-row">
-            <div class="stat-box"><strong>${state.progress.score}</strong><span>puntos</span></div>
-            <div class="stat-box"><strong>${state.progress.played}</strong><span>retos</span></div>
-            <div class="stat-box"><strong>${Math.round(accuracy() * 100)}%</strong><span>aciertos</span></div>
-          </div>
-          <div class="daily-mission">
-            <span>Mision del dia</span>
-            <strong>Gana tres estrellas resolviendo un reto de datos, uno de fracciones y uno de patrones.</strong>
-            <small>Carlitos premia la curiosidad: cada juego completado desbloquea una insignia.</small>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <main class="main-grid" id="juegos">
-      <nav class="game-nav" aria-label="Juegos matematicos">
-        <div class="nav-title">
-          <span>Mapa de aventura</span>
-          <strong>${unlockedBadges}/${GAMES.length} misiones</strong>
-        </div>
-        ${GAMES.map((game) => `
-          <button type="button" class="game-tab${game.id === state.activeGame ? " active" : ""}" data-game="${game.id}">
-            <b>${escapeHtml(game.level)}</b>
-            <span>${escapeHtml(game.title)}</span>
-            <small>${escapeHtml(game.concept)}</small>
-            <em>${escapeHtml(game.mission)}</em>
-            <i class="star-row" aria-label="Estrellas del juego">${renderStars(state.progress.completed[game.id] ? 3 : 0)}</i>
-          </button>
-        `).join("")}
-      </nav>
-
-      <div class="stage-wrap">
-        <section class="game-stage" aria-live="polite">
-          <div class="stage-header">
-            <div>
-              <p class="eyebrow">${escapeHtml(active.concept)}</p>
-              <h2>${escapeHtml(active.title)}</h2>
-              <p>${escapeHtml(active.short)}</p>
-              <p class="mission-copy">Mision: ${escapeHtml(active.mission)}</p>
-            </div>
-            <div class="rhythm-meter" aria-hidden="true">
-              ${repeat(7, (index) => `<span style="animation-delay:${index * 90}ms"></span>`)}
-            </div>
-          </div>
-          <div class="play-area" id="playArea">
-            ${state.challenge ? renderChallenge() : ""}
-          </div>
-        </section>
-
-        <section class="progress-panel" id="progreso">
-          <h2>Insignias de aprendizaje</h2>
-          <div class="badge-grid">
-            ${GAMES.map((game) => `
-              <div class="badge${state.progress.completed[game.id] ? "" : " locked"}">
-                <strong>${escapeHtml(state.progress.completed[game.id] ? game.badge : game.title)}</strong>
-                <span>${renderStars(state.progress.completed[game.id] ? 3 : 0)}</span>
-              </div>
-            `).join("")}
-          </div>
-        </section>
-
-        <section class="concept-panel">
-          <h2>Conceptos que aparecen en los juegos</h2>
-          <div class="concept-grid">
-            <article class="concept"><strong>Promedio</strong><p>Reparte el total en partes iguales para ver el valor central aproximado.</p></article>
-            <article class="concept"><strong>Mediana</strong><p>Ordena los datos y mira el valor que queda en el centro.</p></article>
-            <article class="concept"><strong>Moda</strong><p>Busca el dato que mas se repite.</p></article>
-            <article class="concept"><strong>Probabilidad</strong><p>Compara que resultado tiene mas caminos para aparecer.</p></article>
-            <article class="concept"><strong>Grafico</strong><p>Convierte numeros en barras para comparar mas rapido.</p></article>
-            <article class="concept"><strong>Fraccion</strong><p>Muestra cuantas partes de un todo estan seleccionadas.</p></article>
-            <article class="concept"><strong>Secuencia</strong><p>Encuentra la regla que permite anticipar el siguiente numero.</p></article>
-          </div>
-        </section>
-      </div>
-    </main>
+    ${state.route === "game" ? renderGameView() : renderHomeView()}
 
     <footer class="footer">
       <span>Borrador interno. Personaje e imagenes requieren autorizacion antes de publicacion final.</span>
@@ -219,88 +196,193 @@ function renderApp() {
   bindEvents();
 }
 
-function bindEvents() {
-  document.querySelectorAll("[data-scroll-target]").forEach((button) => {
-    button.addEventListener("click", () => {
-      document.getElementById(button.dataset.scrollTarget).scrollIntoView({
-        behavior: prefersReducedMotion() ? "auto" : "smooth",
-        block: "start",
-      });
-    });
-  });
+function renderHomeView() {
+  const unlockedBadges = GAMES.filter((game) => gameStars(game.id) > 0).length;
+  const last = getGame(state.progress.lastGame || state.activeGame) || GAMES[0];
 
-  document.querySelectorAll("[data-game]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.activeGame = button.dataset.game;
-      state.feedback = null;
-      state.answered = false;
-      state.picked = [];
-      newChallenge();
-      document.getElementById("juegos").scrollIntoView({
-        behavior: prefersReducedMotion() ? "auto" : "smooth",
-        block: "start",
-      });
-    });
-  });
+  return `
+    <section class="hero home-hero" style="--hero-image: url('${ASSETS.hero}')">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">Matematicas y estadistica jugando</p>
+          <h1>Jugando con Carlitos</h1>
+          <p>Cada juego ahora es una vista propia: entra a una pestana, elige dificultad, resuelve retos, mira tu historial y cambia de juego cuando quieras.</p>
+          <div class="hero-actions">
+            <a class="hero-button" href="#${last.id}">Continuar: ${escapeHtml(last.title)}</a>
+            <a class="hero-button secondary" href="#mapa">Ver juegos</a>
+          </div>
+        </div>
+        ${renderPlayerCard(unlockedBadges)}
+      </div>
+    </section>
 
-  const saveName = document.querySelector("#saveName");
-  const nameInput = document.querySelector("#playerName");
-  saveName.addEventListener("click", () => {
-    state.progress.name = nameInput.value.trim().slice(0, 32);
-    writeProgress();
-    renderApp();
-  });
+    <main class="home-view" id="mapa">
+      <section class="hub-intro">
+        <p class="eyebrow">Pestanas independientes</p>
+        <h2>Elige una mision</h2>
+        <p>Los juegos no dependen entre si. Puedes practicar una sola habilidad o saltar entre vistas como en una app de juegos.</p>
+      </section>
 
-  document.querySelector("#resetProgress").addEventListener("click", () => {
-    state.progress = defaultProgress();
-    writeProgress();
-    state.feedback = null;
-    state.answered = false;
-    state.picked = [];
-    newChallenge();
-  });
+      <section class="game-hub" aria-label="Juegos disponibles">
+        ${GAMES.map((game) => renderHubCard(game)).join("")}
+      </section>
 
-  document.querySelector("#toggleMotion").addEventListener("click", () => {
-    state.progress.motionOff = !state.progress.motionOff;
-    writeProgress();
-    renderApp();
-  });
-
-  document.querySelectorAll("[data-answer]").forEach((button) => {
-    button.addEventListener("click", () => submitAnswer(button.dataset.answer, button));
-  });
-
-  document.querySelectorAll("[data-number-pick]").forEach((button) => {
-    button.addEventListener("click", () => pickNumber(Number(button.dataset.numberPick)));
-  });
-
-  document.querySelectorAll("[data-piece]").forEach((button) => {
-    button.addEventListener("click", () => togglePiece(Number(button.dataset.piece)));
-  });
-
-  const checkButton = document.querySelector("#checkInteractive");
-  if (checkButton) checkButton.addEventListener("click", checkInteractive);
-
-  const nextButton = document.querySelector("#nextChallenge");
-  if (nextButton) nextButton.addEventListener("click", newChallenge);
+      <section class="progress-panel home-progress" id="progreso">
+        <h2>Insignias de aprendizaje</h2>
+        <div class="badge-grid">
+          ${GAMES.map((game) => `
+            <div class="badge${gameStars(game.id) ? "" : " locked"}">
+              <strong>${escapeHtml(gameStars(game.id) ? game.badge : game.title)}</strong>
+              <span>${renderStars(gameStars(game.id))}</span>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+    </main>
+  `;
 }
 
-function newChallenge() {
-  state.challenge = createChallenge(state.activeGame);
-  state.feedback = null;
-  state.answered = false;
-  state.picked = [];
-  renderApp();
+function renderPlayerCard(unlockedBadges) {
+  return `
+    <aside class="player-card" aria-label="Perfil local del jugador">
+      <div class="player-head">
+        <div class="mascot">
+          <img src="${ASSETS.mascot}" alt="Carlitos">
+        </div>
+        <div>
+          <p class="eyebrow">Jugador local</p>
+          <h2>${escapeHtml(state.progress.name || "Equipo Carlitos")}</h2>
+          <p>Los avances se guardan solo en este navegador.</p>
+        </div>
+      </div>
+      <div class="name-row">
+        <input id="playerName" maxlength="32" value="${escapeAttribute(state.progress.name)}" aria-label="Nombre del jugador" placeholder="Nombre del equipo">
+        <button type="button" id="saveName">Guardar</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><strong>${state.progress.score}</strong><span>puntos</span></div>
+        <div class="stat-box"><strong>${state.progress.played}</strong><span>retos</span></div>
+        <div class="stat-box"><strong>${Math.round(accuracy() * 100)}%</strong><span>aciertos</span></div>
+      </div>
+      <div class="daily-mission">
+        <span>Mision del dia</span>
+        <strong>Completa retos en tres pestanas diferentes y compara tus aciertos.</strong>
+        <small>${unlockedBadges}/${GAMES.length} misiones con al menos una estrella.</small>
+      </div>
+    </aside>
+  `;
 }
 
-function createChallenge(gameId) {
-  if (gameId === "semillas") return createSeedChallenge();
-  if (gameId === "rio") return createRiverChallenge();
-  if (gameId === "fracciones") return createFractionChallenge();
-  if (gameId === "datos") return createDataChallenge();
-  if (gameId === "azar") return createChanceChallenge();
-  if (gameId === "barras") return createBarChallenge();
-  return createPatternChallenge();
+function renderHubCard(game) {
+  const stats = getGameStats(game.id);
+  const stars = gameStars(game.id);
+  const progress = gameProgressPercent(game.id);
+
+  return `
+    <article class="hub-card theme-${game.color}">
+      <div class="hub-card-top">
+        <span>${escapeHtml(game.level)}</span>
+        <span class="star-row">${renderStars(stars)}</span>
+      </div>
+      <h3>${escapeHtml(game.title)}</h3>
+      <p>${escapeHtml(game.short)}</p>
+      <div class="hub-meta">
+        <span>${escapeHtml(game.concept)}</span>
+        <span>${stats.correct}/${DIFFICULTIES[state.progress.difficulty].target} aciertos</span>
+      </div>
+      <div class="mini-progress" aria-label="Progreso del juego">
+        <i style="width:${progress}%"></i>
+      </div>
+      <a class="play-link" href="#${game.id}">Abrir vista</a>
+    </article>
+  `;
+}
+
+function renderGameView() {
+  const active = getGame(state.activeGame);
+  const stats = getGameStats(active.id);
+  const difficulty = DIFFICULTIES[state.progress.difficulty];
+
+  return `
+    <main class="game-route theme-${active.color}">
+      <nav class="view-tabs" aria-label="Cambiar de juego">
+        <a href="#inicio">Inicio</a>
+        ${GAMES.map((game) => `
+          <a href="#${game.id}" class="${game.id === active.id ? "active" : ""}">
+            <span>${escapeHtml(game.level)}</span>
+            ${escapeHtml(game.title)}
+          </a>
+        `).join("")}
+      </nav>
+
+      <section class="game-view">
+        <header class="game-view-header">
+          <div>
+            <p class="eyebrow">${escapeHtml(active.concept)}</p>
+            <h1>${escapeHtml(active.title)}</h1>
+            <p>${escapeHtml(active.mission)}</p>
+          </div>
+          <div class="game-hud">
+            <div><strong>${stats.played}</strong><span>retos aqui</span></div>
+            <div><strong>${stats.correct}</strong><span>aciertos</span></div>
+            <div><strong>${gameStars(active.id)}</strong><span>estrellas</span></div>
+            <div><strong>${difficulty.short}</strong><span>dificultad</span></div>
+          </div>
+        </header>
+
+        <div class="game-layout">
+          <section class="game-stage view-stage" aria-live="polite">
+            <div class="stage-header">
+              <div>
+                <p class="eyebrow">Reto activo</p>
+                <h2>${escapeHtml(active.short)}</h2>
+                <p class="mission-copy">Mecanica: ${escapeHtml(active.mechanic)}</p>
+              </div>
+              <div class="rhythm-meter" aria-hidden="true">
+                ${repeat(7, (index) => `<span style="animation-delay:${index * 90}ms"></span>`)}
+              </div>
+            </div>
+            <div class="energy-bar" aria-label="Energia del reto">
+              <span style="width:${Math.max(16, 100 - (stats.played % 10) * 8)}%"></span>
+            </div>
+            <div class="play-area" id="playArea">
+              ${state.challenge ? renderChallenge() : ""}
+            </div>
+          </section>
+
+          <aside class="control-dock">
+            <section class="control-card">
+              <h2>Dificultad</h2>
+              <div class="difficulty-selector" role="group" aria-label="Dificultad">
+                ${Object.entries(DIFFICULTIES).map(([id, item]) => `
+                  <button type="button" class="${state.progress.difficulty === id ? "active" : ""}" data-difficulty="${id}">
+                    ${escapeHtml(item.label)}
+                  </button>
+                `).join("")}
+              </div>
+            </section>
+
+            <section class="control-card">
+              <h2>Progreso de esta vista</h2>
+              <div class="mini-progress big"><i style="width:${gameProgressPercent(active.id)}%"></i></div>
+              <p>${stats.correct} aciertos de ${difficulty.target} para dominar este nivel.</p>
+            </section>
+
+            <section class="control-card">
+              <h2>Historial</h2>
+              ${renderHistory(active.id)}
+            </section>
+
+            <section class="control-card">
+              <h2>Carlitos explica</h2>
+              <p>${escapeHtml(active.mechanic)}</p>
+              <button type="button" id="nextChallengeSide">Nuevo reto</button>
+            </section>
+          </aside>
+        </div>
+      </section>
+    </main>
+  `;
 }
 
 function renderChallenge() {
@@ -354,42 +436,125 @@ function renderFeedback() {
   `;
 }
 
+function bindEvents() {
+  document.querySelector("#resetProgress")?.addEventListener("click", () => {
+    state.progress = defaultProgress();
+    writeProgress();
+    state.challenge = state.route === "game" ? createChallenge(state.activeGame) : null;
+    state.feedback = null;
+    state.answered = false;
+    state.picked = [];
+    renderApp();
+  });
+
+  document.querySelector("#toggleMotion")?.addEventListener("click", () => {
+    state.progress.motionOff = !state.progress.motionOff;
+    writeProgress();
+    renderApp();
+  });
+
+  document.querySelector("#saveName")?.addEventListener("click", () => {
+    const input = document.querySelector("#playerName");
+    state.progress.name = input.value.trim().slice(0, 32);
+    writeProgress();
+    renderApp();
+  });
+
+  document.querySelectorAll("[data-difficulty]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.progress.difficulty = button.dataset.difficulty;
+      writeProgress();
+      newChallenge();
+    });
+  });
+
+  document.querySelectorAll("[data-answer]").forEach((button) => {
+    button.addEventListener("click", () => submitAnswer(button.dataset.answer, button));
+  });
+
+  document.querySelectorAll("[data-number-pick]").forEach((button) => {
+    button.addEventListener("click", () => pickNumber(Number(button.dataset.numberPick)));
+  });
+
+  document.querySelectorAll("[data-piece]").forEach((button) => {
+    button.addEventListener("click", () => togglePiece(Number(button.dataset.piece)));
+  });
+
+  document.querySelector("#checkInteractive")?.addEventListener("click", checkInteractive);
+  document.querySelector("#nextChallenge")?.addEventListener("click", newChallenge);
+  document.querySelector("#nextChallengeSide")?.addEventListener("click", newChallenge);
+}
+
+function newChallenge() {
+  if (state.route !== "game") return;
+  state.challenge = createChallenge(state.activeGame);
+  state.feedback = null;
+  state.answered = false;
+  state.picked = [];
+  renderApp();
+}
+
+function createChallenge(gameId) {
+  if (gameId === "semillas") return createSeedChallenge();
+  if (gameId === "rio") return createRiverChallenge();
+  if (gameId === "fracciones") return createFractionChallenge();
+  if (gameId === "datos") return createDataChallenge();
+  if (gameId === "azar") return createChanceChallenge();
+  if (gameId === "barras") return createBarChallenge();
+  return createPatternChallenge();
+}
+
+function difficultyRange() {
+  return DIFFICULTIES[state.progress.difficulty]?.range || DIFFICULTIES.desafio.range;
+}
+
 function createSeedChallenge() {
-  const a = rand(3, 9);
-  const b = rand(2, 8);
+  const [min, max] = difficultyRange();
+  const a = rand(min, Math.max(min, Math.floor(max / 2)));
+  const b = rand(min, Math.max(min + 1, Math.floor(max / 2) + 4));
   const answer = a + b;
   return {
-    prompt: `Carlitos encontro ${a} semillas en una caja y ${b} en otra. Cuantas semillas hay en total?`,
-    hint: "Suma juntando los dos grupos.",
+    prompt: `Operacion relampago: ${a} + ${b}. Cuantas semillas junta Carlitos?`,
+    hint: "Suma juntando los dos grupos. Si dudas, cuenta primero el grupo mas grande.",
+    summary: `${a} + ${b}`,
     a,
     b,
     answer,
-    options: makeNumberOptions(answer, 4, 1, 18),
+    options: makeNumberOptions(answer, 4, 1, max * 2),
   };
 }
 
 function renderSeedBoard(challenge) {
   return `
-    <div class="seed-field">
-      <div class="seed-group">
-        <strong>Caja A</strong>
-        <div class="seed-dots">${repeat(challenge.a, (index) => `<span class="seed-dot" style="animation-delay:${index * 20}ms"></span>`)}</div>
+    <div class="fall-lane">
+      <div class="falling-card">
+        <span>${challenge.a}</span>
+        <b>+</b>
+        <span>${challenge.b}</span>
       </div>
-      <div class="seed-group">
-        <strong>Caja B</strong>
-        <div class="seed-dots">${repeat(challenge.b, (index) => `<span class="seed-dot" style="animation-delay:${index * 20}ms"></span>`)}</div>
+      <div class="seed-field">
+        <div class="seed-group">
+          <strong>Caja A</strong>
+          <div class="seed-dots">${repeat(challenge.a, (index) => `<span class="seed-dot" style="animation-delay:${index * 20}ms"></span>`)}</div>
+        </div>
+        <div class="seed-group">
+          <strong>Caja B</strong>
+          <div class="seed-dots">${repeat(challenge.b, (index) => `<span class="seed-dot" style="animation-delay:${index * 20}ms"></span>`)}</div>
+        </div>
       </div>
     </div>
   `;
 }
 
 function createRiverChallenge() {
-  const values = uniqueNumbers(5, 2, 32).sort(() => Math.random() - 0.5);
+  const [min, max] = difficultyRange();
+  const values = uniqueNumbers(5, min, max).sort(() => Math.random() - 0.5);
   const sorted = [...values].sort((a, b) => a - b);
   return {
     mode: "interactive",
     prompt: "Ordena las piedras del rio de menor a mayor.",
     hint: "Primero busca el numero mas pequeno y luego sigue subiendo.",
+    summary: `Ordenar: ${values.join(", ")}`,
     values,
     answer: sorted.join(","),
   };
@@ -397,25 +562,30 @@ function createRiverChallenge() {
 
 function renderRiverBoard(challenge) {
   return `
-    <div class="number-pool">
-      ${challenge.values
-        .filter((value) => !state.picked.includes(value))
-        .map((value) => `<button type="button" data-number-pick="${value}">${value}</button>`)
-        .join("")}
-    </div>
-    <div class="number-answer" aria-label="Respuesta ordenada">
-      ${state.picked.map((value) => `<span>${value}</span>`).join("")}
+    <div class="river-board">
+      <div class="number-pool">
+        ${challenge.values
+          .filter((value) => !state.picked.includes(value))
+          .map((value) => `<button type="button" data-number-pick="${value}">${value}</button>`)
+          .join("")}
+      </div>
+      <div class="number-answer" aria-label="Respuesta ordenada">
+        ${state.picked.length ? state.picked.map((value) => `<span>${value}</span>`).join("") : "<em>Toca piedras para formar el camino</em>"}
+      </div>
     </div>
   `;
 }
 
 function createFractionChallenge() {
-  const denominator = [4, 6, 8][rand(0, 2)];
+  const difficulty = state.progress.difficulty;
+  const denominators = difficulty === "experto" ? [8, 10, 12] : difficulty === "desafio" ? [6, 8, 10] : [4, 6, 8];
+  const denominator = denominators[rand(0, denominators.length - 1)];
   const numerator = rand(1, denominator - 1);
   return {
     mode: "interactive",
     prompt: `Pinta ${numerator} de ${denominator} partes de la huerta.`,
     hint: "Una fraccion cuenta partes seleccionadas de un mismo todo.",
+    summary: `${numerator}/${denominator}`,
     numerator,
     denominator,
     answer: numerator,
@@ -424,7 +594,7 @@ function createFractionChallenge() {
 
 function renderFractionBoard(challenge) {
   return `
-    <div class="fraction-grid">
+    <div class="fraction-grid" style="--fraction-cols:${challenge.denominator > 8 ? 6 : 4}">
       ${repeat(challenge.denominator, (index) => `
         <button type="button" class="fraction-piece${state.picked.includes(index) ? " selected" : ""}" data-piece="${index}">
           Parte ${index + 1}
@@ -435,23 +605,26 @@ function renderFractionBoard(challenge) {
 }
 
 function createDataChallenge() {
-  const data = [rand(2, 9), rand(2, 9), rand(2, 9), rand(2, 9), rand(2, 9)];
-  const sourceIndex = rand(0, 4);
-  let targetIndex = rand(0, 4);
-  while (targetIndex === sourceIndex) targetIndex = rand(0, 4);
+  const [min, max] = difficultyRange();
+  const length = state.progress.difficulty === "experto" ? 7 : state.progress.difficulty === "desafio" ? 6 : 5;
+  const data = Array.from({ length }, () => rand(min, Math.max(min + 4, Math.floor(max / 2))));
+  const sourceIndex = rand(0, data.length - 1);
+  let targetIndex = rand(0, data.length - 1);
+  while (targetIndex === sourceIndex) targetIndex = rand(0, data.length - 1);
   data[targetIndex] = data[sourceIndex];
   const sorted = [...data].sort((a, b) => a - b);
   const mean = Math.round((sum(data) / data.length) * 10) / 10;
-  const median = sorted[2];
+  const median = sorted[Math.floor(sorted.length / 2)];
   const mode = getMode(data);
   const ask = ["promedio", "mediana", "moda"][rand(0, 2)];
   const answer = ask === "promedio" ? mean : ask === "mediana" ? median : mode;
   return {
-    prompt: `La huerta registro estos plantines por dia. Cual es la ${ask}?`,
+    prompt: `La huerta registro estos plantines. Cual es la ${ask}?`,
     hint: "Ordenar los datos ayuda mucho antes de responder.",
+    summary: `${ask}: ${data.join(", ")}`,
     data,
     answer,
-    options: makeNumberOptions(answer, 4, 1, 12),
+    options: makeNumberOptions(answer, 4, 1, max),
   };
 }
 
@@ -469,16 +642,18 @@ function renderDataBoard(challenge) {
 }
 
 function createChanceChallenge() {
+  const spread = state.progress.difficulty === "experto" ? 6 : state.progress.difficulty === "desafio" ? 5 : 4;
   const colors = [
-    { name: "verde", count: rand(3, 5), color: "#137a4d" },
-    { name: "dorado", count: rand(1, 4), color: "#c8a24a" },
-    { name: "coral", count: rand(1, 3), color: "#e26d5a" },
-    { name: "azul", count: rand(1, 3), color: "#63b7d0" },
+    { name: "verde", count: rand(3, spread + 2), color: "#137a4d" },
+    { name: "dorado", count: rand(1, spread), color: "#c8a24a" },
+    { name: "coral", count: rand(1, spread), color: "#e26d5a" },
+    { name: "azul", count: rand(1, spread), color: "#63b7d0" },
   ];
   const answer = [...colors].sort((a, b) => b.count - a.count)[0].name;
   return {
     prompt: "La rueda tiene sectores de colores. Que color tiene mas probabilidad de salir?",
     hint: "Mas sectores significa mas oportunidades.",
+    summary: colors.map((entry) => `${entry.name}:${entry.count}`).join(" "),
     colors,
     answer,
     options: colors.map((entry) => ({ label: entry.name, value: entry.name })),
@@ -503,21 +678,23 @@ function renderChanceBoard(challenge) {
 }
 
 function createBarChallenge() {
+  const [min, max] = difficultyRange();
   const labels = ["papel", "latas", "botellas", "carton"];
-  const data = labels.map((label) => ({ label, value: rand(2, 12) }));
+  const data = labels.map((label) => ({ label, value: rand(min, Math.max(min + 3, Math.floor(max / 2))) }));
   const total = sum(data.map((entry) => entry.value));
-  const max = [...data].sort((a, b) => b.value - a.value)[0];
-  const min = [...data].sort((a, b) => a.value - b.value)[0];
+  const maxEntry = [...data].sort((a, b) => b.value - a.value)[0];
+  const minEntry = [...data].sort((a, b) => a.value - b.value)[0];
   const ask = rand(0, 1) === 0 ? "total" : "diferencia";
-  const answer = ask === "total" ? total : max.value - min.value;
+  const answer = ask === "total" ? total : maxEntry.value - minEntry.value;
   return {
     prompt: ask === "total"
       ? "Cuantos materiales recupero el equipo en total?"
-      : `Cuanta diferencia hay entre ${max.label} y ${min.label}?`,
+      : `Cuanta diferencia hay entre ${maxEntry.label} y ${minEntry.label}?`,
     hint: "Las barras permiten comparar cantidades de un vistazo.",
+    summary: ask,
     data,
     answer,
-    options: makeNumberOptions(answer, 4, 1, 48),
+    options: makeNumberOptions(answer, 4, 1, max * labels.length),
   };
 }
 
@@ -536,7 +713,7 @@ function renderBarBoard(challenge) {
 }
 
 function createPatternChallenge() {
-  const patterns = [
+  const basePatterns = [
     { sequence: [2, 4, 6, 8], answer: 10, rule: "sumar 2", name: "pasos pares" },
     { sequence: [3, 6, 9, 12], answer: 15, rule: "sumar 3", name: "tambor de tres" },
     { sequence: [5, 10, 15, 20], answer: 25, rule: "sumar 5", name: "palmas de cinco" },
@@ -544,15 +721,21 @@ function createPatternChallenge() {
     { sequence: [1, 4, 9, 16], answer: 25, rule: "cuadrados", name: "huellas cuadradas" },
     { sequence: [21, 18, 15, 12], answer: 9, rule: "restar 3", name: "corriente que baja" },
   ];
+  const expertPatterns = [
+    { sequence: [2, 6, 12, 20], answer: 30, rule: "sumar 4, 6, 8 y luego 10", name: "saltos crecientes" },
+    { sequence: [1, 3, 6, 10], answer: 15, rule: "sumar 2, 3, 4 y luego 5", name: "triangulos" },
+  ];
+  const patterns = state.progress.difficulty === "experto" ? basePatterns.concat(expertPatterns) : basePatterns;
   const pattern = patterns[rand(0, patterns.length - 1)];
   return {
     prompt: `El ritmo de Carlitos marca ${pattern.sequence.join(", ")} y luego se detiene. Que numero sigue?`,
     hint: "Mira si el ritmo suma, resta, duplica o crece con otra regla.",
     explain: `La regla era ${pattern.rule}.`,
+    summary: pattern.sequence.join(", "),
     sequence: pattern.sequence,
     name: pattern.name,
     answer: pattern.answer,
-    options: makeNumberOptions(pattern.answer, 4, 1, 30),
+    options: makeNumberOptions(pattern.answer, 4, 1, 60),
   };
 }
 
@@ -581,7 +764,7 @@ function submitAnswer(value, button) {
 
   state.answered = true;
   button.classList.add(ok ? "correct" : "wrong");
-  scoreResult(ok);
+  scoreResult(ok, value);
 }
 
 function pickNumber(value) {
@@ -603,30 +786,36 @@ function togglePiece(index) {
 function checkInteractive() {
   if (state.answered) return;
   let ok = false;
+  let selected = state.picked.join(",");
 
   if (state.activeGame === "rio") {
-    ok = state.picked.join(",") === state.challenge.answer;
+    ok = selected === state.challenge.answer;
   } else if (state.activeGame === "fracciones") {
+    selected = String(state.picked.length);
     ok = state.picked.length === state.challenge.answer;
   }
 
   state.answered = true;
-  scoreResult(ok);
+  scoreResult(ok, selected);
 }
 
-function scoreResult(ok) {
+function scoreResult(ok, selectedValue) {
   const game = getGame(state.activeGame);
+  const stats = getGameStats(game.id);
+  const difficulty = DIFFICULTIES[state.progress.difficulty] || DIFFICULTIES.desafio;
   state.progress.played += 1;
+  stats.played += 1;
 
   if (ok) {
     state.progress.correct += 1;
+    stats.correct += 1;
     state.progress.streak += 1;
-    const points = 10 + Math.min(8, state.progress.streak);
+    stats.bestStreak = Math.max(stats.bestStreak || 0, state.progress.streak);
+    const points = 10 + difficulty.bonus + Math.min(8, state.progress.streak);
     state.progress.score += points;
-    state.progress.completed[state.activeGame] = true;
     state.feedback = {
       ok: true,
-      message: `Excelente. +${points} puntos, racha ${state.progress.streak}. Carlitos desbloqueo: ${game.badge}.`,
+      message: `Excelente. +${points} puntos, racha ${state.progress.streak}.`,
     };
   } else {
     state.progress.streak = 0;
@@ -636,12 +825,70 @@ function scoreResult(ok) {
     };
   }
 
+  state.progress.completed[game.id] = gameStars(game.id) > 0 || ok;
+  pushHistory(game.id, {
+    ok,
+    prompt: state.challenge.summary || state.challenge.prompt,
+    selected: selectedValue || "",
+    answer: state.challenge.answer,
+  });
+
   writeProgress();
   window.setTimeout(renderApp, 260);
 }
 
+function renderHistory(gameId) {
+  const history = state.progress.historyByGame[gameId] || [];
+  if (!history.length) {
+    return `<div class="history-empty">Todavia no hay intentos en esta vista.</div>`;
+  }
+
+  return `
+    <div class="history-list">
+      ${history.map((item) => `
+        <div class="history-item ${item.ok ? "correct" : "incorrect"}">
+          <strong>${item.ok ? "OK" : "Revisar"}</strong>
+          <span>${escapeHtml(item.prompt)}</span>
+          <small>Respuesta: ${escapeHtml(item.selected || "-")} | Correcta: ${escapeHtml(item.answer)}</small>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function pushHistory(gameId, item) {
+  if (!state.progress.historyByGame[gameId]) state.progress.historyByGame[gameId] = [];
+  state.progress.historyByGame[gameId].unshift({
+    ...item,
+    at: new Date().toISOString(),
+  });
+  state.progress.historyByGame[gameId] = state.progress.historyByGame[gameId].slice(0, 6);
+}
+
+function getGameStats(gameId) {
+  if (!state.progress.statsByGame[gameId]) {
+    state.progress.statsByGame[gameId] = { played: 0, correct: 0, bestStreak: 0 };
+  }
+  return state.progress.statsByGame[gameId];
+}
+
+function gameStars(gameId) {
+  const stats = getGameStats(gameId);
+  const target = DIFFICULTIES[state.progress.difficulty]?.target || 6;
+  if (!stats.correct) return 0;
+  if (stats.correct >= target && stats.played && stats.correct / stats.played >= 0.7) return 3;
+  if (stats.correct >= Math.ceil(target / 2)) return 2;
+  return 1;
+}
+
+function gameProgressPercent(gameId) {
+  const stats = getGameStats(gameId);
+  const target = DIFFICULTIES[state.progress.difficulty]?.target || 6;
+  return Math.min(100, Math.round((stats.correct / target) * 100));
+}
+
 function getGame(id) {
-  return GAMES.find((game) => game.id === id) || GAMES[0];
+  return GAMES.find((game) => game.id === id);
 }
 
 function accuracy() {
@@ -658,21 +905,31 @@ function defaultProgress() {
     correct: 0,
     completed: {},
     motionOff: false,
+    difficulty: "desafio",
+    lastGame: "semillas",
+    statsByGame: {},
+    historyByGame: {},
   };
 }
 
 function readProgress() {
+  const base = defaultProgress();
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (!parsed || typeof parsed !== "object") return defaultProgress();
+    const stored = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    const parsed = JSON.parse(stored || "null");
+    if (!parsed || typeof parsed !== "object") return base;
     return {
-      ...defaultProgress(),
+      ...base,
       ...parsed,
       completed: parsed.completed || {},
       motionOff: Boolean(parsed.motionOff),
+      difficulty: DIFFICULTIES[parsed.difficulty] ? parsed.difficulty : "desafio",
+      statsByGame: parsed.statsByGame || {},
+      historyByGame: parsed.historyByGame || {},
+      lastGame: parsed.lastGame || "semillas",
     };
   } catch (error) {
-    return defaultProgress();
+    return base;
   }
 }
 
@@ -687,7 +944,7 @@ function writeProgress() {
 function makeNumberOptions(answer, count, min, max) {
   const values = new Set([answer]);
   while (values.size < count) {
-    const offset = rand(-4, 4);
+    const offset = rand(-6, 6) || 1;
     const candidate = Math.max(min, Math.min(max, Math.round(Number(answer) + offset)));
     values.add(candidate);
   }
