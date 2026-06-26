@@ -550,6 +550,10 @@
 * `npx --yes playwright screenshot --full-page http://127.0.0.1:8790/#semillas _preview_v040_semillas.png`
 * `npx --yes playwright screenshot --full-page http://127.0.0.1:8790/#azar _preview_v040_azar.png`
 * `npx --yes playwright screenshot --viewport-size="390,1200" --full-page http://127.0.0.1:8790/#patrones _preview_v040_mobile_patrones.png`
+* `Invoke-WebRequest -UseBasicParsing https://investigapyrm.github.io/jugando_con_carlitos/?v=0.4.0`
+* `Invoke-WebRequest -UseBasicParsing https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.4.0`
+* `Invoke-WebRequest -UseBasicParsing https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.4.0`
+* `npx --yes playwright screenshot --full-page https://investigapyrm.github.io/jugando_con_carlitos/?v=0.4.0&nocache=61e880d#semillas _preview_public_v040_semillas.png`
 * Prueba funcional headless `_tmp_v040_interactive_check.js`.
 
 ### Resultados verificados
@@ -565,6 +569,12 @@
   * `#semillas` con barra de tiempo, atajos y tablero sin solapes;
   * `#azar` con herramienta de giro visible;
   * `#patrones` en movil sin solapes criticos.
+* GitHub Pages responde `200` en `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.4.0`.
+* La URL publica sirve `index.html` con `styles.css?v=0.4.0` y `app.js?v=0.4.0`.
+* La URL publica sirve `app.js` con `APP_VERSION = "v0.4.0"`.
+* La captura publica de `#semillas` muestra `v0.4.0` y barra de tiempo funcional.
+* Commit de la version interactiva: `61e880d743fd3d15fa2403639e3b5db7ac99832a`.
+* Push exitoso a `origin/main`.
 
 ### Pruebas realizadas
 
@@ -594,7 +604,6 @@
 
 ### Pendientes
 
-* Activar o verificar GitHub Pages si la URL publica sigue sin responder.
 * Integrar imagenes finales especificas por juego.
 * Evaluar modo docente con objetivos, niveles sugeridos y actividades offline.
 * Eventualmente crear seguimiento GAS/Sheets solo con reglas de privacidad y consentimiento.
