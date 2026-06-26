@@ -27,6 +27,8 @@ Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
 * Se creo `README.md` y bitacora propia del proyecto.
 * Se valido con `node --check app.js`, `node --check service-worker.js`, HTTP local, manifest, service worker, capturas Playwright desktop/movil y prueba funcional headless `interactive games OK`.
 * Se ajusto el juego `Datos del vivero` para que siempre exista al menos un valor repetido cuando se trabaja la moda.
+* Se creo el commit local `9cc33b6dc570797348beb6c558d6c24a1ab5720b`, mensaje `Inicializa appweb de juegos con Carlitos`.
+* El push a `origin/main` fallo porque GitHub nego permiso de escritura a `diegomezapy` con error `403`.
 
 ## Criterios editoriales y tecnicos
 

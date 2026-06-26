@@ -10,7 +10,7 @@
 * Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
 * URL local prevista: `http://127.0.0.1:8790/`
 * Responsable: Codex, a solicitud de Diego
-* Version: `v0.1.0`, pendiente commit y push al momento de registrar
+* Version: `v0.1.0`, commit local realizado, push bloqueado por permiso GitHub 403
 
 ### Objetivo de la intervencion
 
@@ -77,6 +77,14 @@
 * `npx --yes playwright screenshot --viewport-size="390,1200" --full-page http://127.0.0.1:8790/ _preview_jugando_mobile.png`
 * Prueba headless con Playwright via cache `npx`.
 * `git diff --check`
+* `git add .`
+* `git diff --cached --check`
+* `git commit -m "Inicializa appweb de juegos con Carlitos"`
+* `git push -u origin main`
+* `gh --version`
+* `gh auth status`
+* `git rev-parse HEAD`
+* `git remote -v`
 
 ### Resultados verificados
 
@@ -88,6 +96,10 @@
 * Capturas desktop y movil generadas y revisadas.
 * Prueba headless resulto `interactive games OK`.
 * `git diff --check` sin errores.
+* Commit local creado:
+  * `9cc33b6dc570797348beb6c558d6c24a1ab5720b`
+  * mensaje: `Inicializa appweb de juegos con Carlitos`
+* `gh auth status` confirma sesion activa como `diegomezapy`.
 
 ### Pruebas realizadas
 
@@ -105,6 +117,9 @@
 
 * El repositorio remoto estaba vacio, lo cual era esperado para la primera version.
 * Se ajusto el juego de estadistica para forzar al menos un valor repetido, de modo que la moda tenga sentido didactico.
+* `git push -u origin main` fallo con:
+  * `Permission to investigapyrm/jugando_con_carlitos.git denied to diegomezapy.`
+  * `The requested URL returned error: 403`
 
 ### Soluciones aplicadas
 
@@ -113,7 +128,8 @@
 
 ### Pendientes
 
-* Crear commit inicial y hacer push.
+* Otorgar permiso de escritura a `diegomezapy` sobre `investigapyrm/jugando_con_carlitos.git` o empujar desde una cuenta con acceso.
+* Reintentar `git push -u origin main`.
 * Activar/verificar GitHub Pages.
 * Generar imagenes especificas para juegos matematicos y estadisticos.
 
@@ -121,6 +137,7 @@
 
 * Las imagenes reutilizadas requieren autorizacion antes de publicacion final.
 * El progreso en `localStorage` no es seguimiento institucional; si se necesita seguimiento de aula, se debe disenar GAS/Sheets con permisos y privacidad.
+* Mientras no haya permiso de escritura, el repositorio remoto seguira sin la app aunque la copia local este lista.
 
 ### Recomendaciones
 
