@@ -144,3 +144,128 @@
 * Mantener los juegos cortos y verificables.
 * No recolectar datos personales de ninos.
 * Si se usa en aula, preferir nombre de equipo y no nombre completo de estudiante.
+
+## 2026-06-25 21:06
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / FACEN / investigapyrm
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL local verificada: `http://127.0.0.1:8790/`
+* Responsable: Codex, a solicitud de Diego
+* Version: `v0.2.0`, pendiente de push por bloqueo GitHub 403 ya detectado
+
+### Objetivo de la intervencion
+
+* Usar como inspiracion un prototipo HTML de juego ritmico tipo arcade para crear contenido mas interesante, atractivo y dinamico en la appweb de juegos matematicos y estadisticos con Carlitos.
+
+### Diagnostico inicial
+
+* La app `v0.1.0` ya funcionaba como experiencia directa, pero se percibia todavia como una coleccion de tarjetas y preguntas.
+* La referencia aportada tenia ideas utiles para una app infantil:
+  * tarjetas de niveles;
+  * rachas;
+  * estrellas;
+  * HUD visible;
+  * controles de movimiento;
+  * sensacion de juego inmediato;
+  * estetica arcade con sombras fuertes.
+* No convenia copiar el tema ni el codigo musical original; se adapto la idea al dominio educativo de matematicas y estadistica.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.2.0`.
+* Se agrego el juego `Ritmo de patrones` para trabajar secuencias numericas.
+* Se agregaron misiones por nivel para los siete juegos.
+* Se agrego mapa de aventura en la navegacion lateral.
+* Se reemplazo el contador de insignias por estrellas de progreso.
+* Se agrego mision diaria en la tarjeta del jugador.
+* Se agrego bonificacion de puntos por racha.
+* Se agrego control local `Animaciones: Si/No`.
+* Se reforzo la identidad visual con tarjetas mas marcadas, sombras tipo arcade, barras animadas y tableros mas expresivos.
+* Se actualizo cache-busting de `index.html` y `service-worker.js`.
+* Se actualizo `README.md`, `manifest.webmanifest` y `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `manifest.webmanifest`
+* `service-worker.js`
+* `README.md`
+* `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/manifest.webmanifest`
+* `Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8790/service-worker.js`
+* `npx --yes playwright screenshot --full-page http://127.0.0.1:8790/ _preview_jugando_v020_desktop.png`
+* `npx --yes playwright screenshot --viewport-size="390,1200" --full-page http://127.0.0.1:8790/ _preview_jugando_v020_mobile.png`
+* Prueba funcional headless con Playwright desde cache `npx`.
+
+### Resultados verificados
+
+* HTTP local responde `200`.
+* `manifest.webmanifest` responde `200`.
+* `service-worker.js` responde `200`.
+* `app.js` y `service-worker.js` no presentan errores de sintaxis.
+* Capturas desktop y movil generadas y revisadas visualmente.
+* Prueba funcional headless resulto `jugando v0.2.0 interactive check OK`.
+* Los siete juegos cambian correctamente desde el mapa de aventura.
+* El nuevo juego `Ritmo de patrones` muestra el tablero de secuencia y genera feedback.
+* El control `Animaciones: Si/No` aplica la clase `motion-off`.
+
+### Pruebas realizadas
+
+* Sintaxis JavaScript con Node.
+* Validacion HTTP local.
+* Validacion de manifest y service worker.
+* Capturas Playwright desktop/movil.
+* Recorrido automatizado de juegos:
+  * `Semillas veloces`;
+  * `Rio de numeros`;
+  * `Huerta partida`;
+  * `Datos del vivero`;
+  * `Rueda del azar`;
+  * `Grafico reciclador`;
+  * `Ritmo de patrones`.
+
+### Errores o incidentes
+
+* El primer intento de prueba con `@playwright/test` no resolvio el modulo desde el repo local.
+* Se reemplazo por un script temporal con `playwright.chromium` y aserciones manuales usando `NODE_PATH` al cache de `npx`.
+* Los archivos temporales de prueba y capturas fueron eliminados despues de validar.
+
+### Soluciones aplicadas
+
+* Se adapto la referencia arcade a un lenguaje educativo propio de Carlitos.
+* Se mantuvo app estatica, sin dependencia obligatoria de build ni backend.
+* Se mantuvo progreso local sin datos personales.
+* Se agrego control de animaciones para mejorar accesibilidad.
+
+### Pendientes
+
+* Reintentar `git push -u origin main` cuando `diegomezapy` tenga permiso de escritura sobre `investigapyrm/jugando_con_carlitos.git`.
+* Activar/verificar GitHub Pages despues del push.
+* Crear iconos o imagenes especificas para cada juego.
+* Definir si se agregara modo docente y guia didactica.
+
+### Riesgos
+
+* Las imagenes de Carlitos siguen requiriendo autorizacion antes de publicacion final.
+* La app aun no esta publicada en el remoto por bloqueo de permisos.
+* El progreso es local y no representa seguimiento institucional de estudiantes.
+
+### Recomendaciones
+
+* Mantener el estilo de aventura y misiones en proximas iteraciones.
+* Si se agregan nuevos juegos, conservar retos cortos y feedback inmediato.
+* No agregar registro nominal de ninos sin diseno previo de privacidad, consentimiento y roles.

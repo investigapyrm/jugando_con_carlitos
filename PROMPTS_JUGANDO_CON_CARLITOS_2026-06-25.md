@@ -8,7 +8,13 @@ Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
 
 ## Prompt inicial
 
-> ahora vamos a crear otra appweb en [investigapyrm/jugando_con_carlitos.git](https://github.com/investigapyrm/jugando_con_carlitos.git) pero esta vez carlitos va a ofrecer a los niños vqarios juegos interactivos super geniales relacionadso a conceptos matematicos, estadisticos
+> ahora vamos a crear otra appweb en [investigapyrm/jugando_con_carlitos.git](https://github.com/investigapyrm/jugando_con_carlitos.git) pero esta vez carlitos va a ofrecer a los ninos varios juegos interactivos super geniales relacionados a conceptos matematicos, estadisticos
+
+## Prompt de mejora visual y de contenido
+
+> inspirate en esta idea para crea contenido mas interesante
+
+Referencia adjunta: prototipo HTML de juego tipo ritmo con estetica arcade infantil, tarjetas de niveles, HUD, estrellas, rachas, controles de movimiento y dinamica de juego inmediata.
 
 ## Alcance operativo
 
@@ -29,6 +35,14 @@ Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
 * Se ajusto el juego `Datos del vivero` para que siempre exista al menos un valor repetido cuando se trabaja la moda.
 * Se creo el commit local `9cc33b6dc570797348beb6c558d6c24a1ab5720b`, mensaje `Inicializa appweb de juegos con Carlitos`.
 * El push a `origin/main` fallo porque GitHub nego permiso de escritura a `diegomezapy` con error `403`.
+* En `v0.2.0` se tomo la referencia del juego ritmico para mejorar:
+  * mapa de aventura;
+  * tarjetas de niveles mas expresivas;
+  * estrellas por mision;
+  * mision diaria;
+  * rachas con bonificacion;
+  * control local de animaciones;
+  * nuevo juego `Ritmo de patrones`, centrado en secuencias numericas.
 
 ## Criterios editoriales y tecnicos
 
@@ -38,3 +52,4 @@ Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
 * Mantener advertencia de derechos sobre Carlitos e imagenes.
 * Priorizar juegos cortos, visuales, verificables y aptos para celular.
 * Mantener version visible y cache-busting.
+* Adaptar la inspiracion visual sin copiar el codigo ni el tema musical original: la app conserva foco en matematicas, estadistica y aprendizaje con Carlitos.

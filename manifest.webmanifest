@@ -1,7 +1,7 @@
 {
   "name": "Jugando con Carlitos",
   "short_name": "Carlitos Juegos",
-  "description": "Juegos matematicos y estadisticos para ninos.",
+  "description": "Aventura de juegos matematicos, estadisticos y patrones con Carlitos.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f5f7f6",

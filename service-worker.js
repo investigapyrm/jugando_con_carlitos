@@ -1,10 +1,10 @@
-const CACHE_NAME = "jugando-con-carlitos-v0-1-0";
+const CACHE_NAME = "jugando-con-carlitos-v0-2-0";
 
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=0.1.0",
-  "./app.js?v=0.1.0",
+  "./styles.css?v=0.2.0",
+  "./app.js?v=0.2.0",
   "./manifest.webmanifest",
   "./assets/generated/hero_jugando_con_carlitos.png",
   "./assets/generated/carlitos_character_sheet_v01.png",

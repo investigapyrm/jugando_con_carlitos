@@ -8,7 +8,9 @@ Repositorio:
 
 ## Estado
 
-Version inicial: `v0.1.0`
+Version actual: `v0.2.0`
+
+La version `v0.2.0` refuerza la experiencia infantil tipo aventura: mapa de misiones, tarjetas con estilo arcade, estrellas, rachas, mision diaria y un nuevo juego de patrones numericos inspirado en dinamicas de ritmo.
 
 Arquitectura:
 
@@ -29,6 +31,7 @@ assets/generated/       Imagenes de Carlitos reutilizadas como referencia visual
 * `Datos del vivero`: promedio, mediana y moda.
 * `Rueda del azar`: probabilidad.
 * `Grafico reciclador`: lectura de graficos de barras.
+* `Ritmo de patrones`: secuencias numericas.
 
 ## Experiencia de usuario
 
@@ -39,7 +42,9 @@ Incluye:
 * seleccion de juegos;
 * retos generados dinamicamente;
 * retroalimentacion inmediata;
-* puntos, racha e insignias;
+* puntos, racha, estrellas e insignias;
+* mision diaria y misiones por nivel;
+* control local para reducir animaciones;
 * nombre local opcional del equipo;
 * progreso en `localStorage`;
 * funcionamiento offline basico despues de la primera carga;
@@ -77,6 +82,7 @@ No publicar como version final sin validacion editorial, legal e institucional.
 
 * Generar iconos propios para cada juego.
 * Crear imagenes especificas de Carlitos jugando con numeros, graficos, fracciones y probabilidad.
+* Crear una escena visual especifica para `Ritmo de patrones`.
 * Agregar modo docente con guia de conceptos y actividades.
 * Incorporar exportacion simple de progreso si se decide usar en aula.
 * Conectar a Google Sheets/GAS solo si se necesita seguimiento institucional.
