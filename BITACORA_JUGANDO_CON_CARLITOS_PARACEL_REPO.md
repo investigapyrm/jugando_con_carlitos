@@ -423,6 +423,8 @@
 * Las siete rutas de juego renderizan su propia vista.
 * El selector de dificultad funciona.
 * El feedback y el historial local aparecen despues de responder.
+* Commit local creado: `2a27f6fa27ea2c413de20c1d3f700af826971c12`.
+* Push exitoso a `origin/main`.
 
 ### Pruebas realizadas
 
@@ -455,7 +457,7 @@
 ### Pendientes
 
 * Integrar imagenes finales especificas para cada juego.
-* Activar/verificar GitHub Pages si todavia no esta activo.
+* Verificar GitHub Pages si todavia no esta activo o si requiere espera de despliegue.
 * Decidir si se agregara un modo docente mas completo.
 
 ### Riesgos
