@@ -1,0 +1,8 @@
+_preview*.png
+test-results/
+playwright-report/
+node_modules/
+.env
+.env.*
+*.log
+desktop.ini

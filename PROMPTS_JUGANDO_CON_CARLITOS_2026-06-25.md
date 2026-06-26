@@ -1,0 +1,38 @@
+# Secuencia de prompts - Jugando con Carlitos
+
+Fecha de ultima edicion: 2026-06-25
+
+Proyecto: Jugando con Carlitos
+
+Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+
+## Prompt inicial
+
+> ahora vamos a crear otra appweb en [investigapyrm/jugando_con_carlitos.git](https://github.com/investigapyrm/jugando_con_carlitos.git) pero esta vez carlitos va a ofrecer a los niños vqarios juegos interactivos super geniales relacionadso a conceptos matematicos, estadisticos
+
+## Alcance operativo
+
+* Se interpreto el pedido como una nueva appweb estatica para GitHub Pages.
+* Se clono el repositorio remoto, que estaba vacio.
+* Se creo una app directa de juegos, sin landing intermedia.
+* Se definieron seis juegos iniciales:
+  * `Semillas veloces`: conteo y suma.
+  * `Rio de numeros`: orden y comparacion.
+  * `Huerta partida`: fracciones.
+  * `Datos del vivero`: promedio, mediana y moda.
+  * `Rueda del azar`: probabilidad.
+  * `Grafico reciclador`: graficos de barras.
+* Se agrego progreso local con puntos, racha, aciertos, retos jugados e insignias.
+* Se agrego PWA/offline basico.
+* Se creo `README.md` y bitacora propia del proyecto.
+* Se valido con `node --check app.js`, `node --check service-worker.js`, HTTP local, manifest, service worker, capturas Playwright desktop/movil y prueba funcional headless `interactive games OK`.
+* Se ajusto el juego `Datos del vivero` para que siempre exista al menos un valor repetido cuando se trabaja la moda.
+
+## Criterios editoriales y tecnicos
+
+* No recolectar datos personales de ninos.
+* Usar nombre de equipo opcional y local.
+* Guardar progreso solo en el navegador.
+* Mantener advertencia de derechos sobre Carlitos e imagenes.
+* Priorizar juegos cortos, visuales, verificables y aptos para celular.
+* Mantener version visible y cache-busting.

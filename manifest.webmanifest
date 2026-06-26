@@ -1,0 +1,17 @@
+{
+  "name": "Jugando con Carlitos",
+  "short_name": "Carlitos Juegos",
+  "description": "Juegos matematicos y estadisticos para ninos.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5f7f6",
+  "theme_color": "#0b5d3b",
+  "icons": [
+    {
+      "src": "assets/generated/carlitos_character_sheet_v01.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
