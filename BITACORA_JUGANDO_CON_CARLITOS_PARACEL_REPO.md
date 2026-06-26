@@ -155,7 +155,7 @@
 * Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
 * URL local verificada: `http://127.0.0.1:8790/`
 * Responsable: Codex, a solicitud de Diego
-* Version: `v0.2.0`, pendiente de push por bloqueo GitHub 403 ya detectado
+* Version: `v0.2.0`, commit `f4350613d43553fb794da360bd312b85547f86f7`, push exitoso a `origin/main`
 
 ### Objetivo de la intervencion
 
@@ -222,6 +222,8 @@
 * Los siete juegos cambian correctamente desde el mapa de aventura.
 * El nuevo juego `Ritmo de patrones` muestra el tablero de secuencia y genera feedback.
 * El control `Animaciones: Si/No` aplica la clase `motion-off`.
+* Commit local creado: `f4350613d43553fb794da360bd312b85547f86f7`.
+* `git push -u origin main` exitoso; la rama `main` quedo publicada en `origin/main`.
 
 ### Pruebas realizadas
 
@@ -253,15 +255,14 @@
 
 ### Pendientes
 
-* Reintentar `git push -u origin main` cuando `diegomezapy` tenga permiso de escritura sobre `investigapyrm/jugando_con_carlitos.git`.
-* Activar/verificar GitHub Pages despues del push.
+* Activar/verificar GitHub Pages.
 * Crear iconos o imagenes especificas para cada juego.
 * Definir si se agregara modo docente y guia didactica.
 
 ### Riesgos
 
 * Las imagenes de Carlitos siguen requiriendo autorizacion antes de publicacion final.
-* La app aun no esta publicada en el remoto por bloqueo de permisos.
+* Falta verificar GitHub Pages como URL publica navegable.
 * El progreso es local y no representa seguimiento institucional de estudiantes.
 
 ### Recomendaciones
