@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.6.7";
+const APP_VERSION = "v0.7.0";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -35,7 +35,7 @@ const AGE_GROUPS = [
     short: "Ninos",
     title: "Aventura gestual",
     subtitle: "Dedos, punteria, robots y probabilidad con respuestas corporales.",
-    gameIds: ["dedos", "semillas", "robots", "azar", "ritmo"],
+    gameIds: ["dedos", "semillas", "robots", "azar", "ritmo", "ia"],
   },
   {
     id: "mayores",
@@ -43,7 +43,7 @@ const AGE_GROUPS = [
     short: "Mayores",
     title: "Laboratorio de movimiento",
     subtitle: "Datos, estrategia y lectura visual con gestos mas precisos.",
-    gameIds: ["robots", "azar", "datos", "ritmo"],
+    gameIds: ["robots", "azar", "datos", "ritmo", "ia"],
   },
 ];
 
@@ -114,9 +114,28 @@ const GAMES = [
     gesture: "dedos",
     prompt: "Completar una secuencia con dedos",
   },
+  {
+    id: "ia",
+    title: "Maquina que Aprende",
+    concept: "IA, datos y sesgo",
+    conceptKey: "aprendizaje",
+    level: "Mision 7",
+    ages: ["ninos", "mayores"],
+    color: "plum",
+    gesture: "camara",
+    prompt: "Entrenar una IA con ejemplos y descubrir cuando se equivoca",
+  },
 ];
 
-const FAIR_GAME_IDS = ["dedos", "semillas", "robots", "azar", "datos", "ritmo"];
+const FAIR_GAME_IDS = ["dedos", "semillas", "robots", "azar", "datos", "ritmo", "ia"];
+
+const AI_CLASSES = [
+  { id: "circulo", label: "Circulo", mark: "●", prototype: [0.9, 0.18, 0.18, 0.42, 0.22, 0.72, 0.2] },
+  { id: "cuadrado", label: "Cuadrado", mark: "■", prototype: [0.18, 0.58, 0.92, 0.48, 0.28, 0.62, 0.48] },
+  { id: "triangulo", label: "Triangulo", mark: "▲", prototype: [0.95, 0.78, 0.18, 0.58, 0.24, 0.68, 0.36] },
+];
+
+const AI_MIN_SAMPLES = 2;
 
 const CONCEPTS = {
   suma: {
@@ -161,6 +180,13 @@ const CONCEPTS = {
     door: "Encuentra la regla que se repite y predice el siguiente paso.",
     repair: "Mira la diferencia entre fichas vecinas y prueba si esa regla se mantiene.",
   },
+  aprendizaje: {
+    label: "Aprendizaje supervisado",
+    short: "IA",
+    color: "#635380",
+    door: "La IA compara ejemplos etiquetados. Si los datos son pobres, aprende mal.",
+    repair: "Agrega ejemplos variados, cambia luz y fondos, y vuelve a probar la matriz.",
+  },
 };
 
 const app = document.querySelector("#app");
@@ -171,6 +197,7 @@ const state = {
   activeGame: "dedos",
   challenge: null,
   answered: false,
+  aiTrainer: defaultAiTrainer(),
   feedback: null,
   progress: readProgress(),
   vision: {
@@ -202,6 +229,8 @@ let visionModule = null;
 let videoElement = null;
 let canvasElement = null;
 let canvasContext = null;
+let aiFeatureCanvas = null;
+let aiFeatureContext = null;
 
 initApp();
 
@@ -355,6 +384,7 @@ function renderFairView() {
         <div class="fair-mission-grid">
           ${FAIR_GAME_IDS.map(renderFairMissionButton).join("")}
         </div>
+        ${game.id === "ia" ? renderAiTrainerPanel("fair") : ""}
         ${state.vision.error ? `
           <details class="fair-demo" open>
             <summary>Controles de apoyo si la camara falla</summary>
@@ -585,7 +615,12 @@ function renderOverlayProblem(challenge) {
   let value = challenge.title;
   let detail = "";
 
-  if (challenge.conceptKey === "suma" && Number.isFinite(challenge.a) && Number.isFinite(challenge.b)) {
+  if (challenge.input === "ai-trainer") {
+    const prediction = state.aiTrainer.prediction;
+    label = "IA en vivo";
+    value = prediction ? aiClassLabel(prediction.id) : "Entrena la IA";
+    detail = prediction ? `${Math.round(prediction.confidence * 100)}% de confianza` : "captura ejemplos etiquetados";
+  } else if (challenge.conceptKey === "suma" && Number.isFinite(challenge.a) && Number.isFinite(challenge.b)) {
     label = "Suma";
     value = `${challenge.a} + ${challenge.b}`;
     detail = "Muestra el total con dedos";
@@ -617,6 +652,10 @@ function renderOverlayProblem(challenge) {
 }
 
 function renderOverlayTargets(game, challenge) {
+  if (challenge.input === "ai-trainer") {
+    return renderAiVisionOverlay();
+  }
+
   if (challenge.input === "zone") {
     return `
       <div class="camera-zones">
@@ -652,7 +691,30 @@ function renderOverlayTargets(game, challenge) {
   `;
 }
 
+function renderAiVisionOverlay() {
+  const prediction = state.aiTrainer.prediction;
+  return `
+    <div class="ai-vision-overlay">
+      <div class="ai-live-card">
+        <span>Prediccion</span>
+        <strong id="aiLivePrediction">${escapeHtml(prediction ? aiClassLabel(prediction.id) : "sin modelo")}</strong>
+        <small id="aiLiveConfidence">${prediction ? `${Math.round(prediction.confidence * 100)}%` : "agrega ejemplos"}</small>
+      </div>
+      <div class="ai-sample-strip">
+        ${AI_CLASSES.map((item) => `
+          <span>${escapeHtml(item.mark)} ${escapeHtml(item.label)}: <b>${aiSampleCount(item.id)}</b></span>
+        `).join("")}
+      </div>
+      <div class="ai-question-card">
+        <strong>Pregunta cientifica</strong>
+        <span>¿La IA generaliza si cambiamos luz, fondo u objetos?</span>
+      </div>
+    </div>
+  `;
+}
+
 function overlayHint(challenge) {
+  if (challenge.input === "ai-trainer") return "Entrena con ejemplos variados y luego prueba la matriz.";
   if (challenge.input === "zone") return "Abre la palma o haz pinza para confirmar.";
   if (challenge.input === "fingers-option") return "1 a 4 dedos seleccionan las tarjetas.";
   return "Los puntos brillantes son tu mano.";
@@ -666,6 +728,7 @@ function pointerStyle() {
 }
 
 function renderChallengePanel(game) {
+  if (game.id === "ia") return renderAiChallengePanel();
   const challenge = state.challenge || createChallenge(game.id);
   return `
     <section class="challenge-panel">
@@ -694,10 +757,12 @@ function renderBoard(gameId, challenge) {
   if (gameId === "robots") return renderRobotBoard(challenge);
   if (gameId === "azar") return renderChanceBoard(challenge);
   if (gameId === "datos") return renderDataBoard(challenge);
+  if (gameId === "ia") return renderAiBoard();
   return renderRhythmBoard(challenge);
 }
 
 function renderAnswerControls(challenge) {
+  if (challenge.input === "ai-trainer") return "";
   if (challenge.input === "fingers-exact") {
     return `
       <div class="answer-strip">
@@ -821,6 +886,146 @@ function renderRhythmBoard(challenge) {
   `;
 }
 
+function renderAiChallengePanel() {
+  const challenge = state.challenge || createChallenge("ia");
+  return `
+    <section class="challenge-panel ai-challenge-panel">
+      <div class="challenge-heading">
+        <p class="eyebrow">Reto activo</p>
+        <h2>${escapeHtml(challenge.title)}</h2>
+        <p>${escapeHtml(challenge.prompt)}</p>
+      </div>
+      ${renderAiBoard()}
+      ${renderAiTrainerPanel("game")}
+      ${renderFeedback()}
+      ${renderConceptCoach(challenge)}
+      <div class="stage-footer">
+        <button type="button" id="newChallenge" class="mini-button">Nuevo reto</button>
+        <span>${escapeHtml(challenge.hint)}</span>
+      </div>
+    </section>
+  `;
+}
+
+function renderAiBoard() {
+  const total = aiTotalSamples();
+  const tested = state.aiTrainer.tests.length;
+  const prediction = state.aiTrainer.prediction;
+  return `
+    <div class="ai-board">
+      <div class="ai-board-kpi">
+        <strong>${total}</strong><span>ejemplos</span>
+      </div>
+      <div class="ai-board-kpi">
+        <strong>${tested}</strong><span>pruebas</span>
+      </div>
+      <div class="ai-board-kpi">
+        <strong>${aiAccuracyLabel()}</strong><span>exactitud</span>
+      </div>
+      <div class="ai-board-prediction">
+        <span>Prediccion actual</span>
+        <strong>${escapeHtml(prediction ? aiClassLabel(prediction.id) : "sin modelo")}</strong>
+        <small>${prediction ? `${Math.round(prediction.confidence * 100)}% de confianza` : "captura ejemplos para entrenar"}</small>
+      </div>
+    </div>
+  `;
+}
+
+function renderAiTrainerPanel(mode = "game") {
+  const active = state.aiTrainer.activeClass;
+  const ready = aiReady();
+  return `
+    <section class="ai-trainer-panel ${mode === "fair" ? "fair-ai-trainer" : ""}">
+      <div class="ai-trainer-head">
+        <div>
+          <span>La Maquina que Aprende</span>
+          <strong>Entrena, prueba y descubre el sesgo</strong>
+        </div>
+        <em>${escapeHtml(state.aiTrainer.message || "Elige una etiqueta y captura ejemplos con la camara.")}</em>
+      </div>
+      <div class="ai-class-grid">
+        ${AI_CLASSES.map((item) => `
+          <button type="button" class="ai-class-card ${active === item.id ? "active" : ""}" data-ai-class="${escapeAttribute(item.id)}">
+            <b>${escapeHtml(item.mark)}</b>
+            <span>${escapeHtml(item.label)}</span>
+            <small>${aiSampleCount(item.id)} ejemplos</small>
+          </button>
+        `).join("")}
+      </div>
+      <div class="ai-action-row">
+        <button type="button" id="aiCaptureSample">Capturar ejemplo: ${escapeHtml(aiClassLabel(active))}</button>
+        <button type="button" class="mini-button" data-ai-demo="balanced">Cargar datos buenos</button>
+        <button type="button" class="mini-button" data-ai-demo="biased">Cargar sesgo rojo</button>
+        <button type="button" class="mini-button" id="aiReset">Limpiar IA</button>
+      </div>
+      <div class="ai-test-row">
+        <span>Probar objeto real:</span>
+        ${AI_CLASSES.map((item) => `
+          <button type="button" data-ai-test="${escapeAttribute(item.id)}" ${ready ? "" : "disabled"}>
+            ${escapeHtml(item.label)}
+          </button>
+        `).join("")}
+      </div>
+      <div class="ai-results-grid">
+        ${renderAiConfidenceBars()}
+        ${renderAiConfusionMatrix()}
+      </div>
+    </section>
+  `;
+}
+
+function renderAiConfidenceBars() {
+  const prediction = state.aiTrainer.prediction;
+  const scores = prediction?.scores || {};
+  return `
+    <div class="ai-confidence">
+      <strong>Confianza del modelo</strong>
+      ${AI_CLASSES.map((item) => {
+        const value = Math.round((scores[item.id] || 0) * 100);
+        return `
+          <div class="ai-confidence-row">
+            <span>${escapeHtml(item.label)}</span>
+            <i style="width:${value}%"></i>
+            <em>${value}%</em>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderAiConfusionMatrix() {
+  const matrix = aiConfusionMatrix();
+  const accuracy = aiAccuracy();
+  return `
+    <div class="ai-matrix">
+      <div class="ai-matrix-title">
+        <strong>Matriz Real / Predicho</strong>
+        <span>Exactitud = ${accuracy.total ? `${accuracy.correct}/${accuracy.total} = ${Math.round(accuracy.value * 100)}%` : "sin pruebas"}</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Real</th>
+            ${AI_CLASSES.map((item) => `<th>${escapeHtml(item.label)}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${AI_CLASSES.map((actual) => `
+            <tr>
+              <th>${escapeHtml(actual.label)}</th>
+              ${AI_CLASSES.map((predicted) => {
+                const count = matrix[actual.id]?.[predicted.id] || 0;
+                return `<td class="${actual.id === predicted.id && count ? "hit" : ""}">${count}</td>`;
+              }).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
 function renderFeedback() {
   if (!state.feedback) return `<div class="feedback"></div>`;
   return `<div class="feedback show ${state.feedback.ok ? "good" : "try"}">${escapeHtml(state.feedback.message)}</div>`;
@@ -874,6 +1079,7 @@ function bindEvents() {
     state.activeGame = "dedos";
     state.activeCategory = "ninos";
     state.challenge = createChallenge(state.activeGame);
+    state.aiTrainer = defaultAiTrainer();
     state.feedback = null;
     state.answered = false;
     writeProgress();
@@ -902,6 +1108,30 @@ function bindEvents() {
 
   document.querySelectorAll("[data-answer]").forEach((button) => {
     button.addEventListener("click", () => submitAnswer(button.dataset.answer, "boton"));
+  });
+
+  document.querySelectorAll("[data-ai-class]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.aiTrainer.activeClass = button.dataset.aiClass;
+      state.aiTrainer.message = `Etiqueta activa: ${aiClassLabel(state.aiTrainer.activeClass)}.`;
+      renderApp();
+    });
+  });
+
+  document.querySelector("#aiCaptureSample")?.addEventListener("click", () => captureAiSample(state.aiTrainer.activeClass));
+
+  document.querySelectorAll("[data-ai-test]").forEach((button) => {
+    button.addEventListener("click", () => recordAiTest(button.dataset.aiTest));
+  });
+
+  document.querySelectorAll("[data-ai-demo]").forEach((button) => {
+    button.addEventListener("click", () => loadAiDemoDataset(button.dataset.aiDemo));
+  });
+
+  document.querySelector("#aiReset")?.addEventListener("click", () => {
+    state.aiTrainer = defaultAiTrainer();
+    state.feedback = null;
+    renderApp();
   });
 
   document.querySelectorAll("[data-sim-fingers]").forEach((button) => {
@@ -1055,6 +1285,7 @@ function startVisionLoop() {
     if (!state.vision.enabled || !state.vision.landmarker || !videoElement) return;
     if (videoElement.readyState >= 2 && videoElement.currentTime !== state.vision.videoTime) {
       state.vision.videoTime = videoElement.currentTime;
+      if (state.activeGame === "ia") updateAiLivePrediction();
       const result = state.vision.landmarker.detectForVideo(videoElement, performance.now());
       handleHandResult(result);
     }
@@ -1131,6 +1362,8 @@ function processVisionAnswer(force) {
   if (!force && Date.now() < state.vision.lockedUntil) return;
 
   const challenge = state.challenge;
+  if (challenge.input === "ai-trainer") return;
+
   if (challenge.input === "fingers-exact") {
     const value = force ? state.vision.fingers : state.vision.stableValue;
     if (value === null || value === undefined) return;
@@ -1179,6 +1412,7 @@ function updateVisionWidgets() {
   document.querySelectorAll("[data-camera-zone]").forEach((node) => {
     node.classList.toggle("active", node.dataset.cameraZone === state.vision.zone);
   });
+  updateAiLiveWidgets();
 }
 
 function drawHands(hands) {
@@ -1260,6 +1494,7 @@ function createChallenge(gameId) {
   if (gameId === "robots") return createRobotChallenge();
   if (gameId === "azar") return createChanceChallenge();
   if (gameId === "datos") return createDataChallenge();
+  if (gameId === "ia") return createAiChallenge();
   return createRhythmChallenge();
 }
 
@@ -1417,6 +1652,279 @@ function createRhythmChallenge() {
     sequence: pattern.sequence,
     answer: pattern.answer,
   };
+}
+
+function createAiChallenge() {
+  return {
+    input: "ai-trainer",
+    conceptKey: "aprendizaje",
+    title: "La Maquina que Aprende",
+    prompt: "Captura ejemplos de circulo, cuadrado y triangulo. Luego prueba objetos reales y mira la matriz.",
+    hint: "Cambia la luz, el fondo o el color para descubrir sesgos.",
+    strategy: "La IA aprende de ejemplos etiquetados. Cada etiqueta necesita variedad para generalizar.",
+    model: "El modelo calcula un retrato visual simple de cada ejemplo y compara el objeto nuevo con lo aprendido.",
+    steps: [
+      "Elige una etiqueta: circulo, cuadrado o triangulo.",
+      "Captura varios ejemplos por etiqueta con buena variedad.",
+      "Prueba un objeto y registra la etiqueta real.",
+      "Observa la matriz: los aciertos quedan en diagonal.",
+      "Cambia luz o color y revisa si baja la exactitud.",
+    ],
+    answer: "modelo entrenado",
+  };
+}
+
+function defaultAiTrainer() {
+  return {
+    activeClass: AI_CLASSES[0].id,
+    samples: Object.fromEntries(AI_CLASSES.map((item) => [item.id, []])),
+    tests: [],
+    prediction: null,
+    message: "Elige una etiqueta y captura ejemplos con la camara.",
+    demoMode: "balanced",
+  };
+}
+
+function aiClassLabel(id) {
+  return AI_CLASSES.find((item) => item.id === id)?.label || "sin clase";
+}
+
+function aiSampleCount(id) {
+  return state.aiTrainer.samples[id]?.length || 0;
+}
+
+function aiTotalSamples() {
+  return AI_CLASSES.reduce((total, item) => total + aiSampleCount(item.id), 0);
+}
+
+function aiReady() {
+  return AI_CLASSES.filter((item) => aiSampleCount(item.id) >= AI_MIN_SAMPLES).length >= 2;
+}
+
+function captureAiSample(labelId) {
+  const feature = readAiFeature() || demoAiFeature(labelId, state.aiTrainer.demoMode);
+  if (!state.aiTrainer.samples[labelId]) state.aiTrainer.samples[labelId] = [];
+  state.aiTrainer.samples[labelId].push(feature);
+  state.aiTrainer.samples[labelId] = state.aiTrainer.samples[labelId].slice(-18);
+  state.aiTrainer.prediction = classifyAiFeature(feature);
+  state.aiTrainer.message = `Ejemplo agregado a ${aiClassLabel(labelId)}. Ahora tiene ${aiSampleCount(labelId)} ejemplos.`;
+  state.feedback = null;
+  renderApp();
+}
+
+function recordAiTest(actualId) {
+  const feature = readAiFeature() || demoAiFeature(actualId, state.aiTrainer.demoMode);
+  const prediction = classifyAiFeature(feature);
+  if (!prediction) {
+    state.aiTrainer.message = "Todavia falta entrenar: agrega ejemplos en al menos dos clases.";
+    renderApp();
+    return;
+  }
+
+  const ok = prediction.id === actualId;
+  const game = getGame("ia");
+  const stats = gameStats("ia");
+  const concept = conceptStats("aprendizaje");
+  state.aiTrainer.prediction = prediction;
+  state.aiTrainer.tests.unshift({
+    actual: actualId,
+    predicted: prediction.id,
+    confidence: prediction.confidence,
+    at: new Date().toISOString(),
+  });
+  state.aiTrainer.tests = state.aiTrainer.tests.slice(0, 30);
+  state.aiTrainer.message = ok
+    ? `La IA acerto: era ${aiClassLabel(actualId)}.`
+    : `La IA se confundio: dijo ${aiClassLabel(prediction.id)}, pero era ${aiClassLabel(actualId)}.`;
+
+  state.progress.played += 1;
+  stats.played += 1;
+  concept.played += 1;
+  concept.lastAt = new Date().toISOString();
+  if (ok) {
+    state.progress.correct += 1;
+    stats.correct += 1;
+    concept.correct += 1;
+    state.progress.streak += 1;
+    state.progress.score += 8 + Math.min(8, state.progress.streak);
+  } else {
+    state.progress.streak = 0;
+  }
+  state.progress.completed.ia = gameStars("ia") > 0 || ok;
+  pushHistory("ia", {
+    ok,
+    selected: aiClassLabel(prediction.id),
+    answer: aiClassLabel(actualId),
+    prompt: "Prueba de clasificacion",
+    source: "camara IA",
+  });
+  state.feedback = {
+    ok,
+    message: ok ? "La prediccion coincide con la etiqueta real." : "Buen hallazgo: esa confusion alimenta la matriz.",
+    selected: aiClassLabel(prediction.id),
+    answer: aiClassLabel(actualId),
+    source: "IA local",
+    diagnosis: ok
+      ? "El modelo generalizo para esta prueba. Ahora prueba otra luz o fondo."
+      : "La IA tambien se equivoca. Revisa si faltan ejemplos variados o si hay sesgo de datos.",
+  };
+  writeProgress();
+  renderApp();
+}
+
+function loadAiDemoDataset(mode) {
+  const next = defaultAiTrainer();
+  next.demoMode = mode === "biased" ? "biased" : "balanced";
+  AI_CLASSES.forEach((item) => {
+    const count = mode === "biased" ? 3 : 5;
+    next.samples[item.id] = repeatArray(count, () => demoAiFeature(item.id, next.demoMode));
+  });
+  next.prediction = classifyAiFeature(demoAiFeature(next.activeClass, next.demoMode), next.samples);
+  next.message = mode === "biased"
+    ? "Datos con sesgo cargados: las clases se parecen demasiado. Prueba la matriz."
+    : "Datos variados cargados: prueba objetos reales y compara exactitud.";
+  state.aiTrainer = next;
+  state.feedback = null;
+  renderApp();
+}
+
+function updateAiLivePrediction() {
+  if (state.activeGame !== "ia" || !aiReady()) return;
+  const feature = readAiFeature();
+  if (!feature) return;
+  state.aiTrainer.prediction = classifyAiFeature(feature);
+  updateAiLiveWidgets();
+}
+
+function updateAiLiveWidgets() {
+  const prediction = state.aiTrainer.prediction;
+  const label = prediction ? aiClassLabel(prediction.id) : "sin modelo";
+  const confidence = prediction ? `${Math.round(prediction.confidence * 100)}%` : "agrega ejemplos";
+  const labelNode = document.querySelector("#aiLivePrediction");
+  const confidenceNode = document.querySelector("#aiLiveConfidence");
+  if (labelNode) labelNode.textContent = label;
+  if (confidenceNode) confidenceNode.textContent = confidence;
+}
+
+function readAiFeature() {
+  const video = videoElement || document.querySelector("#visionVideo");
+  if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return null;
+  if (!aiFeatureCanvas) {
+    aiFeatureCanvas = document.createElement("canvas");
+    aiFeatureCanvas.width = 32;
+    aiFeatureCanvas.height = 24;
+    aiFeatureContext = aiFeatureCanvas.getContext("2d", { willReadFrequently: true });
+  }
+  if (!aiFeatureContext) return null;
+
+  aiFeatureContext.drawImage(video, 0, 0, aiFeatureCanvas.width, aiFeatureCanvas.height);
+  const { data } = aiFeatureContext.getImageData(0, 0, aiFeatureCanvas.width, aiFeatureCanvas.height);
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let brightness = 0;
+  let brightnessSq = 0;
+  let saturation = 0;
+  let edge = 0;
+  let previous = null;
+  const pixels = data.length / 4;
+
+  for (let index = 0; index < data.length; index += 4) {
+    const red = data[index] / 255;
+    const green = data[index + 1] / 255;
+    const blue = data[index + 2] / 255;
+    const max = Math.max(red, green, blue);
+    const min = Math.min(red, green, blue);
+    const light = (red + green + blue) / 3;
+    r += red;
+    g += green;
+    b += blue;
+    brightness += light;
+    brightnessSq += light * light;
+    saturation += max === 0 ? 0 : (max - min) / max;
+    if (previous !== null) edge += Math.abs(light - previous);
+    previous = light;
+  }
+
+  const mean = brightness / pixels;
+  const contrast = Math.sqrt(Math.max(0, brightnessSq / pixels - mean * mean));
+  return [
+    r / pixels,
+    g / pixels,
+    b / pixels,
+    mean,
+    contrast,
+    saturation / pixels,
+    edge / Math.max(1, pixels - 1),
+  ];
+}
+
+function classifyAiFeature(feature, samples = state.aiTrainer.samples) {
+  if (!feature) return null;
+  const centroids = AI_CLASSES
+    .map((item) => ({ item, centroid: aiCentroid(samples[item.id] || []) }))
+    .filter((entry) => entry.centroid);
+  if (!centroids.length) return null;
+
+  const distances = centroids.map(({ item, centroid }) => ({
+    id: item.id,
+    distance: euclidean(feature, centroid),
+  }));
+  const weights = distances.map((entry) => ({ ...entry, weight: 1 / Math.max(0.0001, entry.distance) }));
+  const total = weights.reduce((sum, entry) => sum + entry.weight, 0) || 1;
+  const scores = Object.fromEntries(weights.map((entry) => [entry.id, entry.weight / total]));
+  const best = weights.slice().sort((a, b) => b.weight - a.weight)[0];
+  return {
+    id: best.id,
+    confidence: scores[best.id] || 0,
+    scores,
+  };
+}
+
+function aiCentroid(samples) {
+  if (!samples.length) return null;
+  const size = samples[0].length;
+  const total = Array(size).fill(0);
+  samples.forEach((sample) => sample.forEach((value, index) => {
+    total[index] += value;
+  }));
+  return total.map((value) => value / samples.length);
+}
+
+function euclidean(a, b) {
+  return Math.sqrt(a.reduce((sum, value, index) => sum + ((value - b[index]) ** 2), 0));
+}
+
+function demoAiFeature(labelId, mode = "balanced") {
+  const item = AI_CLASSES.find((entry) => entry.id === labelId) || AI_CLASSES[0];
+  const base = mode === "biased"
+    ? [0.82, 0.22, 0.18, 0.43, 0.18, 0.7, 0.28 + (AI_CLASSES.findIndex((entry) => entry.id === labelId) * 0.02)]
+    : item.prototype;
+  return base.map((value) => clamp(value + ((Math.random() - 0.5) * 0.08), 0, 1));
+}
+
+function aiConfusionMatrix() {
+  const matrix = Object.fromEntries(AI_CLASSES.map((actual) => [
+    actual.id,
+    Object.fromEntries(AI_CLASSES.map((predicted) => [predicted.id, 0])),
+  ]));
+  state.aiTrainer.tests.forEach((item) => {
+    if (matrix[item.actual]?.[item.predicted] !== undefined) {
+      matrix[item.actual][item.predicted] += 1;
+    }
+  });
+  return matrix;
+}
+
+function aiAccuracy() {
+  const total = state.aiTrainer.tests.length;
+  const correct = state.aiTrainer.tests.filter((item) => item.actual === item.predicted).length;
+  return { total, correct, value: total ? correct / total : 0 };
+}
+
+function aiAccuracyLabel() {
+  const accuracy = aiAccuracy();
+  return accuracy.total ? `${Math.round(accuracy.value * 100)}%` : "-";
 }
 
 function submitAnswer(value, source) {
@@ -1664,6 +2172,7 @@ function visionNumberLabel() {
 }
 
 function cameraCaptureLabel() {
+  if (state.activeGame === "ia" && state.vision.enabled) return "Video + IA";
   if (state.vision.ready) return "Video + manos";
   if (state.vision.enabled) return "Video activo";
   if (state.vision.loading) return "Esperando permiso";
@@ -1826,6 +2335,10 @@ function clamp(value, min, max) {
 
 function repeat(count, renderer) {
   return Array.from({ length: count }, (_, index) => renderer(index)).join("");
+}
+
+function repeatArray(count, renderer) {
+  return Array.from({ length: count }, (_, index) => renderer(index));
 }
 
 function renderStars(count) {

@@ -1951,3 +1951,186 @@
 
 * Llevar mouse o teclado para el facilitador.
 * Probar pantalla completa y distancia a camara antes de iniciar la actividad con ninos.
+
+## 2026-06-27 13:10
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica estable: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.7`
+* Rama de trabajo: `feature/maquina-que-aprende-feria`
+* Responsable: Codex
+* Version de rama: `v0.7.0`
+
+### Objetivo de la intervencion
+
+* Incorporar en una nueva rama la idea `La Maquina que Aprende`, donde ninos entrenan una IA en vivo durante una feria cientifica.
+
+### Diagnostico inicial
+
+* El modo feria `v0.6.7` ya tiene camara como escenario principal.
+* La nueva idea requiere un flujo distinto a los juegos de dedos: entrenamiento supervisado, etiquetas, pruebas, error, sesgo, generalizacion y matriz de confusion.
+* Para uso en feria, conviene evitar dependencias de cuentas externas o servicios de entrenamiento remotos.
+
+### Acciones realizadas
+
+* Se creo la rama `feature/maquina-que-aprende-feria`.
+* Se actualizo la app a `v0.7.0` en la rama.
+* Se agrego la mision 7 `La Maquina que Aprende`.
+* Se agregaron clases didacticas:
+  * `Circulo`;
+  * `Cuadrado`;
+  * `Triangulo`.
+* Se implemento un entrenador local:
+  * captura ejemplos etiquetados desde el cuadro de camara;
+  * calcula caracteristicas visuales simples;
+  * clasifica por similitud con centroides;
+  * permite cargar datos demo balanceados o sesgados;
+  * permite registrar pruebas con etiqueta real;
+  * muestra confianza, matriz Real/Predicho y exactitud.
+* Se actualizo cache-busting:
+  * `styles.css?v=0.7.0`;
+  * `app.js?v=0.7.0`;
+  * cache `jugando-con-carlitos-v0-7-0`.
+* Se actualizo `README.md` y la secuencia de prompts.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git switch -c feature/maquina-que-aprende-feria`
+* `node --check app.js`
+* `node --check service-worker.js`
+
+### Resultados verificados
+
+* Sintaxis de `app.js`: valida.
+* Sintaxis de `service-worker.js`: valida.
+* Pendiente: prueba visual y funcional con Playwright.
+
+### Pruebas realizadas
+
+* Pendiente de completar antes del commit.
+
+### Errores o incidentes
+
+* Sin incidentes hasta esta etapa.
+
+### Soluciones aplicadas
+
+* Clasificador local didactico en lugar de dependencia externa tipo Teachable Machine para mayor robustez operativa en feria.
+
+### Pendientes
+
+* Validar UI local con ruta `#ia`.
+* Validar modo feria con la mision IA activa.
+* Commit y push de la rama.
+
+### Riesgos
+
+* El clasificador local es didactico, no un modelo de vision avanzado.
+* La calidad de la camara, luz, fondo y variedad de ejemplos afectan la matriz.
+* En feria real se deben usar tarjetas/objetos claramente visibles y explicar que el objetivo es aprender como la IA se equivoca.
+
+### Recomendaciones
+
+* Usar tarjetas impresas grandes de circulo, cuadrado y triangulo para la primera prueba.
+* Luego probar sesgos: mismo color, poca luz, fondos distintos o pocos ejemplos.
+* Presentar la exactitud como resultado experimental, no como evaluacion de los ninos.
+
+## 2026-06-27 13:28
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* Rama de trabajo: `feature/maquina-que-aprende-feria`
+* Responsable: Codex
+* Version de rama: `v0.7.0`
+
+### Objetivo de la intervencion
+
+* Validar localmente la mision `La Maquina que Aprende` antes de commit y push de rama.
+
+### Diagnostico inicial
+
+* La sintaxis ya era valida, pero faltaba verificar interaccion real de UI: carga de datos demo, pruebas con etiqueta real, matriz y modo feria.
+
+### Acciones realizadas
+
+* Se ejecuto servidor local en `http://127.0.0.1:8797/`.
+* Se creo un script temporal Playwright `_tmp_ai_check.js`.
+* Se probo la ruta `#ia`:
+  * carga de panel `.ai-trainer-panel`;
+  * carga de datos demo balanceados;
+  * pruebas reales para `Circulo`, `Cuadrado` y `Triangulo`;
+  * matriz con exactitud;
+  * confianza del modelo.
+* Se probo modo feria:
+  * mision IA visible;
+  * siete tarjetas de mision;
+  * overlay de IA dentro del visor.
+
+### Archivos modificados
+
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `python -m http.server 8797 --bind 127.0.0.1`
+* `node _tmp_ai_check.js`
+
+### Resultados verificados
+
+* `node --check app.js`: valido.
+* `node --check service-worker.js`: valido.
+* `git diff --check`: sin errores de whitespace, solo avisos LF/CRLF de Windows.
+* Playwright:
+  * `hasTitle: true`;
+  * `classCards: 3`;
+  * `testsEnabled: true`;
+  * matriz con `Exactitud = 3/3 = 100%` en demo balanceado;
+  * modo feria con `missionCards: 7`;
+  * overlay IA visible.
+
+### Pruebas realizadas
+
+* URL local: `http://127.0.0.1:8797/?v=0.7.0#ia`
+* Captura local:
+  * `test-results/v070_ai_lab.png`
+
+### Errores o incidentes
+
+* Sin incidentes en la prueba local automatizada.
+
+### Soluciones aplicadas
+
+* Se mantuvo el clasificador local didactico y se valido que el flujo pedagogico principal funciona sin servicio externo.
+
+### Pendientes
+
+* Probar con camara real y tarjetas fisicas.
+* Si la rama se aprueba, fusionar a `main` y publicar por GitHub Pages.
+
+### Riesgos
+
+* La matriz demo balanceada no reemplaza una prueba operacional con objetos reales.
+* En feria se debe explicar que el modelo es didactico y sirve para observar sesgos, no para reconocimiento visual profesional.
+
+### Recomendaciones
+
+* Preparar tarjetas grandes de formas con variantes de color, luz y fondo.
+* Hacer una ronda con pocos ejemplos y otra con ejemplos variados para comparar exactitud.

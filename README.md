@@ -12,9 +12,11 @@ URL publica:
 
 ## Estado
 
-Version actual: `v0.6.7`
+Version actual en esta rama: `v0.7.0`
 
-La version `v0.6.7` reorienta la app al uso en feria durante la Semana de la Ciencia. La pantalla principal ahora es el `modo feria`: la zona de captura de movimientos con camara es el escenario principal y los desafios matematicos aparecen directamente dentro de esa misma vista, con una consola minima para el facilitador.
+La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
+
+La base estable viene de `v0.6.7`, que reoriento la app al uso en feria durante la Semana de la Ciencia. La pantalla principal sigue siendo el `modo feria`: la zona de captura de movimientos con camara es el escenario principal y los desafios matematicos aparecen directamente dentro de esa misma vista, con una consola minima para el facilitador.
 
 Tambien conserva el flujo de camara estable de la version anterior: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva modo demo para contingencia.
 
@@ -41,6 +43,7 @@ La app sigue siendo estatica, sin backend obligatorio. El progreso se guarda loc
 * `Rueda en el aire`: probabilidad con eleccion gestual por zonas.
 * `Laboratorio de datos`: mediana y moda con seleccion por dedos.
 * `Ritmo corporal`: patrones y secuencias respondiendo con dedos.
+* `La Maquina que Aprende`: entrenamiento supervisado local con ejemplos, clasificacion por camara, matriz de confusion y exactitud.
 
 ## Categorias por edad
 
@@ -68,7 +71,14 @@ Incluye:
 * avance, puntos, racha, estrellas e insignias;
 * tablero de sensor local con dedos, zona y gesto detectados;
 * portales conceptuales con estrategia, modelo, pasos y diagnostico;
-* dominio acumulado por concepto: suma, comparacion, multiplicacion, probabilidad, datos y patrones;
+* dominio acumulado por concepto: suma, comparacion, multiplicacion, probabilidad, datos, patrones e IA;
+* entrenador de IA local para feria:
+  * clases `Circulo`, `Cuadrado` y `Triangulo`;
+  * captura de ejemplos etiquetados desde camara;
+  * modo demo con datos buenos o datos sesgados;
+  * pruebas con etiqueta real;
+  * matriz Real/Predicho;
+  * calculo de exactitud;
 * mecanicas de juego por movimiento:
   * mostrar el total con dedos;
   * mover la mano hacia la opcion correcta;
@@ -140,6 +150,7 @@ http://127.0.0.1:8790/#robots
 http://127.0.0.1:8790/#azar
 http://127.0.0.1:8790/#datos
 http://127.0.0.1:8790/#ritmo
+http://127.0.0.1:8790/#ia
 ```
 
 ## Publicacion
@@ -163,6 +174,7 @@ No publicar como version final sin validacion editorial, legal e institucional.
 ## Proximos pasos
 
 * Probar el reconocimiento de dedos con ninos reales y ajustar tolerancias.
+* Validar la nueva mision `La Maquina que Aprende` con tarjetas impresas y objetos reales en mesa de feria.
 * Crear imagenes especificas de Carlitos jugando con manos, camara y movimiento.
 * Agregar modo docente con guia de conceptos, seguridad y actividades sin camara.
 * Incorporar exportacion simple de progreso si se decide usar en aula.
