@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.6.2";
+const APP_VERSION = "v0.6.3";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -8,8 +8,18 @@ const ASSETS = {
 };
 
 const MEDIAPIPE_VERSION = "0.10.21";
-const VISION_BUNDLE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`;
-const VISION_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
+const VISION_SOURCES = [
+  {
+    label: "jsDelivr",
+    bundle: `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`,
+    wasm: `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`,
+  },
+  {
+    label: "unpkg",
+    bundle: `https://unpkg.com/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`,
+    wasm: `https://unpkg.com/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`,
+  },
+];
 const HAND_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task";
 
 const HAND_CONNECTIONS = [
@@ -198,6 +208,7 @@ let visionModule = null;
 let videoElement = null;
 let canvasElement = null;
 let canvasContext = null;
+let detectorSourceLabel = "";
 
 initApp();
 
@@ -830,11 +841,27 @@ async function requestCameraStream() {
 
 async function loadHandLandmarker() {
   if (state.vision.landmarker) return;
-  if (!visionModule) visionModule = await import(VISION_BUNDLE_URL);
-  const { FilesetResolver, HandLandmarker } = visionModule;
-  const vision = await FilesetResolver.forVisionTasks(VISION_WASM_URL);
+
+  const errors = [];
+  for (const source of VISION_SOURCES) {
+    try {
+      const module = await import(source.bundle);
+      const { FilesetResolver, HandLandmarker } = module;
+      const vision = await FilesetResolver.forVisionTasks(source.wasm);
+      state.vision.landmarker = await createHandLandmarker(HandLandmarker, vision);
+      visionModule = module;
+      detectorSourceLabel = source.label;
+      return;
+    } catch (error) {
+      errors.push(`${source.label}: ${error?.message || error}`);
+    }
+  }
+  throw new Error(`No se pudo cargar MediaPipe (${errors.join(" | ")})`);
+}
+
+async function createHandLandmarker(HandLandmarker, vision) {
   try {
-    state.vision.landmarker = await HandLandmarker.createFromOptions(vision, {
+    return await HandLandmarker.createFromOptions(vision, {
       baseOptions: {
         modelAssetPath: HAND_MODEL_URL,
         delegate: "GPU",
@@ -846,7 +873,7 @@ async function loadHandLandmarker() {
       minTrackingConfidence: 0.5,
     });
   } catch (error) {
-    state.vision.landmarker = await HandLandmarker.createFromOptions(vision, {
+    return HandLandmarker.createFromOptions(vision, {
       baseOptions: { modelAssetPath: HAND_MODEL_URL },
       runningMode: "VIDEO",
       numHands: 2,
@@ -1453,7 +1480,7 @@ function cameraPanelTitle() {
 }
 
 function cameraPanelText() {
-  if (state.vision.ready) return "Mueve la mano o muestra dedos dentro del recuadro.";
+  if (state.vision.ready) return `Mueve la mano o muestra dedos dentro del recuadro. Detector: ${detectorSourceLabel || "activo"}.`;
   if (state.vision.enabled && state.vision.loading) return "Ya deberias verte. Estamos preparando el detector de manos.";
   if (state.vision.enabled) return "El video funciona. Si el detector no cargo, usa los botones demo mientras tanto.";
   if (state.vision.errorCode === "permission") return "El navegador nego el permiso. Habilitalo y vuelve a tocar Activar camara.";
@@ -1543,7 +1570,7 @@ function cameraErrorMessage(error) {
 }
 
 function detectorErrorMessage(error) {
-  return "El video esta activo, pero el detector de manos no termino de cargar. Puedes ver la camara y jugar con el modo demo.";
+  return "El video esta activo, pero el detector de manos no termino de cargar desde las fuentes externas. Puedes ver la camara y jugar con el modo demo.";
 }
 
 function isHardCameraError(error) {

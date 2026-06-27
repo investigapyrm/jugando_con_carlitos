@@ -1259,3 +1259,112 @@
 * URL recomendada para prueba: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.2`
 * Queda incorporada la idea de portales conceptuales y diagnostico de permisos de camara.
 * Pendiente importante: prueba final con camara fisica real en celular o notebook del usuario.
+
+## 2026-06-27 10:00
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.6.3`
+
+### Objetivo de la intervencion
+
+* Atender el reporte del usuario: la camara no se activa y aparece `Failed to load resource: the server responded with a status of 404`.
+
+### Diagnostico inicial
+
+* El repo local estaba limpio y sincronizado.
+* Se verifico la app publica `v0.6.2` con camara falsa y la camara llego a `Manos listas` sin solicitudes 404 durante el flujo de activacion.
+* Se verificaron recursos criticos:
+  * `index.html`: HTTP `200`;
+  * `app.js`: HTTP `200`;
+  * `vision_bundle.mjs` en `jsDelivr`: HTTP `200`;
+  * modelo `hand_landmarker.task`: HTTP `200`.
+* La URL base `.../wasm` devuelve `404` si se abre como archivo, aunque MediaPipe la usa como carpeta base para cargar archivos internos.
+* Los archivos reales `vision_wasm_internal.wasm` y `vision_wasm_internal.js` existen en `jsDelivr` y `unpkg`.
+* Un 404 comun en navegador puede venir de iconos como `favicon.ico`, no necesariamente de la camara.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.6.3`.
+* Se agrego `favicon.svg` y se enlazo desde `index.html` para evitar 404 de icono.
+* Se actualizo cache-busting:
+  * `styles.css?v=0.6.3`;
+  * `app.js?v=0.6.3`;
+  * cache `jugando-con-carlitos-v0-6-3`.
+* Se agrego fallback de MediaPipe:
+  * fuente primaria `jsDelivr`;
+  * fuente secundaria `unpkg`.
+* El panel de camara ahora muestra la fuente del detector cuando queda listo.
+* Se mantuvo el modo demo como respaldo.
+
+### Archivos modificados
+
+* `app.js`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `favicon.svg`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `Invoke-WebRequest` para recursos publicos y CDN.
+* Prueba Playwright temporal `_tmp_capture_camera_404.py` para capturar solicitudes 404.
+
+### Resultados verificados
+
+* En prueba publica con camara falsa `v0.6.2`, estado final:
+  * `enabled: true`;
+  * `ready: true`;
+  * `status: Manos listas`;
+  * `error: ""`.
+* No se registraron solicitudes 404 durante el flujo de activacion con Playwright y service worker bloqueado.
+
+### Pruebas realizadas
+
+* `node --check app.js`: sin errores.
+* `node --check service-worker.js`: sin errores.
+* `git diff --check`: sin errores de whitespace, solo advertencias normales LF/CRLF de Windows.
+* Servidor local:
+  * `python -m http.server 8793 --bind 127.0.0.1`
+* Prueba Playwright local temporal `_tmp_v063_camera_check.py`.
+* Resultado:
+  * `STATE {"enabled":true,"ready":true,"status":"Manos listas","error":""}`;
+  * `BAD []`;
+  * `local v0.6.3 camera no-404 check OK`.
+
+### Errores o incidentes
+
+* No se pudo reproducir el fallo exacto de camara del dispositivo del usuario con camara falsa.
+* El 404 reportado podria corresponder a favicon, cache anterior, una fuente externa bloqueada por red o permiso real del navegador.
+
+### Soluciones aplicadas
+
+* Eliminar 404 de favicon.
+* Agregar segunda fuente CDN para el detector.
+* Mantener video y detector como capas separadas.
+
+### Pendientes
+
+* Ejecutar validaciones locales y publicas de `v0.6.3`.
+* Probar en camara fisica real del dispositivo del usuario.
+* Si falla de nuevo, capturar la URL exacta del recurso 404 desde la consola.
+
+### Riesgos
+
+* Si el sistema operativo o navegador tiene camara bloqueada globalmente, la web no puede activar el stream hasta cambiar permisos.
+* Si la red bloquea `jsDelivr`, `unpkg` o `storage.googleapis.com`, el detector puede fallar aunque el video funcione.
+* El cache del service worker puede requerir recarga dura si el navegador conserva una version anterior.
+
+### Recomendaciones
+
+* Probar desde `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.3`.
+* En Chrome/Edge, tocar el candado o icono de camara y seleccionar `Permitir`.
+* Si persiste, abrir consola y copiar la URL completa del recurso que da 404.
