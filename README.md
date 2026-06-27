@@ -12,9 +12,11 @@ URL publica:
 
 ## Estado
 
-Version actual: `v0.6.1`
+Version actual: `v0.6.2`
 
-La version `v0.6.1` reconstruye y ajusta la app como una experiencia de juego corporal. Los ninos pueden responder mostrando dedos, moviendo la mano hacia zonas de la pantalla o activando gestos simples frente a la camara.
+La version `v0.6.2` mantiene la experiencia de juego corporal y agrega una capa de `portales conceptuales`: cada reto muestra la estrategia antes de responder y, al finalizar, explica los pasos, el modelo mental y el concepto trabajado.
+
+Tambien mejora el flujo de camara: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva siempre el modo demo.
 
 La camara es opcional: todos los juegos conservan controles tactiles y modo demo para aula, proyector, navegadores sin permisos o dispositivos sin camara.
 
@@ -63,6 +65,8 @@ Incluye:
 * retroalimentacion inmediata;
 * avance, puntos, racha, estrellas e insignias;
 * tablero de sensor local con dedos, zona y gesto detectados;
+* portales conceptuales con estrategia, modelo, pasos y diagnostico;
+* dominio acumulado por concepto: suma, comparacion, multiplicacion, probabilidad, datos y patrones;
 * mecanicas de juego por movimiento:
   * mostrar el total con dedos;
   * mover la mano hacia la opcion correcta;
@@ -86,7 +90,7 @@ La camara y el detector se tratan como dos estados separados:
 * `Video activo`: el nino ya debe verse en el panel.
 * `Manos listas`: el detector de dedos y movimientos esta funcionando.
 
-Si la camara no esta disponible o falla el permiso, la app cambia a modo demo y sigue funcionando con botones. Si el video funciona pero no carga el detector, la app mantiene la vista de camara activa y permite jugar con modo demo.
+Si la camara no esta disponible o falla el permiso, la app cambia a modo demo y sigue funcionando con botones. En ese caso muestra una guia breve para revisar candado/icono de camara, permisos del sitio, recarga y origen HTTPS. Si el video funciona pero no carga el detector, la app mantiene la vista de camara activa y permite jugar con modo demo.
 
 ## Ideas tomadas de repositorios Git
 
@@ -107,6 +111,7 @@ La version `v0.6.x` agrega un patron propio para juegos con movimiento:
 * estado de deteccion visible para docente y estudiante;
 * retos cortos que se entienden sin tutorial largo;
 * rutas separadas por juego para poder usarlos como pestanas independientes.
+* explicacion conceptual breve despues de responder, para que la app ensene y no solo puntue.
 
 ## Uso local
 

@@ -684,6 +684,11 @@ h3 {
   background: #e7f8ef;
 }
 
+.camera-panel.has-error {
+  background: #fff0eb;
+  border-color: rgba(226, 109, 90, 0.34);
+}
+
 .camera-panel strong {
   display: block;
   font-size: 1rem;
@@ -695,6 +700,22 @@ h3 {
   font-size: 0.88rem;
   font-weight: 900;
   margin: 0;
+}
+
+.camera-help {
+  background: rgba(255, 255, 255, 0.62);
+  border: 2px solid rgba(5, 39, 25, 0.08);
+  border-radius: 8px;
+  color: var(--green-950);
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.35rem 0 0;
+  padding: 0.65rem 0.8rem 0.65rem 1.55rem;
+}
+
+.camera-help li {
+  font-size: 0.84rem;
+  font-weight: 850;
 }
 
 .sensor-readout {
@@ -1045,7 +1066,8 @@ h3 {
 .zone-strip,
 .choice-grid,
 .stage-footer,
-.feedback {
+.feedback,
+.concept-coach {
   margin: 1rem;
 }
 
@@ -1086,6 +1108,187 @@ h3 {
   background: #fff0eb;
   border: 2px solid rgba(226, 109, 90, 0.28);
   color: #9f2f24;
+}
+
+.concept-coach {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(99, 183, 208, 0.16), transparent 34%),
+    linear-gradient(180deg, #ffffff, #fbfdfc);
+  border: 2px solid rgba(5, 39, 25, 0.12);
+  border-left: 8px solid var(--yellow);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.9rem;
+}
+
+.concept-coach.ok {
+  border-left-color: var(--green-700);
+}
+
+.concept-coach.review {
+  border-left-color: var(--coral-strong);
+}
+
+.concept-coach-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.concept-coach-head strong {
+  color: var(--green-950);
+  font-size: 1.05rem;
+}
+
+.coach-chip {
+  background: var(--coach-color, var(--yellow));
+  border: 2px solid rgba(5, 39, 25, 0.18);
+  border-radius: 999px;
+  color: var(--green-950);
+  font-size: 0.78rem;
+  font-weight: 950;
+  padding: 0.28rem 0.65rem;
+  text-transform: uppercase;
+}
+
+.portal-label {
+  color: var(--ink);
+  font-weight: 900;
+  margin: 0;
+}
+
+.coach-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.coach-grid div,
+.coach-answer {
+  background: var(--mint);
+  border: 2px solid rgba(5, 39, 25, 0.08);
+  border-radius: 8px;
+  padding: 0.7rem;
+}
+
+.coach-grid span {
+  color: var(--green-800);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.coach-grid p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 850;
+  margin: 0.2rem 0 0;
+}
+
+.coach-answer {
+  background: #fff8e4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: space-between;
+}
+
+.coach-answer.ok {
+  background: #e7f8ef;
+}
+
+.coach-answer.review {
+  background: #fff0eb;
+}
+
+.coach-answer span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.coach-answer strong {
+  color: var(--green-950);
+}
+
+.coach-steps {
+  counter-reset: coach-step;
+  display: grid;
+  gap: 0.45rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.coach-steps li {
+  align-items: start;
+  background: #f8fbfa;
+  border: 2px solid rgba(5, 39, 25, 0.08);
+  border-radius: 8px;
+  color: var(--green-950);
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 850;
+  gap: 0.5rem;
+  grid-template-columns: auto 1fr;
+  padding: 0.55rem;
+}
+
+.coach-steps li::before {
+  background: var(--yellow);
+  border-radius: 999px;
+  color: var(--green-950);
+  content: counter(coach-step);
+  counter-increment: coach-step;
+  display: grid;
+  font-weight: 950;
+  height: 1.55rem;
+  place-items: center;
+  width: 1.55rem;
+}
+
+.concept-mastery {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.mastery-row {
+  background: #f8fbfa;
+  border: 2px solid rgba(5, 39, 25, 0.08);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.35rem;
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+.mastery-row div {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+  justify-content: space-between;
+}
+
+.mastery-row strong {
+  color: var(--green-950);
+  font-size: 0.88rem;
+}
+
+.mastery-row span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.mastery-row i {
+  background: linear-gradient(90deg, var(--concept-color, var(--yellow)), var(--green-700));
+  border-radius: 999px;
+  display: block;
+  height: 8px;
+  min-width: 8px;
 }
 
 .control-card {
@@ -1245,7 +1448,8 @@ h3 {
   .sensor-readout,
   .lane-board,
   .air-options,
-  .choice-grid {
+  .choice-grid,
+  .coach-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1261,7 +1465,8 @@ h3 {
   .sensor-readout,
   .lane-board,
   .air-options,
-  .choice-grid {
+  .choice-grid,
+  .coach-grid {
     grid-template-columns: 1fr;
   }
 

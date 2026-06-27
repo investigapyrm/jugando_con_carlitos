@@ -1100,3 +1100,126 @@
 * URL recomendada para prueba: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.1`
 * La activacion visible de camara queda corregida.
 * Pendiente: prueba final con camara fisica real en celular o notebook.
+
+## 2026-06-27 09:41
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.6.2`
+
+### Objetivo de la intervencion
+
+* Incorporar la idea del prototipo adjunto de `Aventura Matematica Conceptual`, adaptandola a la app de Carlitos.
+* Mejorar el problema reportado de camara bloqueada con mensajes y pasos concretos para permisos del navegador.
+
+### Diagnostico inicial
+
+* La version `v0.6.1` ya mostraba video separado del detector, pero cuando el navegador denegaba permisos seguia mostrando un mensaje demasiado generico.
+* Los juegos seguian teniendo feedback breve; faltaba explicar el concepto, el procedimiento y el error de forma pedagogica.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.6.2`.
+* Se agrego una capa de `portales conceptuales` por reto:
+  * concepto trabajado;
+  * estrategia;
+  * modelo mental;
+  * pasos de razonamiento;
+  * diagnostico despues de responder.
+* Se agrego dominio acumulado por concepto:
+  * suma;
+  * comparacion;
+  * multiplicacion;
+  * probabilidad;
+  * estadistica;
+  * patrones.
+* Se mejoro el flujo de camara:
+  * solicitud principal con camara frontal y tamano ideal;
+  * reintento con `video:true` si fallan restricciones no criticas;
+  * codigos de error por permiso, origen inseguro, navegador sin soporte, camara ausente y detector;
+  * panel con pasos concretos para habilitar camara.
+* Se corrigio un reto de patrones que podia generar respuesta mayor a 10, incompatible con dedos.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* Pendiente de completar con pruebas finales.
+
+### Resultados verificados
+
+* Pendiente de completar con pruebas finales.
+
+### Pruebas realizadas
+
+* Pendiente de completar con pruebas finales.
+
+### Errores o incidentes
+
+* Pendiente de completar con pruebas finales.
+
+### Soluciones aplicadas
+
+* El feedback deja de ser solo binario y ahora ensena el razonamiento.
+* El bloqueo de camara se comunica con pasos accionables y modo demo visible.
+
+### Pendientes
+
+* Ejecutar validaciones locales.
+* Probar camara falsa permitida y permiso bloqueado con Playwright.
+* Publicar y verificar GitHub Pages con `?v=0.6.2`.
+* Probar con camara fisica real en dispositivo del usuario.
+
+### Riesgos
+
+* La camara real depende de permisos del navegador y del sistema operativo.
+* MediaPipe sigue dependiendo de disponibilidad de red para cargar modelo externo.
+* El progreso por concepto queda solo en `localStorage`, no es evaluacion formal.
+
+### Recomendaciones
+
+* Mantener el modo demo como alternativa permanente.
+* Validar los textos de portales conceptuales con docentes antes de usarlo en aula.
+* Usar la version publicada HTTPS para pruebas reales de camara.
+
+### Actualizacion de verificacion local
+
+* Se ejecuto `node --check app.js` sin errores.
+* Se ejecuto `node --check service-worker.js` sin errores.
+* Se ejecuto `git diff --check` sin errores de whitespace; solo advertencias normales LF/CRLF de Windows.
+* Se mantuvo servidor local:
+  * `python -m http.server 8792 --bind 127.0.0.1`
+* Se ejecuto prueba Playwright local temporal `_tmp_v062_concept_camera_check.py`.
+* Resultado: `jugando v0.6.2 concept and camera checks OK`.
+* La prueba verifico:
+  * `#robots` muestra `Puerta conceptual` antes de responder;
+  * al responder correctamente, aparece `Portal correcto`, `Estrategia`, `Modelo` y pasos;
+  * la barra lateral muestra `Dominios` y dominio `Multiplicar`;
+  * camara falsa con `srcObject`, `videoWidth > 0` y `videoHeight > 0`;
+  * permiso denegado simulado muestra `Permiso de camara bloqueado` y pasos con `candado` y `Recarga`;
+  * vista movil `#semillas` mantiene reto, portal conceptual, panel de camara y dominios sin solapes criticos.
+* Capturas locales generadas y revisadas:
+  * `test-results/v062_local_concept_portal.png`;
+  * `test-results/v062_local_fake_camera.png`;
+  * `test-results/v062_local_camera_blocked_help.png`;
+  * `test-results/v062_local_mobile_semillas.png`.
+
+### Pendientes actualizados
+
+* Publicar `v0.6.2`.
+* Verificar GitHub Pages con cache-busting.
+* Repetir prueba publica con camara falsa.
+* Probar camara fisica real en celular o notebook.
