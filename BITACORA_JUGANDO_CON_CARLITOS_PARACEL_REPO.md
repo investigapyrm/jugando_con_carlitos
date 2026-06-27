@@ -1223,3 +1223,39 @@
 * Verificar GitHub Pages con cache-busting.
 * Repetir prueba publica con camara falsa.
 * Probar camara fisica real en celular o notebook.
+
+### Actualizacion de verificacion publica 2026-06-27 09:55
+
+* Commit principal de la version: `71ef53b`.
+* Push exitoso a `origin/main`.
+* GitHub Pages verificado con HTTP `200`:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.2&check=71ef53b`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.6.2&check=71ef53b`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.6.2&check=71ef53b`
+* La URL publica sirve `index.html` con:
+  * `styles.css?v=0.6.2`;
+  * `app.js?v=0.6.2`.
+* La URL publica sirve `app.js` con:
+  * `APP_VERSION = "v0.6.2"`;
+  * `renderConceptCoach`;
+  * `cameraHelpSteps`.
+* La URL publica sirve `service-worker.js` con cache `jugando-con-carlitos-v0-6-2`.
+* Se ejecuto prueba Playwright publica temporal `_tmp_public_v062_concept_camera_check.py`.
+* Resultado: `public jugando v0.6.2 concept and camera checks OK`.
+* La prueba publica verifico:
+  * `#robots` carga `Puerta conceptual`;
+  * al responder correctamente aparece `Portal correcto`;
+  * camara falsa activa `#visionVideo` con `srcObject`, `videoWidth > 0` y `videoHeight > 0`;
+  * permiso denegado simulado muestra `Permiso de camara bloqueado`;
+  * `.camera-help` muestra pasos para revisar `candado`.
+* Capturas publicas revisadas:
+  * `test-results/v062_public_concept_portal.png`;
+  * `test-results/v062_public_fake_camera.png`;
+  * `test-results/v062_public_camera_blocked_help.png`.
+
+### Estado de cierre
+
+* Version publicada y verificada: `v0.6.2`.
+* URL recomendada para prueba: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.2`
+* Queda incorporada la idea de portales conceptuales y diagnostico de permisos de camara.
+* Pendiente importante: prueba final con camara fisica real en celular o notebook del usuario.
