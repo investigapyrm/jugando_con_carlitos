@@ -2134,3 +2134,100 @@
 
 * Preparar tarjetas grandes de formas con variantes de color, luz y fondo.
 * Hacer una ronda con pocos ejemplos y otra con ejemplos variados para comparar exactitud.
+
+## 2026-06-27 12:39
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* Rama de trabajo: `feature/maquina-que-aprende-feria`
+* Responsable: Codex
+* Version de rama: `v0.7.1`
+
+### Objetivo de la intervencion
+
+* Corregir fallas de conteo de dedos reportadas por el usuario.
+* Mejorar reconocimiento de manos abiertas para que dos manos abiertas puedan contar 10.
+* Reconocer cero mediante gesto tipo `OK`, con pulgar e indice unidos.
+
+### Diagnostico inicial
+
+* La regla anterior detectaba el pulgar con una condicion simple de distancia horizontal y altura.
+* En manos abiertas, especialmente con rotacion, uno o ambos pulgares podian no contarse; por eso 10 podia aparecer como 8.
+* El cero no tenia gesto propio y podia confundirse con pinza o con tres dedos extendidos.
+
+### Acciones realizadas
+
+* Se actualizo la version de rama a `v0.7.1`.
+* Se reemplazo el conteo simple por heuristicas geometricas:
+  * escala de mano basada en distancia muneca-palma;
+  * dedos extendidos por distancia a muneca y articulaciones;
+  * pulgar extendido por apertura respecto al indice y a la palma;
+  * deteccion previa de gesto cero.
+* Se agrego `isOkZeroGesture()` para reconocer el gesto `OK`.
+* Se cambio `detectGesture()` para devolver `cero` cuando corresponde.
+* Se actualizo el texto de ayuda: `Para cero, une pulgar e indice como un OK.`
+* Se actualizo cache-busting:
+  * `styles.css?v=0.7.1`;
+  * `app.js?v=0.7.1`;
+  * cache `jugando-con-carlitos-v0-7-1`.
+* Se agrego favicon local basado en una imagen existente para evitar que el navegador genere un 404 de `favicon.ico` y confunda el diagnostico de camara.
+
+### Archivos modificados
+
+* `app.js`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `node --check app.js`
+* `node --check service-worker.js`
+* `git diff --check`
+* `python -m http.server 8798 --bind 127.0.0.1`
+* `node _tmp_finger_check.js`
+
+### Resultados verificados
+
+* Sintaxis de `app.js`: valida.
+* Sintaxis de `service-worker.js`: valida.
+* Prueba sintetica en navegador:
+  * una mano abierta: `5`;
+  * dos manos abiertas: `10`;
+  * gesto `OK`: `0`;
+  * gesto detectado: `cero`;
+  * version visible: `v0.7.1`.
+
+### Pruebas realizadas
+
+* URL local: `http://127.0.0.1:8798/?v=0.7.1#dedos`
+* Prueba Playwright temporal con landmarks sinteticos.
+
+### Errores o incidentes
+
+* Sin incidentes en la prueba sintetica.
+* Durante el servidor local se observo un 404 de `favicon.ico`; no afectaba la camara, pero se neutralizo agregando favicon explicito en `index.html`.
+
+### Soluciones aplicadas
+
+* Conteo de dedos mas robusto para pulgar y reconocimiento explicito de cero.
+
+### Pendientes
+
+* Validar con camara real y manos de ninos en el lugar de feria.
+* Ajustar umbrales si la luz, distancia o angulo generan falsos positivos.
+
+### Riesgos
+
+* La deteccion sigue dependiendo de MediaPipe, encuadre, luz y orientacion de la mano.
+* El gesto `OK` podria confundirse si el nino junta pulgar e indice sin redondear bien la mano.
+
+### Recomendaciones
+
+* Mostrar una tarjeta visual de ejemplo: mano abierta para 5/10 y gesto `OK` para cero.
+* Indicar a los ninos que muestren la palma completa dentro del recuadro.

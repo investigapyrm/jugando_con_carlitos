@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.7.0";
+const APP_VERSION = "v0.7.1";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -717,7 +717,7 @@ function overlayHint(challenge) {
   if (challenge.input === "ai-trainer") return "Entrena con ejemplos variados y luego prueba la matriz.";
   if (challenge.input === "zone") return "Abre la palma o haz pinza para confirmar.";
   if (challenge.input === "fingers-option") return "1 a 4 dedos seleccionan las tarjetas.";
-  return "Los puntos brillantes son tu mano.";
+  return "Mano abierta cuenta dedos; OK significa cero.";
 }
 
 function pointerStyle() {
@@ -1456,13 +1456,62 @@ function clearVisionCanvas() {
 }
 
 function countExtendedFingers(landmarks) {
-  let count = 0;
-  if (landmarks[8].y < landmarks[6].y - 0.025) count += 1;
-  if (landmarks[12].y < landmarks[10].y - 0.025) count += 1;
-  if (landmarks[16].y < landmarks[14].y - 0.025) count += 1;
-  if (landmarks[20].y < landmarks[18].y - 0.025) count += 1;
-  if (Math.abs(landmarks[4].x - landmarks[3].x) > 0.055 && landmarks[4].y < landmarks[6].y + 0.08) count += 1;
+  if (isOkZeroGesture(landmarks)) return 0;
+
+  const fingers = [
+    [8, 6, 5],
+    [12, 10, 9],
+    [16, 14, 13],
+    [20, 18, 17],
+  ];
+  let count = fingers.reduce((total, [tip, pip, mcp]) => (
+    total + (isFingerExtended(landmarks, tip, pip, mcp) ? 1 : 0)
+  ), 0);
+  if (isThumbExtended(landmarks)) count += 1;
   return count;
+}
+
+function handScale(landmarks) {
+  return Math.max(0.08, distance(landmarks[0], landmarks[9]));
+}
+
+function isFingerExtended(landmarks, tipIndex, pipIndex, mcpIndex) {
+  const scale = handScale(landmarks);
+  const wrist = landmarks[0];
+  const tip = landmarks[tipIndex];
+  const pip = landmarks[pipIndex];
+  const mcp = landmarks[mcpIndex];
+  const fartherFromWrist = distance(tip, wrist) > distance(pip, wrist) + scale * 0.1;
+  const aboveJoint = tip.y < pip.y + scale * 0.05;
+  const awayFromPalm = distance(tip, mcp) > distance(pip, mcp) + scale * 0.08;
+  return (fartherFromWrist && aboveJoint) || (fartherFromWrist && awayFromPalm);
+}
+
+function isThumbExtended(landmarks) {
+  if (isOkZeroGesture(landmarks)) return false;
+  const scale = handScale(landmarks);
+  const wrist = landmarks[0];
+  const thumbTip = landmarks[4];
+  const thumbIp = landmarks[3];
+  const thumbMcp = landmarks[2];
+  const indexMcp = landmarks[5];
+  const openedFromIndex = distance(thumbTip, indexMcp) > distance(thumbIp, indexMcp) + scale * 0.12;
+  const openedFromPalm = distance(thumbTip, wrist) > distance(thumbIp, wrist) + scale * 0.08;
+  const longThumb = distance(thumbTip, thumbMcp) > scale * 0.34;
+  return longThumb && (openedFromIndex || openedFromPalm);
+}
+
+function isOkZeroGesture(landmarks) {
+  const scale = handScale(landmarks);
+  const pinchDistance = distance(landmarks[4], landmarks[8]);
+  if (pinchDistance > scale * 0.34) return false;
+  const threeFingersUp = [
+    isFingerExtended(landmarks, 12, 10, 9),
+    isFingerExtended(landmarks, 16, 14, 13),
+    isFingerExtended(landmarks, 20, 18, 17),
+  ].filter(Boolean).length;
+  const indexBent = distance(landmarks[8], landmarks[5]) < distance(landmarks[6], landmarks[5]) + scale * 0.24;
+  return threeFingersUp >= 2 && indexBent;
 }
 
 function handZone(landmarks) {
@@ -1481,6 +1530,7 @@ function handCenter(landmarks) {
 
 function detectGesture(landmarks, fingers) {
   const pinchDistance = distance(landmarks[4], landmarks[8]);
+  if (isOkZeroGesture(landmarks)) return "cero";
   if (pinchDistance < 0.055) return "pinza";
   if (fingers >= 4) return "palma";
   if (fingers === 0) return "puno";
@@ -2193,7 +2243,7 @@ function cameraPanelTitle() {
 }
 
 function cameraPanelText() {
-  if (state.vision.ready) return "Mueve la mano o muestra dedos dentro del recuadro.";
+  if (state.vision.ready) return "Muestra dedos abiertos. Para cero, une pulgar e indice como un OK.";
   if (state.vision.enabled && state.vision.loading) return "El escenario ya recibe video. Estamos preparando el detector de manos.";
   if (state.vision.enabled) return "El video funciona. Si el detector no cargo, usa los botones demo mientras tanto.";
   if (state.vision.errorCode === "permission") return "El navegador nego el permiso. Habilitalo y vuelve a tocar Activar camara.";

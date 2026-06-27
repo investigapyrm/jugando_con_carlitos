@@ -12,13 +12,15 @@ URL publica:
 
 ## Estado
 
-Version actual en esta rama: `v0.7.0`
+Version actual en esta rama: `v0.7.1`
 
 La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
 
 La base estable viene de `v0.6.7`, que reoriento la app al uso en feria durante la Semana de la Ciencia. La pantalla principal sigue siendo el `modo feria`: la zona de captura de movimientos con camara es el escenario principal y los desafios matematicos aparecen directamente dentro de esa misma vista, con una consola minima para el facilitador.
 
 Tambien conserva el flujo de camara estable de la version anterior: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva modo demo para contingencia.
+
+La version `v0.7.1` ajusta el conteo de dedos: mejora la deteccion de pulgares para manos abiertas y reconoce el cero con el gesto tipo `OK`, juntando pulgar e indice.
 
 Uso previsto: notebook o computadora conectada a proyector/pantalla grande, con camara integrada o externa apuntando al espacio donde participa el nino. No esta pensada principalmente como experiencia individual de celular.
 
@@ -65,6 +67,7 @@ Incluye:
 * sensor de manos con camara opcional;
 * escenario de camara grande, video velado, puntos de mano destacados y desafios dentro del mismo visor;
 * reconocimiento de dedos y posicion de la mano cuando el navegador lo permite;
+* gesto de cero con pulgar e indice unidos, tipo `OK`;
 * modo demo con botones de dedos, zonas y gesto de palma;
 * historial local por juego;
 * retroalimentacion inmediata;
