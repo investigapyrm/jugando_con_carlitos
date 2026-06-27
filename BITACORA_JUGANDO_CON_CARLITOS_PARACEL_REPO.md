@@ -1870,3 +1870,84 @@
 * Usar navegador Chrome o Edge actualizado.
 * Activar pantalla completa durante la feria.
 * Mantener el modo demo como respaldo operativo.
+
+## 2026-06-27 12:32
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.7`
+* Responsable: Codex
+* Version: `v0.6.7`
+
+### Objetivo de la intervencion
+
+* Verificar publicacion real de `v0.6.7` en GitHub Pages.
+
+### Diagnostico inicial
+
+* Despues del push, GitHub Pages siguio sirviendo temporalmente la version anterior.
+* Fue necesario esperar propagacion y validar con cache-busting.
+
+### Acciones realizadas
+
+* Se publico el commit `b44e082` en `main`.
+* Se verifico por HTTP anonimo que la URL publica sirve:
+  * `styles.css?v=0.6.7`;
+  * `app.js?v=0.6.7`;
+  * `APP_VERSION = "v0.6.7"`;
+  * `overlay-problem`;
+  * cache `jugando-con-carlitos-v0-6-7`;
+  * sin reintroducir `VISION_SOURCES`.
+* Se ejecuto prueba Playwright contra GitHub Pages con camara simulada.
+
+### Archivos modificados
+
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git push origin main`
+* `Invoke-WebRequest`
+* `node _tmp_v066_fair_check.js`
+
+### Resultados verificados
+
+* GitHub Pages sirve `v0.6.7`.
+* Prueba publica Playwright:
+  * visor `1358x610`;
+  * reto dentro del visor: suma visible en `.overlay-problem`;
+  * sin panel duplicado;
+  * seis misiones de rotacion rapida;
+  * estado `Manos listas`;
+  * video con opacidad `0.16` y filtro de privacidad.
+
+### Pruebas realizadas
+
+* URL publica probada: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.7`
+* Captura publica:
+  * `test-results/v067_public_fair_stage.png`
+
+### Errores o incidentes
+
+* GitHub Pages requirio tres intentos de sondeo antes de servir la version nueva.
+
+### Soluciones aplicadas
+
+* Validacion anonima con cache-busting y prueba visual automatizada contra URL publica.
+
+### Pendientes
+
+* Validar en el lugar fisico de la Semana de la Ciencia con camara, iluminacion y proyector reales.
+
+### Riesgos
+
+* Las pruebas automatizadas usan camara simulada; no sustituyen la validacion operacional en el stand.
+
+### Recomendaciones
+
+* Llevar mouse o teclado para el facilitador.
+* Probar pantalla completa y distancia a camara antes de iniciar la actividad con ninos.
