@@ -12,9 +12,9 @@ URL publica:
 
 ## Estado
 
-Version actual: `v0.6.0`
+Version actual: `v0.6.1`
 
-La version `v0.6.0` reconstruye la app como una experiencia de juego corporal. Los ninos pueden responder mostrando dedos, moviendo la mano hacia zonas de la pantalla o activando gestos simples frente a la camara.
+La version `v0.6.1` reconstruye y ajusta la app como una experiencia de juego corporal. Los ninos pueden responder mostrando dedos, moviendo la mano hacia zonas de la pantalla o activando gestos simples frente a la camara.
 
 La camara es opcional: todos los juegos conservan controles tactiles y modo demo para aula, proyector, navegadores sin permisos o dispositivos sin camara.
 
@@ -56,6 +56,7 @@ Incluye:
 * categorias por edad;
 * retos generados dinamicamente;
 * sensor de manos con camara opcional;
+* panel basico de video para confirmar que la camara esta capturando;
 * reconocimiento de dedos y posicion de la mano cuando el navegador lo permite;
 * modo demo con botones de dedos, zonas y gesto de palma;
 * historial local por juego;
@@ -80,7 +81,12 @@ La camara se activa solo si el usuario presiona `Activar camara` y acepta el per
 
 El reconocimiento de manos usa MediaPipe Hand Landmarker en el navegador. El video no se envia a un backend del proyecto y la app no guarda imagenes ni videos.
 
-Si la camara no esta disponible, falla el permiso o no carga el modelo, la app cambia a modo demo y sigue funcionando con botones.
+La camara y el detector se tratan como dos estados separados:
+
+* `Video activo`: el nino ya debe verse en el panel.
+* `Manos listas`: el detector de dedos y movimientos esta funcionando.
+
+Si la camara no esta disponible o falla el permiso, la app cambia a modo demo y sigue funcionando con botones. Si el video funciona pero no carga el detector, la app mantiene la vista de camara activa y permite jugar con modo demo.
 
 ## Ideas tomadas de repositorios Git
 
@@ -94,7 +100,7 @@ Las versiones anteriores se inspiraron en patrones observados en repositorios pu
 
 No se copio codigo externo. Se adaptaron ideas de interaccion a una app estatica propia, mantenible y alineada al contenido de Carlitos.
 
-La version `v0.6.0` agrega un patron propio para juegos con movimiento:
+La version `v0.6.x` agrega un patron propio para juegos con movimiento:
 
 * sensor opcional, nunca obligatorio;
 * controles manuales equivalentes para accesibilidad y prueba;

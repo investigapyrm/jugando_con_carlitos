@@ -959,3 +959,113 @@
 * Version publicada y verificada: `v0.6.0`.
 * URL recomendada para prueba: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.0`
 * Pendiente importante: probar camara real en celular o notebook con autorizacion del navegador.
+
+## 2026-06-27 09:05
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.6.1`
+
+### Objetivo de la intervencion
+
+* Corregir el problema reportado por el usuario: la camara no se activaba de forma visible.
+* Agregar un panel minimo donde el nino vea que la camara esta capturando sus movimientos.
+
+### Diagnostico inicial
+
+* La version `v0.6.0` activaba camara y detector en un mismo flujo.
+* Si el detector de MediaPipe fallaba, tardaba o no cargaba, el bloque `catch` apagaba la camara completa.
+* Operativamente esto hacia que el usuario percibiera que la camara no funcionaba, aunque el permiso o el stream pudieran estar disponibles.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.6.1`.
+* Se separaron dos estados:
+  * `Video activo`: existe stream de camara y el nino debe verse en el panel.
+  * `Manos listas`: el detector de manos esta cargado y puede interpretar dedos/movimientos.
+* Se modifico `startCamera()` para:
+  * solicitar permiso de camara;
+  * mostrar inmediatamente el video local cuando `getUserMedia` responde;
+  * cargar el detector despues, sin apagar la camara si falla.
+* Se agrego un panel basico de camara:
+  * cinta `Video activo`;
+  * texto de estado;
+  * mensaje de error si el detector o permiso falla.
+* Se actualizo cache-busting:
+  * `styles.css?v=0.6.1`;
+  * `app.js?v=0.6.1`;
+  * cache `jugando-con-carlitos-v0-6-1`.
+* Se actualizo `README.md`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+* `G:\Mi unidad\MANUAL_MAESTRO_FORMATOS_FUNCIONES_APPWEB\APRENDIZAJE_CARLITOS_APPWEB_JUEGOS_MATEMATICOS_ESTADISTICOS_2026-06-25.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `git diff --check`
+* `python -m http.server 8791 --bind 127.0.0.1`
+* Prueba Playwright local temporal `_tmp_camera_v061_check.py` con:
+  * `--use-fake-device-for-media-stream`;
+  * `--use-fake-ui-for-media-stream`.
+
+### Resultados verificados
+
+* La prueba con camara falsa confirma que el `video` recibe `srcObject`.
+* La prueba confirma `videoWidth > 0` y `videoHeight > 0`.
+* El panel `#cameraPanel` queda visible.
+* La cinta `.capture-ribbon` muestra estado `Video`.
+* Captura local generada:
+  * `test-results/v061_local_fake_camera_panel.png`.
+
+### Pruebas realizadas
+
+* `node --check app.js`: sin errores.
+* `node --check service-worker.js`: sin errores.
+* `git diff --check`: sin errores de whitespace, solo advertencias normales LF/CRLF de Windows.
+* Resultado funcional: `camera panel v0.6.1 fake camera check OK`.
+
+### Errores o incidentes
+
+* No se uso camara fisica real en esta prueba; se uso dispositivo falso de Chromium para validar flujo de navegador.
+* Aun queda pendiente validar deteccion de manos con camara real y buena iluminacion.
+
+### Soluciones aplicadas
+
+* El video de camara ya no depende del exito de MediaPipe.
+* Si el detector falla, el nino sigue viendo la camara y puede jugar con modo demo.
+* Se muestra estado minimo y comprensible para docente/nino.
+
+### Pendientes
+
+* Publicar `v0.6.1`.
+* Verificar GitHub Pages con cache-busting.
+* Repetir prueba publica con camara falsa.
+* Probar con dispositivo fisico real.
+
+### Riesgos
+
+* En navegadores con permisos bloqueados, no habra video hasta habilitar camara.
+* En redes con bloqueo a CDN/modelo, puede funcionar solo el video sin detector.
+* El reconocimiento de dedos sigue dependiendo de iluminacion y posicion de mano.
+
+### Recomendaciones
+
+* Mantener siempre el panel de video visible antes de exigir deteccion.
+* Explicar en modo docente la diferencia entre `Video activo` y `Manos listas`.
+* Probar en celular real antes de usar en aula.

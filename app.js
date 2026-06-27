@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.6.0";
+const APP_VERSION = "v0.6.1";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -133,6 +133,7 @@ const state = {
     zone: "centro",
     gesture: "espera",
     confidence: 0,
+    error: "",
     stableValue: null,
     stableCount: 0,
     lastRaw: null,
@@ -161,7 +162,7 @@ function initApp() {
     renderApp();
   });
   window.addEventListener("keydown", handleKeyboard);
-  window.addEventListener("beforeunload", stopCamera);
+  window.addEventListener("beforeunload", () => stopCamera(false));
 }
 
 function syncRoute() {
@@ -383,8 +384,11 @@ function renderVisionPanel() {
   return `
     <section class="vision-panel">
       <div class="vision-preview ${state.vision.enabled ? "camera-on" : ""}">
-        <video id="visionVideo" playsinline muted></video>
+        <video id="visionVideo" playsinline muted autoplay></video>
         <canvas id="visionCanvas"></canvas>
+        <div class="capture-ribbon ${state.vision.enabled ? "on" : ""}">
+          <i></i><span>${escapeHtml(cameraCaptureLabel())}</span>
+        </div>
         <div class="vision-empty">
           <img src="${ASSETS.mascot}" alt="">
           <strong>Sensor de manos</strong>
@@ -393,10 +397,17 @@ function renderVisionPanel() {
       </div>
       <div class="vision-controls">
         <button type="button" id="startCamera" ${state.vision.loading ? "disabled" : ""}>
-          ${state.vision.enabled ? "Reactivar camara" : "Activar camara"}
+          ${state.vision.enabled ? "Reiniciar camara" : "Activar camara"}
         </button>
         <button type="button" id="stopCamera" class="mini-button">Apagar</button>
         <span class="sensor-pill ${state.vision.ready ? "ready" : ""}" id="visionStatus">${escapeHtml(state.vision.status)}</span>
+      </div>
+      <div class="camera-panel ${state.vision.enabled ? "on" : ""}" id="cameraPanel">
+        <div>
+          <strong>${escapeHtml(cameraPanelTitle())}</strong>
+          <span>${escapeHtml(cameraPanelText())}</span>
+        </div>
+        ${state.vision.error ? `<p>${escapeHtml(state.vision.error)}</p>` : ""}
       </div>
       <div class="sensor-readout">
         <div><strong id="visionFingers">${visionNumberLabel()}</strong><span>dedos</span></div>
@@ -591,7 +602,7 @@ function bindEvents() {
   });
 
   document.querySelector("#startCamera")?.addEventListener("click", startCamera);
-  document.querySelector("#stopCamera")?.addEventListener("click", stopCamera);
+  document.querySelector("#stopCamera")?.addEventListener("click", () => stopCamera());
   document.querySelector("#newChallenge")?.addEventListener("click", newChallenge);
 
   document.querySelectorAll("[data-answer]").forEach((button) => {
@@ -625,6 +636,9 @@ function attachVisionElements() {
   canvasElement = document.querySelector("#visionCanvas");
   canvasContext = canvasElement?.getContext("2d") || null;
   if (videoElement && state.vision.stream) {
+    videoElement.muted = true;
+    videoElement.playsInline = true;
+    videoElement.autoplay = true;
     videoElement.srcObject = state.vision.stream;
     videoElement.play().catch(() => {});
   }
@@ -633,7 +647,8 @@ function attachVisionElements() {
 async function startCamera() {
   if (state.vision.loading) return;
   state.vision.loading = true;
-  state.vision.status = "Preparando camara";
+  state.vision.error = "";
+  state.vision.status = "Solicitando permiso";
   renderApp();
 
   try {
@@ -641,6 +656,7 @@ async function startCamera() {
       throw new Error("El navegador no permite camara.");
     }
 
+    stopCameraTracks();
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
       video: {
@@ -652,24 +668,42 @@ async function startCamera() {
 
     state.vision.stream = stream;
     state.vision.enabled = true;
+    state.vision.ready = false;
     state.vision.mode = "camara";
-    state.vision.status = "Cargando detector";
+    state.vision.status = "Camara activa";
+    state.vision.error = "";
     renderApp();
-
-    await loadHandLandmarker();
-    state.vision.ready = true;
-    state.vision.loading = false;
-    state.vision.status = "Manos listas";
     attachVisionElements();
-    startVisionLoop();
+
+    state.vision.status = "Cargando detector";
     updateVisionWidgets();
   } catch (error) {
     state.vision.enabled = false;
     state.vision.ready = false;
     state.vision.loading = false;
     state.vision.mode = "demo";
-    state.vision.status = "Modo demo activo";
-    stopCamera(false);
+    state.vision.status = "Camara no disponible";
+    state.vision.error = cameraErrorMessage(error);
+    stopCameraTracks();
+    renderApp();
+    return;
+  }
+
+  try {
+    await loadHandLandmarker();
+    state.vision.ready = true;
+    state.vision.loading = false;
+    state.vision.status = "Manos listas";
+    renderApp();
+    startVisionLoop();
+    updateVisionWidgets();
+  } catch (error) {
+    state.vision.ready = false;
+    state.vision.loading = false;
+    state.vision.mode = "camara";
+    state.vision.landmarker = null;
+    state.vision.status = "Video activo";
+    state.vision.error = detectorErrorMessage(error);
     renderApp();
   }
 }
@@ -717,18 +751,23 @@ function startVisionLoop() {
 function stopCamera(shouldRender = true) {
   if (animationFrame) cancelAnimationFrame(animationFrame);
   animationFrame = null;
-  if (state.vision.stream) {
-    state.vision.stream.getTracks().forEach((track) => track.stop());
-  }
-  state.vision.stream = null;
+  stopCameraTracks();
   state.vision.enabled = false;
   state.vision.ready = false;
   state.vision.loading = false;
   state.vision.mode = "demo";
-  state.vision.status = "Modo demo activo";
+  state.vision.status = "Camara apagada";
+  state.vision.error = "";
   if (videoElement) videoElement.srcObject = null;
   if (canvasContext && canvasElement) canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
   if (shouldRender) renderApp();
+}
+
+function stopCameraTracks() {
+  if (state.vision.stream) {
+    state.vision.stream.getTracks().forEach((track) => track.stop());
+  }
+  state.vision.stream = null;
 }
 
 function handleHandResult(result) {
@@ -1159,11 +1198,54 @@ function getMode(values) {
 }
 
 function visionShortLabel() {
-  return state.vision.ready ? "camara" : "demo";
+  if (state.vision.ready) return "detecta";
+  if (state.vision.enabled) return "video";
+  return "demo";
 }
 
 function visionNumberLabel() {
   return state.vision.fingers === null || state.vision.fingers === undefined ? "-" : String(state.vision.fingers);
+}
+
+function cameraCaptureLabel() {
+  if (state.vision.ready) return "Video + manos";
+  if (state.vision.enabled) return "Video activo";
+  if (state.vision.loading) return "Esperando permiso";
+  return "Camara apagada";
+}
+
+function cameraPanelTitle() {
+  if (state.vision.ready) return "La camara esta leyendo movimientos";
+  if (state.vision.enabled && state.vision.loading) return "La camara ya muestra video";
+  if (state.vision.enabled) return "Video activo";
+  if (state.vision.error) return "No se pudo activar la camara";
+  return "Camara apagada";
+}
+
+function cameraPanelText() {
+  if (state.vision.ready) return "Mueve la mano o muestra dedos dentro del recuadro.";
+  if (state.vision.enabled && state.vision.loading) return "Ya deberias verte. Estamos preparando el detector de manos.";
+  if (state.vision.enabled) return "El video funciona. Si el detector no cargo, usa los botones demo mientras tanto.";
+  if (state.vision.error) return "Revisa permisos del navegador o usa el modo demo.";
+  return "Toca Activar camara para ver tu imagen en este panel.";
+}
+
+function cameraErrorMessage(error) {
+  const name = error?.name || "";
+  if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+    return "Permiso denegado. Habilita la camara en el navegador o usa el modo demo.";
+  }
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+    return "No se encontro una camara disponible en este dispositivo.";
+  }
+  if (location.protocol !== "https:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+    return "La camara necesita HTTPS o localhost. Abre la version publicada en GitHub Pages.";
+  }
+  return "No se pudo iniciar el video. Puedes seguir jugando con los controles demo.";
+}
+
+function detectorErrorMessage(error) {
+  return "El video esta activo, pero el detector de manos no termino de cargar. Puedes ver la camara y jugar con el modo demo.";
 }
 
 function normalizeAnswer(value) {
