@@ -771,3 +771,161 @@
   * `#robots` carga tablero, barras de vida, cartas y feedback despues de responder.
 * Se genero captura publica ignorada por Git:
   * `test-results/v050_public_robots.png`.
+
+## 2026-06-27 08:05
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.6.0`
+
+### Objetivo de la intervencion
+
+* Reconstruir la app alrededor de una nueva idea de interaccion fisica:
+  * responder mostrando numeros con los dedos;
+  * elegir opciones moviendo la mano hacia zonas de la pantalla;
+  * usar gestos simples como palma o pinza cuando la camara este activa.
+* Mantener vistas separadas por categorias de edad:
+  * 4 a 7 anos;
+  * 8 a 12 anos;
+  * mayores de 12 anos.
+* Usar las imagenes ya existentes en el repositorio.
+* Hacer que los juegos sean mas atractivos que los tableros de botones tradicionales.
+
+### Diagnostico inicial
+
+* La version `v0.5.0` ya tenia categorias por edad y `Guerra de Robots`.
+* El usuario indico que los juegos actuales seguian siendo aburridos y pidio orientar la app a movimiento corporal.
+* El riesgo principal era convertir la app en una demo tecnica de camara sin una mecanica educativa clara.
+* Otro riesgo era depender exclusivamente de permisos de camara, lo que no seria robusto para aula, celular o proyector.
+
+### Acciones realizadas
+
+* Se reconstruyo la app como `v0.6.0`.
+* Se reemplazo la experiencia anterior por una interfaz de `Manos Magicas`.
+* Se agrego un panel de sensor de manos con:
+  * activacion voluntaria de camara;
+  * lectura de dedos;
+  * zona de mano: izquierda, centro o derecha;
+  * gesto detectado: palma, pinza, mano o sin mano;
+  * modo demo siempre disponible.
+* Se integro MediaPipe Hand Landmarker como detector opcional cargado en navegador.
+* Se mantuvo fallback completo sin camara:
+  * botones de dedos `0` a `10`;
+  * botones de zona;
+  * boton de palma.
+* Se reorganizaron los juegos:
+  * `#dedos`: suma y conteo con dedos;
+  * `#semillas`: comparacion moviendo la mano;
+  * `#robots`: multiplicacion eligiendo ataque con dedos;
+  * `#azar`: probabilidad con zonas y rueda;
+  * `#datos`: mediana y moda con dedos;
+  * `#ritmo`: patrones corporales.
+* Se ajusto el layout para que el reto activo quede primero y el sensor actue como herramienta.
+* Se oculto el cartel de sensor cuando la camara esta activa.
+* Se corrigio la persistencia de vida de robots cuando un valor queda en `0`.
+* Se actualizo cache-busting a `v0.6.0`.
+* Se actualizo `README.md`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+* `G:\Mi unidad\MANUAL_MAESTRO_FORMATOS_FUNCIONES_APPWEB\APRENDIZAJE_CARLITOS_APPWEB_JUEGOS_MATEMATICOS_ESTADISTICOS_2026-06-25.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `npm view @mediapipe/tasks-vision version`
+* `Invoke-WebRequest -UseBasicParsing https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/vision_bundle.mjs`
+* `Invoke-WebRequest -Method Head https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `git diff --check`
+* `python -m http.server 8790 --bind 127.0.0.1`
+* Prueba Playwright local temporal `_tmp_v060_motion_check.py`.
+
+### Resultados verificados
+
+* La app usa las imagenes del repositorio:
+  * `assets/generated/hero_jugando_con_carlitos.png`;
+  * `assets/generated/carlitos_character_sheet_v01.png`.
+* El sensor es opcional y tiene modo demo equivalente.
+* La camara solo se solicita mediante accion explicita del usuario.
+* El video se procesa localmente en el navegador y no se guarda en la app.
+* La app conserva progreso local con `localStorage`.
+
+### Pruebas realizadas
+
+* `node --check app.js`: pendiente de repetir luego del ajuste final.
+* `node --check service-worker.js`: pendiente de repetir luego del ajuste final.
+* `git diff --check`: pendiente de repetir luego del ajuste final.
+* Prueba Playwright local inicial: `jugando v0.6.0 motion demo check OK`.
+* Capturas locales iniciales revisadas:
+  * `test-results/v060_local_dedos.png`;
+  * `test-results/v060_local_robots.png`;
+  * `test-results/v060_local_mobile_semillas.png`.
+
+### Errores o incidentes
+
+* La version `@mediapipe/tasks-vision@0.10.22` no estaba disponible en jsDelivr para `vision_bundle.mjs`; se adopto `0.10.21` por disponibilidad verificada.
+* La camara puede fallar si el usuario no concede permisos o si el navegador no soporta `getUserMedia`.
+* La deteccion por vision computacional requiere pruebas con ninos reales, iluminacion real y dispositivos reales.
+
+### Soluciones aplicadas
+
+* El sensor de manos se diseno como mejora progresiva y no como dependencia obligatoria.
+* Los mismos retos pueden resolverse por camara, teclado/touch o controles demo.
+* Se mantiene GitHub Pages como superficie principal y se evita backend para no guardar datos personales ni video.
+
+### Pendientes
+
+* Repetir validaciones finales locales despues del ajuste de layout.
+* Publicar en `origin/main`.
+* Verificar GitHub Pages con `?v=0.6.0`.
+* Probar camara en dispositivo real con HTTPS.
+* Diseñar imagenes especificas de Carlitos usando manos/camara/movimiento.
+
+### Riesgos
+
+* El reconocimiento de dedos puede variar por iluminacion, distancia, camara y edad del nino.
+* La camara requiere consentimiento y debe explicarse claramente que no se guarda video.
+* En aulas con conectividad limitada, el primer uso de MediaPipe puede tardar por carga de modelo externo.
+* La app es educativa y ludica; no debe tratar el puntaje local como evaluacion formal.
+
+### Recomendaciones
+
+* Mantener modo demo y controles manuales aunque se mejore el detector.
+* Crear un modo docente con instrucciones de seguridad y alternativas sin camara.
+* Validar con ninos de cada rango de edad antes de ajustar dificultad.
+* Si se desea seguimiento institucional, evaluar una version separada con Google Sheets/GAS sin captura de imagen ni video.
+
+### Actualizacion de verificacion local
+
+* Se ejecuto `node --check app.js` sin errores.
+* Se ejecuto `node --check service-worker.js` sin errores.
+* Se ejecuto `git diff --check` sin errores de whitespace, solo con advertencias normales LF/CRLF de Windows.
+* Se mantuvo servidor local:
+  * `python -m http.server 8790 --bind 127.0.0.1`
+* Se ejecuto prueba Playwright local temporal `_tmp_v060_motion_check.py`.
+* Resultado de prueba funcional: `jugando v0.6.0 motion layout check OK`.
+* La prueba verifico:
+  * `#ninos` muestra `Aventura gestual` e incluye `Robot gestual`;
+  * `#dedos` permite resolver una suma con dedos demo;
+  * `#semillas` permite elegir el canasto correcto;
+  * `#robots` permite resolver multiplicacion usando dedos demo;
+  * en movil `#semillas` muestra reto y sensor sin solapes criticos.
+* Se generaron capturas locales ignoradas por Git:
+  * `test-results/v060_local_dedos_after_layout.png`;
+  * `test-results/v060_local_robots_after_layout.png`;
+  * `test-results/v060_local_mobile_semillas_after_layout.png`.
+* La revision visual confirmo que el reto activo queda primero y el sensor funciona como panel de apoyo.
