@@ -12,9 +12,9 @@ URL publica:
 
 ## Estado
 
-Version actual: `v0.6.4`
+Version actual: `v0.6.5`
 
-La version `v0.6.4` mantiene la experiencia de juego corporal y agrega una capa de `portales conceptuales`: cada reto muestra la estrategia antes de responder y, al finalizar, explica los pasos, el modelo mental y el concepto trabajado.
+La version `v0.6.5` mantiene la experiencia de juego corporal y mejora el visor de camara: la imagen del nino queda muy sutil, los puntos de la mano se destacan y cada reto despliega portales, tarjetas o el numero detectado directamente sobre el espacio donde se mueve la mano.
 
 Tambien conserva el flujo de camara estable de la version anterior que funcionaba en celular: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva siempre el modo demo.
 
@@ -58,7 +58,7 @@ Incluye:
 * categorias por edad;
 * retos generados dinamicamente;
 * sensor de manos con camara opcional;
-* panel basico de video para confirmar que la camara esta capturando;
+* escenario de camara con video velado, puntos de mano destacados y capa de juego encima;
 * reconocimiento de dedos y posicion de la mano cuando el navegador lo permite;
 * modo demo con botones de dedos, zonas y gesto de palma;
 * historial local por juego;
@@ -84,6 +84,8 @@ Incluye:
 La camara se activa solo si el usuario presiona `Activar camara` y acepta el permiso del navegador.
 
 El reconocimiento de manos usa MediaPipe Hand Landmarker en el navegador. El video no se envia a un backend del proyecto y la app no guarda imagenes ni videos.
+
+Para reducir exposicion visual en aula o celular, la vista de camara no se muestra como espejo principal: el video queda desenfocado, con baja opacidad y una capa oscura suave. Lo importante en pantalla son los puntos brillantes de la mano, el cursor detectado y los objetos del juego que aparecen sobre ese mismo espacio de movimiento.
 
 La camara y el detector se tratan como dos estados separados:
 

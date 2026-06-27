@@ -1526,3 +1526,117 @@
 * URL recomendada para prueba en celular: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.4`
 * Se restauro el flujo de camara estable previo.
 * Pendiente: validar en el celular real del usuario.
+
+## 2026-06-27 11:25
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.6.5`
+
+### Objetivo de la intervencion
+
+* Atender la mejora solicitada por el usuario: la camara ya funciona en celular, pero la imagen del nino no debe destacarse; deben destacarse los puntos de la mano y el juego debe desarrollarse sobre el espacio de movimiento.
+
+### Diagnostico inicial
+
+* El repo local estaba sincronizado con `origin/main`.
+* El flujo estable de camara `v0.6.4` no debia tocarse porque el usuario confirmo que funcionaba en celular.
+* La mejora requerida era principalmente de experiencia visual y privacidad: usar el visor como escenario de juego, no como espejo del nino.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.6.5`.
+* Se mantuvo el flujo de camara estable de `v0.6.4`:
+  * `VISION_BUNDLE_URL`;
+  * `VISION_WASM_URL`;
+  * sin `VISION_SOURCES`;
+  * sin fallback `unpkg`;
+  * sin `favicon.svg`.
+* Se agrego capa de juego sobre el visor:
+  * portales por zona para respuestas con movimiento;
+  * tarjetas de seleccion para juegos con 1 a 4 dedos;
+  * objetivo central para mostrar numero detectado;
+  * cursor de mano detectada.
+* Se suavizo visualmente el video:
+  * baja opacidad;
+  * desenfoque;
+  * filtro gris/saturacion;
+  * velo oscuro suave.
+* Se reforzo el dibujo de puntos y conexiones de la mano en el canvas.
+* Se actualizo cache-busting:
+  * `styles.css?v=0.6.5`;
+  * `app.js?v=0.6.5`;
+  * cache `jugando-con-carlitos-v0-6-5`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `rg -n "APP_VERSION|renderMotionOverlay|handCenter|vision-preview|motion-overlay|v0\.6\.4|v0\.6\.5|jugando-con-carlitos-v" app.js styles.css index.html service-worker.js README.md`
+* Pendiente: pruebas locales y publicas.
+
+### Resultados verificados
+
+* Pendiente de completar tras pruebas.
+
+### Pruebas realizadas
+
+* Pendiente de completar tras pruebas.
+
+### Errores o incidentes
+
+* No se modifico la carga de MediaPipe para evitar repetir la regresion de camara reportada por el usuario.
+
+### Soluciones aplicadas
+
+* Convertir el panel de camara en escenario AR liviano: video atenuado, mano destacada y objetivos del juego encima.
+
+### Pendientes
+
+* Ejecutar pruebas locales.
+* Publicar en `origin/main`.
+* Verificar GitHub Pages.
+* Copiar bitacora actualizada a la carpeta maestra.
+
+### Riesgos
+
+* En camara fisica real, la deteccion de mano puede variar por iluminacion, distancia o permisos del navegador.
+* El service worker puede requerir cache-busting y recarga en celular para ver `v0.6.5`.
+
+### Recomendaciones
+
+* Probar desde `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.5`.
+* Mantener controles demo como alternativa de aula y accesibilidad.
+
+### Actualizacion de validacion local 2026-06-27 11:43
+
+* Pruebas estaticas:
+  * `node --check app.js`: sin errores.
+  * `node --check service-worker.js`: sin errores.
+  * `git diff --check`: sin errores de whitespace; solo avisos normales LF/CRLF de Windows.
+* Servidor local:
+  * `python -m http.server 8795 --bind 127.0.0.1`
+* Prueba Playwright local con camara simulada y Edge:
+  * `#dedos`: visor en modo `camera-on`, video activo `640px`, opacidad `0.16`, filtro `blur(3px) grayscale(0.4) saturate(0.72) contrast(0.88)`, capa `.motion-overlay` visible y objetivo `.camera-number-target` visible.
+  * `#semillas`: visor en modo `camera-on`, video activo, portales `.camera-zones` visibles sobre el area de camara.
+* Capturas generadas como evidencia local:
+  * `test-results/v065_local_camera_overlay_viewport.png`
+  * `test-results/v065_local_camera_zones_viewport.png`
+* Ajuste adicional aplicado tras revisar capturas:
+  * En movil, `vision-panel` se muestra antes del tablero del reto.
+  * En movil, `.app-top` deja de ser sticky para no cubrir el escenario de camara.
+* Resultado: validacion local de `v0.6.5` correcta.

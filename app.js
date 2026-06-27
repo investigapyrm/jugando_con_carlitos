@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.6.4";
+const APP_VERSION = "v0.6.5";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -184,6 +184,8 @@ const state = {
     zone: "centro",
     gesture: "espera",
     confidence: 0,
+    handX: null,
+    handY: null,
     error: "",
     errorCode: "",
     stableValue: null,
@@ -442,6 +444,7 @@ function renderVisionPanel() {
       <div class="vision-preview ${state.vision.enabled ? "camera-on" : ""}">
         <video id="visionVideo" playsinline muted autoplay></video>
         <canvas id="visionCanvas"></canvas>
+        ${renderMotionOverlay()}
         <div class="capture-ribbon ${state.vision.enabled ? "on" : ""}">
           <i></i><span>${escapeHtml(cameraCaptureLabel())}</span>
         </div>
@@ -484,6 +487,80 @@ function renderVisionPanel() {
       </div>
     </section>
   `;
+}
+
+function renderMotionOverlay() {
+  const challenge = state.challenge || createChallenge(state.activeGame);
+  const game = getGame(state.activeGame) || GAMES[0];
+  const cursorStyle = pointerStyle();
+  return `
+    <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}">
+      <div class="overlay-grid-lines"></div>
+      ${renderOverlayTargets(game, challenge)}
+      <div class="hand-cursor ${state.vision.handX === null ? "hidden" : ""}" id="handCursor" style="${cursorStyle}">
+        <span id="handCursorValue">${visionNumberLabel()}</span>
+      </div>
+      <div class="overlay-instruction">
+        <strong>${escapeHtml(overlayTitle(challenge))}</strong>
+        <span>${escapeHtml(overlayHint(challenge))}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderOverlayTargets(game, challenge) {
+  if (challenge.input === "zone") {
+    return `
+      <div class="camera-zones">
+        ${challenge.options.map((option) => `
+          <div class="camera-zone ${state.vision.zone === option.value ? "active" : ""}" data-camera-zone="${escapeAttribute(option.value)}">
+            <small>${escapeHtml(option.label)}</small>
+            <strong>${escapeHtml(option.count ?? "")}</strong>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  if (challenge.input === "fingers-option") {
+    return `
+      <div class="camera-choice-ring">
+        ${challenge.options.map((option, index) => `
+          <div class="camera-choice">
+            <small>${index + 1} dedo${index ? "s" : ""}</small>
+            <strong>${escapeHtml(option.label)}</strong>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="camera-number-target">
+      <span>detectado</span>
+      <strong id="overlayLiveAnswer">${visionNumberLabel()}</strong>
+      <small>${escapeHtml(game.concept)}</small>
+    </div>
+  `;
+}
+
+function overlayTitle(challenge) {
+  if (challenge.input === "zone") return "Mueve la mano hacia el portal";
+  if (challenge.input === "fingers-option") return "Elige energia con dedos";
+  return "Responde mostrando dedos";
+}
+
+function overlayHint(challenge) {
+  if (challenge.input === "zone") return "Abre la palma o haz pinza para confirmar.";
+  if (challenge.input === "fingers-option") return "1 a 4 dedos seleccionan las tarjetas.";
+  return "Los puntos brillantes son tu mano.";
+}
+
+function pointerStyle() {
+  if (state.vision.handX === null || state.vision.handY === null) return "";
+  const x = clamp(Math.round((1 - state.vision.handX) * 100), 4, 96);
+  const y = clamp(Math.round(state.vision.handY * 100), 8, 92);
+  return `left:${x}%;top:${y}%`;
 }
 
 function renderChallengePanel(game) {
@@ -894,6 +971,8 @@ function stopCameraTracks() {
 function handleHandResult(result) {
   const hands = result.landmarks || [];
   if (!hands.length) {
+    state.vision.handX = null;
+    state.vision.handY = null;
     updateVisionReading(null, state.vision.zone, "sin mano", 0);
     clearVisionCanvas();
     return;
@@ -902,6 +981,9 @@ function handleHandResult(result) {
   const fingers = hands.reduce((total, landmarks) => total + countExtendedFingers(landmarks), 0);
   const zone = handZone(hands[0]);
   const gesture = detectGesture(hands[0], fingers);
+  const center = handCenter(hands[0]);
+  state.vision.handX = center.x;
+  state.vision.handY = center.y;
   updateVisionReading(fingers, zone, gesture, Math.min(1, hands.length / 2 + 0.5));
   drawHands(hands);
   processVisionAnswer(false);
@@ -961,10 +1043,23 @@ function updateVisionWidgets() {
     ["#sideZone", state.vision.zone],
     ["#sideGesture", state.vision.gesture],
     ["#liveAnswer", visionNumberLabel()],
+    ["#overlayLiveAnswer", visionNumberLabel()],
+    ["#handCursorValue", visionNumberLabel()],
   ];
   updates.forEach(([selector, value]) => {
     const node = document.querySelector(selector);
     if (node) node.textContent = value;
+  });
+  const overlay = document.querySelector("#motionOverlay");
+  if (overlay) overlay.dataset.zone = state.vision.zone;
+  const cursor = document.querySelector("#handCursor");
+  if (cursor) {
+    const style = pointerStyle();
+    cursor.classList.toggle("hidden", !style);
+    if (style) cursor.setAttribute("style", style);
+  }
+  document.querySelectorAll("[data-camera-zone]").forEach((node) => {
+    node.classList.toggle("active", node.dataset.cameraZone === state.vision.zone);
   });
 }
 
@@ -975,9 +1070,13 @@ function drawHands(hands) {
   canvasElement.width = width;
   canvasElement.height = height;
   canvasContext.clearRect(0, 0, width, height);
-  canvasContext.lineWidth = Math.max(3, width / 180);
+  canvasContext.lineCap = "round";
+  canvasContext.lineJoin = "round";
+  canvasContext.shadowColor = "rgba(255, 210, 63, 0.92)";
+  canvasContext.shadowBlur = Math.max(10, width / 60);
+  canvasContext.lineWidth = Math.max(6, width / 105);
   canvasContext.strokeStyle = "#ffd23f";
-  canvasContext.fillStyle = "#0b5d3b";
+  canvasContext.fillStyle = "#15f59a";
   hands.forEach((landmarks) => {
     HAND_CONNECTIONS.forEach(([a, b]) => {
       canvasContext.beginPath();
@@ -987,10 +1086,17 @@ function drawHands(hands) {
     });
     landmarks.forEach((point) => {
       canvasContext.beginPath();
-      canvasContext.arc(point.x * width, point.y * height, Math.max(4, width / 150), 0, Math.PI * 2);
+      canvasContext.arc(point.x * width, point.y * height, Math.max(6, width / 95), 0, Math.PI * 2);
       canvasContext.fill();
     });
+    [4, 8, 12, 16, 20].forEach((index) => {
+      const point = landmarks[index];
+      canvasContext.beginPath();
+      canvasContext.arc(point.x * width, point.y * height, Math.max(9, width / 70), 0, Math.PI * 2);
+      canvasContext.stroke();
+    });
   });
+  canvasContext.shadowBlur = 0;
 }
 
 function clearVisionCanvas() {
@@ -1012,6 +1118,13 @@ function handZone(landmarks) {
   if (center < 0.36) return "izquierda";
   if (center > 0.64) return "derecha";
   return "centro";
+}
+
+function handCenter(landmarks) {
+  return {
+    x: landmarks.reduce((total, point) => total + point.x, 0) / landmarks.length,
+    y: landmarks.reduce((total, point) => total + point.y, 0) / landmarks.length,
+  };
 }
 
 function detectGesture(landmarks, fingers) {
