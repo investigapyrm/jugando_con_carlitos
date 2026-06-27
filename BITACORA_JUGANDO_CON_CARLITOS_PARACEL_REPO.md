@@ -1368,3 +1368,34 @@
 * Probar desde `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.3`.
 * En Chrome/Edge, tocar el candado o icono de camara y seleccionar `Permitir`.
 * Si persiste, abrir consola y copiar la URL completa del recurso que da 404.
+
+### Actualizacion de verificacion publica 2026-06-27 10:08
+
+* Commit principal de la version: `3cc5e3f`.
+* Push exitoso a `origin/main`.
+* GitHub Pages verificado con HTTP `200`:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.3&check=3cc5e3f`;
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.6.3&check=3cc5e3f`;
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.6.3&check=3cc5e3f`;
+  * `https://investigapyrm.github.io/jugando_con_carlitos/favicon.svg?check=3cc5e3f`.
+* La URL publica sirve:
+  * `styles.css?v=0.6.3`;
+  * `app.js?v=0.6.3`;
+  * `favicon.svg`.
+* La URL publica sirve `app.js` con:
+  * `APP_VERSION = "v0.6.3"`;
+  * `VISION_SOURCES`;
+  * fuente fallback `unpkg.com/@mediapipe/tasks-vision`.
+* La URL publica sirve `service-worker.js` con cache `jugando-con-carlitos-v0-6-3`.
+* Se ejecuto prueba Playwright publica temporal `_tmp_public_v063_camera_check.py`.
+* Resultado:
+  * `STATE {"enabled":true,"ready":true,"status":"Manos listas","error":""}`;
+  * `BAD []`;
+  * `public v0.6.3 camera no-404 check OK`.
+
+### Estado de cierre
+
+* Version publicada y verificada: `v0.6.3`.
+* URL recomendada para prueba: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.3`
+* No se reprodujo el 404 en prueba publica automatizada; se elimino el 404 probable de favicon y se agrego respaldo de CDN para el detector.
+* Pendiente: prueba con camara fisica real del usuario y, si falla, capturar la URL exacta del recurso 404.
