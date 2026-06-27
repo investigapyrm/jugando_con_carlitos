@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.6.6";
+const APP_VERSION = "v0.6.7";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -330,9 +330,14 @@ function renderFairView() {
     <main class="fair-view theme-${game.color}">
       <section class="fair-arena" aria-label="Estacion interactiva de feria">
         <div class="fair-stage-heading">
-          <p class="eyebrow">Semana de la Ciencia</p>
-          <h1>Estacion Carlitos</h1>
-          <p>Un participante entra al recuadro, responde con la mano y el publico ayuda a pensar.</p>
+          <div>
+            <p class="eyebrow">Semana de la Ciencia</p>
+            <p>Un participante entra al recuadro y responde con la mano.</p>
+          </div>
+          <div class="fair-stage-title">
+            <strong>Estacion Carlitos</strong>
+            <span>${escapeHtml(game.title)}</span>
+          </div>
         </div>
         ${renderVisionPanel({ fair: true })}
       </section>
@@ -350,11 +355,6 @@ function renderFairView() {
         <div class="fair-mission-grid">
           ${FAIR_GAME_IDS.map(renderFairMissionButton).join("")}
         </div>
-        <div class="fair-setup">
-          <span>1. Proyectar</span>
-          <span>2. Activar camara</span>
-          <span>3. Jugar por turnos</span>
-        </div>
         ${state.vision.error ? `
           <details class="fair-demo" open>
             <summary>Controles de apoyo si la camara falla</summary>
@@ -369,12 +369,11 @@ function renderFairView() {
 function renderFairMissionButton(gameId) {
   const game = getGame(gameId);
   if (!game) return "";
-  const stats = gameStats(game.id);
+  const missionNumber = FAIR_GAME_IDS.indexOf(game.id) + 1;
   return `
-    <button type="button" class="fair-mission-card ${game.id === state.activeGame ? "active" : ""}" data-fair-game="${escapeAttribute(game.id)}">
-      <span>${escapeHtml(game.level)}</span>
+    <button type="button" class="fair-mission-card ${game.id === state.activeGame ? "active" : ""}" data-fair-game="${escapeAttribute(game.id)}" aria-label="Cambiar a ${escapeAttribute(game.title)}">
+      <span>Mision ${missionNumber}</span>
       <strong>${escapeHtml(game.title)}</strong>
-      <small>${escapeHtml(game.concept)} | ${stats.correct} aciertos</small>
     </button>
   `;
 }
@@ -527,7 +526,7 @@ function renderVisionPanel(options = {}) {
       </div>
       <div class="vision-controls">
         <button type="button" id="startCamera" ${state.vision.loading ? "disabled" : ""}>
-          ${state.vision.enabled ? "Reiniciar camara" : fair ? "Activar camara de la estacion" : "Activar camara"}
+          ${state.vision.enabled ? "Reiniciar camara" : "Activar camara"}
         </button>
         <button type="button" id="stopCamera" class="mini-button">Apagar</button>
         <span class="sensor-pill ${state.vision.ready ? "ready" : ""}" id="visionStatus">${escapeHtml(state.vision.status)}</span>

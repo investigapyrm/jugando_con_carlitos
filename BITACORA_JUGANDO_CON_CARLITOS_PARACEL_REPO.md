@@ -1774,3 +1774,99 @@
 
 * Probar en el lugar de la feria con la camara y proyector reales.
 * Mantener el modo demo como respaldo si falla la red o la deteccion.
+
+## 2026-06-27 12:18
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.6.7`
+
+### Objetivo de la intervencion
+
+* Reducir aun mas la carga visual del modo feria.
+* Hacer que la captura de movimiento sea el elemento dominante para uso con proyector en la Semana de la Ciencia.
+* Mantener los controles de facilitador sin convertirlos en el centro de la experiencia.
+
+### Diagnostico inicial
+
+* La version `v0.6.6` ya ubicaba el reto dentro del visor, pero el encabezado y la barra de controles de camara todavia ocupaban demasiado espacio visual.
+* En un stand de feria, la pantalla debe leerse desde lejos: reto grande, zona de mano clara y controles secundarios compactos.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.6.7`.
+* Se redujo el encabezado del modo feria a una barra liviana.
+* Se aumento el protagonismo del visor de camara con altura responsive para proyector.
+* Se convirtio la barra de controles de camara en una capsula compacta.
+* Se simplificaron los botones de mision para rotacion rapida.
+* Se retiro texto operativo redundante de la vista principal.
+* Se actualizo cache-busting:
+  * `styles.css?v=0.6.7`;
+  * `app.js?v=0.6.7`;
+  * cache `jugando-con-carlitos-v0-6-7`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `node --check app.js`
+* `node --check service-worker.js`
+* `git diff --check`
+* `node _tmp_v066_fair_check.js`
+
+### Resultados verificados
+
+* Sintaxis de `app.js`: valida.
+* Sintaxis de `service-worker.js`: valida.
+* `git diff --check`: sin errores de whitespace, solo avisos LF/CRLF de Windows.
+* Prueba Playwright local con camara simulada:
+  * modo feria cargado;
+  * visor de camara `1358x610`;
+  * reto matematico dentro del visor;
+  * sin panel duplicado de desafio;
+  * seis misiones disponibles;
+  * estado `Manos listas`;
+  * opacidad de video `0.16` con filtro de privacidad.
+
+### Pruebas realizadas
+
+* URL local: `http://127.0.0.1:8796/?v=0.6.7`
+* Captura local:
+  * `test-results/v067_local_fair_stage_compact.png`
+
+### Errores o incidentes
+
+* El script temporal de Playwright seguia validando texto de `v0.6.6`; se ajusto para verificar el modo feria por `data-route="fair"`.
+
+### Soluciones aplicadas
+
+* Composicion mas limpia para feria: escenario grande, reto dentro del visor, controles secundarios compactos.
+
+### Pendientes
+
+* Publicacion y verificacion GitHub Pages de `v0.6.7`.
+* Prueba en el espacio real de feria con luz, distancia, notebook, camara y proyector definitivos.
+
+### Riesgos
+
+* La deteccion de manos depende de iluminacion, fondo y posicion de la persona.
+* Puede requerirse marcar fisicamente la zona de participacion para evitar que varias manos entren al sensor.
+
+### Recomendaciones
+
+* Usar navegador Chrome o Edge actualizado.
+* Activar pantalla completa durante la feria.
+* Mantener el modo demo como respaldo operativo.

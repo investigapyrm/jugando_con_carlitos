@@ -12,9 +12,9 @@ URL publica:
 
 ## Estado
 
-Version actual: `v0.6.6`
+Version actual: `v0.6.7`
 
-La version `v0.6.6` reorienta la app al uso en feria durante la Semana de la Ciencia. La pantalla principal ahora es el `modo feria`: la zona de captura de movimientos con camara es el escenario principal y los desafios matematicos aparecen directamente dentro de esa misma vista.
+La version `v0.6.7` reorienta la app al uso en feria durante la Semana de la Ciencia. La pantalla principal ahora es el `modo feria`: la zona de captura de movimientos con camara es el escenario principal y los desafios matematicos aparecen directamente dentro de esa misma vista, con una consola minima para el facilitador.
 
 Tambien conserva el flujo de camara estable de la version anterior: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva modo demo para contingencia.
 
