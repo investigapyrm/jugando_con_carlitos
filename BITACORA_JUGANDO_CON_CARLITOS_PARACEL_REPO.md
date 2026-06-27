@@ -1672,3 +1672,105 @@
 * La camara conserva el flujo estable confirmado por el usuario en celular.
 * La imagen del nino queda atenuada; el foco visual pasa a los puntos de mano, cursor y objetos del juego sobre el visor.
 * Pendiente: validacion final del usuario con camara real en celular.
+
+## 2026-06-27 11:46
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.6.6`
+
+### Objetivo de la intervencion
+
+* Reorientar la app para una actividad ludica en feria durante la Semana de la Ciencia, no para uso individual en celulares.
+* Simplificar la experiencia para que la zona de captura de movimientos sea el protagonista principal.
+* Hacer que los desafios matematicos aparezcan directamente dentro del visor de camara.
+
+### Diagnostico inicial
+
+* La version `v0.6.5` ya mejoraba privacidad visual, pero mantenia demasiados paneles, tableros y contenido alrededor del visor.
+* Para feria/proyector, la interfaz debe comportarse como una estacion: pantalla grande, reto dentro del escenario, turnos breves y controles minimos para facilitador.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.6.6`.
+* Se agrego ruta principal `#feria` y la URL sin hash entra por defecto al modo feria.
+* Se simplifico el modo feria:
+  * visor de camara como escenario principal;
+  * retiro del tablero matematico duplicado en esta vista;
+  * consola inferior minima con mision activa, nuevo reto y cambio rapido de mision;
+  * instrucciones breves para stand.
+* Se agrego el problema matematico dentro del visor mediante `.overlay-problem`.
+* Se mantuvo el flujo estable de camara de `v0.6.4`/`v0.6.5`.
+* Se actualizo cache-busting:
+  * `styles.css?v=0.6.6`;
+  * `app.js?v=0.6.6`;
+  * cache `jugando-con-carlitos-v0-6-6`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `git diff --check`
+
+### Resultados verificados
+
+* Sintaxis de `app.js`: valida.
+* Sintaxis de `service-worker.js`: valida.
+* `git diff --check`: sin errores de whitespace, solo avisos normales LF/CRLF de Windows.
+
+### Pruebas realizadas
+
+* Servidor local:
+  * `python -m http.server 8796 --bind 127.0.0.1`
+* Prueba Playwright local con camara simulada y viewport tipo proyector `1440x900`.
+* Resultado:
+  * modo feria carga desde `/?v=0.6.6`;
+  * escenario de camara visible de `1339x522`;
+  * estado `Manos listas`;
+  * video con opacidad `0.16` y filtro de privacidad;
+  * `.overlay-problem` visible dentro del visor con el reto matematico;
+  * no aparece `.challenge-panel` duplicado dentro de `.fair-view`;
+  * seis misiones de rotacion rapida disponibles.
+* Captura local:
+  * `test-results/v066_local_fair_stage.png`
+* Pendiente: verificacion publica despues del push.
+
+### Errores o incidentes
+
+* Durante la validacion se detecto un error de cierre de template literal en `renderOverlayProblem`; fue corregido antes de publicar.
+
+### Soluciones aplicadas
+
+* Modo feria minimalista con foco en camara, reto superpuesto y controles de facilitador reducidos.
+
+### Pendientes
+
+* Prueba visual local.
+* Publicacion y verificacion GitHub Pages.
+* Copia de bitacora a carpeta maestra.
+
+### Riesgos
+
+* En feria real, la deteccion puede variar por luz, distancia a camara y cantidad de personas frente al sensor.
+* Se recomienda usar notebook/proyector y una zona marcada para que participe una persona por turno.
+
+### Recomendaciones
+
+* Probar en el lugar de la feria con la camara y proyector reales.
+* Mantener el modo demo como respaldo si falla la red o la deteccion.

@@ -1,6 +1,6 @@
 # Jugando con Carlitos
 
-Appweb educativa infantil para aprender matematicas y estadistica mediante juegos interactivos con movimiento.
+Appweb educativa infantil para una estacion ludica de feria: matematicas y estadistica con movimiento, camara, proyector y participacion del publico.
 
 Repositorio:
 
@@ -12,13 +12,13 @@ URL publica:
 
 ## Estado
 
-Version actual: `v0.6.5`
+Version actual: `v0.6.6`
 
-La version `v0.6.5` mantiene la experiencia de juego corporal y mejora el visor de camara: la imagen del nino queda muy sutil, los puntos de la mano se destacan y cada reto despliega portales, tarjetas o el numero detectado directamente sobre el espacio donde se mueve la mano.
+La version `v0.6.6` reorienta la app al uso en feria durante la Semana de la Ciencia. La pantalla principal ahora es el `modo feria`: la zona de captura de movimientos con camara es el escenario principal y los desafios matematicos aparecen directamente dentro de esa misma vista.
 
-Tambien conserva el flujo de camara estable de la version anterior que funcionaba en celular: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva siempre el modo demo.
+Tambien conserva el flujo de camara estable de la version anterior: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva modo demo para contingencia.
 
-La camara es opcional: todos los juegos conservan controles tactiles y modo demo para aula, proyector, navegadores sin permisos o dispositivos sin camara.
+Uso previsto: notebook o computadora conectada a proyector/pantalla grande, con camara integrada o externa apuntando al espacio donde participa el nino. No esta pensada principalmente como experiencia individual de celular.
 
 ## Arquitectura
 
@@ -44,21 +44,23 @@ La app sigue siendo estatica, sin backend obligatorio. El progreso se guarda loc
 
 ## Categorias por edad
 
+* `#feria`: modo principal para stand, proyector y turnos breves.
 * `#peques`: 4 a 7 anos. Conteo con dedos, comparacion visual y patrones simples.
 * `#ninos`: 8 a 12 anos. Suma, multiplicacion, probabilidad y datos con respuestas gestuales.
 * `#mayores`: mayores de 12 anos. Estadistica, probabilidad, patrones y estrategia con lectura de datos.
 
 ## Experiencia de usuario
 
-La app abre directamente en la experiencia jugable. No usa landing page ni pasos intermedios.
+La app abre directamente en el modo feria. No usa landing page ni pasos intermedios.
 
 Incluye:
 
 * vistas independientes por juego mediante rutas hash;
+* modo feria como vista principal;
 * categorias por edad;
 * retos generados dinamicamente;
 * sensor de manos con camara opcional;
-* escenario de camara con video velado, puntos de mano destacados y capa de juego encima;
+* escenario de camara grande, video velado, puntos de mano destacados y desafios dentro del mismo visor;
 * reconocimiento de dedos y posicion de la mano cuando el navegador lo permite;
 * modo demo con botones de dedos, zonas y gesto de palma;
 * historial local por juego;
@@ -76,7 +78,7 @@ Incluye:
   * completar patrones corporales;
 * procesamiento local de video en el navegador;
 * funcionamiento offline basico despues de la primera carga;
-* diseno responsive para celular, aula y proyector;
+* diseno orientado a feria, aula y proyector;
 * soporte `prefers-reduced-motion`.
 
 ## Camara y privacidad

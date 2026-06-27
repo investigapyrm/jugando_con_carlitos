@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.6.5";
+const APP_VERSION = "v0.6.6";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -116,6 +116,8 @@ const GAMES = [
   },
 ];
 
+const FAIR_GAME_IDS = ["dedos", "semillas", "robots", "azar", "datos", "ritmo"];
+
 const CONCEPTS = {
   suma: {
     label: "Suma y conteo",
@@ -164,7 +166,7 @@ const CONCEPTS = {
 const app = document.querySelector("#app");
 
 const state = {
-  route: "game",
+  route: "fair",
   activeCategory: "ninos",
   activeGame: "dedos",
   challenge: null,
@@ -220,9 +222,16 @@ function initApp() {
 }
 
 function syncRoute() {
-  const hash = decodeURIComponent(window.location.hash.replace(/^#/, "") || state.activeGame);
+  const rawHash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+  const hash = rawHash || "feria";
   const group = getAgeGroup(hash);
   const game = getGame(hash);
+
+  if (hash === "feria" || hash === "stand" || hash === "ciencia") {
+    state.route = "fair";
+    if (!state.challenge) state.challenge = createChallenge(state.activeGame);
+    return;
+  }
 
   if (group) {
     state.route = "category";
@@ -250,13 +259,17 @@ function syncRoute() {
 
 function renderApp() {
   const totalStars = GAMES.reduce((total, game) => total + gameStars(game.id), 0);
+  app.dataset.route = state.route;
   app.innerHTML = `
     <header class="app-top">
       <div class="top-inner">
-        <a class="brand" href="#home">Jugando con Carlitos</a>
+        <a class="brand" href="#feria">Jugando con Carlitos</a>
         <nav class="top-game-tabs" aria-label="Categorias">
+          <a href="#feria" class="${state.route === "fair" ? "active" : ""}">
+            Feria <span>Semana de la Ciencia</span>
+          </a>
           ${AGE_GROUPS.map((group) => `
-            <a href="#${group.id}" class="${state.activeCategory === group.id && state.route !== "home" ? "active" : ""}">
+            <a href="#${group.id}" class="${state.activeCategory === group.id && state.route !== "home" && state.route !== "fair" ? "active" : ""}">
               ${escapeHtml(group.label)} <span>${escapeHtml(group.short)}</span>
             </a>
           `).join("")}
@@ -265,15 +278,16 @@ function renderApp() {
           <span class="score-pill">Puntos: ${state.progress.score}</span>
           <span class="level-pill">Racha: ${state.progress.streak}</span>
           <span class="mode-pill">Estrellas: ${totalStars}/${GAMES.length * 3}</span>
+          <button type="button" class="reset-button booth-button" id="toggleFullscreen">Pantalla completa</button>
           <button type="button" class="reset-button" id="resetProgress">Reiniciar</button>
         </div>
       </div>
     </header>
 
-    ${state.route === "category" ? renderCategoryView() : state.route === "home" ? renderHomeView() : renderGameView()}
+    ${state.route === "fair" ? renderFairView() : state.route === "category" ? renderCategoryView() : state.route === "home" ? renderHomeView() : renderGameView()}
 
     <footer class="footer">
-      <span>Camara opcional. El video se procesa en este navegador y no se guarda.</span>
+      <span>Modo feria. Camara local, proyector y turnos breves. El video se procesa en este navegador y no se guarda.</span>
       <span class="version">${APP_VERSION} | ${BUILD_DATE}</span>
     </footer>
   `;
@@ -287,11 +301,11 @@ function renderHomeView() {
     <main class="motion-home">
       <section class="motion-hero" style="--hero-image: url('${ASSETS.hero}')">
         <div class="motion-hero-copy">
-          <p class="eyebrow">Matematicas con movimiento</p>
-          <h1>Juega con tus manos</h1>
-          <p>Carlitos convierte dedos, palmas y movimientos en respuestas para resolver retos.</p>
+          <p class="eyebrow">Semana de la Ciencia</p>
+          <h1>Matematica en movimiento</h1>
+          <p>Una estacion ludica para feria: un participante juega frente a la camara y el publico ayuda a pensar la estrategia.</p>
           <div class="hero-actions">
-            <a class="hero-button" href="#dedos">Empezar con dedos</a>
+            <a class="hero-button" href="#feria">Abrir modo feria</a>
             <a class="hero-button secondary" href="#ninos">Elegir por edad</a>
           </div>
         </div>
@@ -306,6 +320,62 @@ function renderHomeView() {
         ${GAMES.map(renderGameCard).join("")}
       </section>
     </main>
+  `;
+}
+
+function renderFairView() {
+  const game = getGame(state.activeGame) || GAMES[0];
+  const stats = gameStats(game.id);
+  return `
+    <main class="fair-view theme-${game.color}">
+      <section class="fair-arena" aria-label="Estacion interactiva de feria">
+        <div class="fair-stage-heading">
+          <p class="eyebrow">Semana de la Ciencia</p>
+          <h1>Estacion Carlitos</h1>
+          <p>Un participante entra al recuadro, responde con la mano y el publico ayuda a pensar.</p>
+        </div>
+        ${renderVisionPanel({ fair: true })}
+      </section>
+
+      <section class="fair-console" aria-label="Controles de la estacion">
+        <div class="fair-current-game">
+          <span>${escapeHtml(game.level)}</span>
+          <strong>${escapeHtml(game.title)}</strong>
+          <small>${escapeHtml(game.concept)} | ${stats.correct}/${Math.max(1, stats.played)} aciertos</small>
+        </div>
+        <div class="fair-main-actions">
+          <button type="button" id="newChallenge" class="fair-next-button">Nuevo reto</button>
+          <button type="button" id="toggleFullscreenSecondary" class="mini-button">Pantalla completa</button>
+        </div>
+        <div class="fair-mission-grid">
+          ${FAIR_GAME_IDS.map(renderFairMissionButton).join("")}
+        </div>
+        <div class="fair-setup">
+          <span>1. Proyectar</span>
+          <span>2. Activar camara</span>
+          <span>3. Jugar por turnos</span>
+        </div>
+        ${state.vision.error ? `
+          <details class="fair-demo" open>
+            <summary>Controles de apoyo si la camara falla</summary>
+            ${renderDemoPad()}
+          </details>
+        ` : ""}
+      </section>
+    </main>
+  `;
+}
+
+function renderFairMissionButton(gameId) {
+  const game = getGame(gameId);
+  if (!game) return "";
+  const stats = gameStats(game.id);
+  return `
+    <button type="button" class="fair-mission-card ${game.id === state.activeGame ? "active" : ""}" data-fair-game="${escapeAttribute(game.id)}">
+      <span>${escapeHtml(game.level)}</span>
+      <strong>${escapeHtml(game.title)}</strong>
+      <small>${escapeHtml(game.concept)} | ${stats.correct} aciertos</small>
+    </button>
   `;
 }
 
@@ -438,9 +508,10 @@ function renderGameCard(game) {
   `;
 }
 
-function renderVisionPanel() {
+function renderVisionPanel(options = {}) {
+  const fair = Boolean(options.fair);
   return `
-    <section class="vision-panel">
+    <section class="vision-panel ${fair ? "fair-vision-panel" : ""}">
       <div class="vision-preview ${state.vision.enabled ? "camera-on" : ""}">
         <video id="visionVideo" playsinline muted autoplay></video>
         <canvas id="visionCanvas"></canvas>
@@ -456,7 +527,7 @@ function renderVisionPanel() {
       </div>
       <div class="vision-controls">
         <button type="button" id="startCamera" ${state.vision.loading ? "disabled" : ""}>
-          ${state.vision.enabled ? "Reiniciar camara" : "Activar camara"}
+          ${state.vision.enabled ? "Reiniciar camara" : fair ? "Activar camara de la estacion" : "Activar camara"}
         </button>
         <button type="button" id="stopCamera" class="mini-button">Apagar</button>
         <span class="sensor-pill ${state.vision.ready ? "ready" : ""}" id="visionStatus">${escapeHtml(state.vision.status)}</span>
@@ -496,14 +567,52 @@ function renderMotionOverlay() {
   return `
     <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}">
       <div class="overlay-grid-lines"></div>
+      ${renderOverlayProblem(challenge)}
       ${renderOverlayTargets(game, challenge)}
       <div class="hand-cursor ${state.vision.handX === null ? "hidden" : ""}" id="handCursor" style="${cursorStyle}">
         <span id="handCursorValue">${visionNumberLabel()}</span>
       </div>
       <div class="overlay-instruction">
-        <strong>${escapeHtml(overlayTitle(challenge))}</strong>
-        <span>${escapeHtml(overlayHint(challenge))}</span>
+        <strong>${escapeHtml(challenge.title)}</strong>
+        <span>${escapeHtml(challenge.prompt)}</span>
+        <em>${escapeHtml(overlayHint(challenge))}</em>
       </div>
+    </div>
+  `;
+}
+
+function renderOverlayProblem(challenge) {
+  let label = "Reto";
+  let value = challenge.title;
+  let detail = "";
+
+  if (challenge.conceptKey === "suma" && Number.isFinite(challenge.a) && Number.isFinite(challenge.b)) {
+    label = "Suma";
+    value = `${challenge.a} + ${challenge.b}`;
+    detail = "Muestra el total con dedos";
+  } else if (challenge.conceptKey === "multiplicacion" && Number.isFinite(challenge.a) && Number.isFinite(challenge.b)) {
+    label = "Robot";
+    value = `${challenge.a} x ${challenge.b}`;
+    detail = "Elige la tarjeta de energia";
+  } else if (Array.isArray(challenge.data)) {
+    label = challenge.title;
+    value = challenge.data.join("  ");
+    detail = "Usa 1 a 4 dedos";
+  } else if (Array.isArray(challenge.sequence)) {
+    label = "Patron";
+    value = `${challenge.sequence.join("  ")}  ?`;
+    detail = "Completa la secuencia";
+  } else if (challenge.input === "zone") {
+    label = "Movimiento";
+    value = challenge.title;
+    detail = "Mueve la mano al portal correcto";
+  }
+
+  return `
+    <div class="overlay-problem">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(detail)}</small>
     </div>
   `;
 }
@@ -542,12 +651,6 @@ function renderOverlayTargets(game, challenge) {
       <small>${escapeHtml(game.concept)}</small>
     </div>
   `;
-}
-
-function overlayTitle(challenge) {
-  if (challenge.input === "zone") return "Mueve la mano hacia el portal";
-  if (challenge.input === "fingers-option") return "Elige energia con dedos";
-  return "Responde mostrando dedos";
 }
 
 function overlayHint(challenge) {
@@ -781,6 +884,22 @@ function bindEvents() {
   document.querySelector("#startCamera")?.addEventListener("click", startCamera);
   document.querySelector("#stopCamera")?.addEventListener("click", () => stopCamera());
   document.querySelector("#newChallenge")?.addEventListener("click", newChallenge);
+  document.querySelector("#toggleFullscreen")?.addEventListener("click", toggleFullscreen);
+  document.querySelector("#toggleFullscreenSecondary")?.addEventListener("click", toggleFullscreen);
+
+  document.querySelectorAll("[data-fair-game]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.activeGame = button.dataset.fairGame;
+      state.activeCategory = categoryForGame(state.activeGame, state.activeCategory).id;
+      state.progress.lastGame = state.activeGame;
+      state.progress.lastCategory = state.activeCategory;
+      state.challenge = createChallenge(state.activeGame);
+      state.feedback = null;
+      state.answered = false;
+      writeProgress();
+      renderApp();
+    });
+  });
 
   document.querySelectorAll("[data-answer]").forEach((button) => {
     button.addEventListener("click", () => submitAnswer(button.dataset.answer, "boton"));
@@ -1567,14 +1686,14 @@ function cameraPanelTitle() {
 
 function cameraPanelText() {
   if (state.vision.ready) return "Mueve la mano o muestra dedos dentro del recuadro.";
-  if (state.vision.enabled && state.vision.loading) return "Ya deberias verte. Estamos preparando el detector de manos.";
+  if (state.vision.enabled && state.vision.loading) return "El escenario ya recibe video. Estamos preparando el detector de manos.";
   if (state.vision.enabled) return "El video funciona. Si el detector no cargo, usa los botones demo mientras tanto.";
   if (state.vision.errorCode === "permission") return "El navegador nego el permiso. Habilitalo y vuelve a tocar Activar camara.";
   if (state.vision.errorCode === "insecure") return "Los navegadores solo permiten camara en GitHub Pages HTTPS o en localhost.";
   if (state.vision.errorCode === "unsupported") return "Prueba Chrome, Edge o Safari actualizado. El modo demo sigue disponible.";
   if (state.vision.errorCode === "notfound") return "Conecta una camara o usa otro dispositivo. Tambien puedes seguir con demo.";
   if (state.vision.error) return "Puedes seguir jugando con los controles demo mientras se revisa el permiso.";
-  return "Toca Activar camara para ver tu imagen en este panel.";
+  return "Toca Activar camara y coloca la mano dentro del escenario proyectado.";
 }
 
 function renderCameraHelp() {
@@ -1657,6 +1776,14 @@ function cameraErrorMessage(error) {
 
 function detectorErrorMessage(error) {
   return "El video esta activo, pero el detector de manos no termino de cargar. Puedes ver la camara y jugar con el modo demo.";
+}
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+    return;
+  }
+  document.documentElement.requestFullscreen?.().catch(() => {});
 }
 
 function isHardCameraError(error) {
