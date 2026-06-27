@@ -12,7 +12,7 @@ URL publica:
 
 ## Estado
 
-Version actual en esta rama: `v0.7.1`
+Version actual en esta rama: `v0.7.2`
 
 La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
 
@@ -21,6 +21,8 @@ La base estable viene de `v0.6.7`, que reoriento la app al uso en feria durante 
 Tambien conserva el flujo de camara estable de la version anterior: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva modo demo para contingencia.
 
 La version `v0.7.1` ajusta el conteo de dedos: mejora la deteccion de pulgares para manos abiertas y reconoce el cero con el gesto tipo `OK`, juntando pulgar e indice.
+
+La version `v0.7.2` mejora el seguimiento: suaviza el cursor de mano, reduce carga del detector limitando lecturas a un ritmo mas estable, corrige la zona visual en video espejado y agrega seleccion por permanencia de la mano sobre una zona.
 
 Uso previsto: notebook o computadora conectada a proyector/pantalla grande, con camara integrada o externa apuntando al espacio donde participa el nino. No esta pensada principalmente como experiencia individual de celular.
 
@@ -67,6 +69,8 @@ Incluye:
 * sensor de manos con camara opcional;
 * escenario de camara grande, video velado, puntos de mano destacados y desafios dentro del mismo visor;
 * reconocimiento de dedos y posicion de la mano cuando el navegador lo permite;
+* seguimiento suavizado de mano para reducir saltos visuales;
+* seleccion por permanencia sobre zonas en los juegos de comparacion y probabilidad;
 * gesto de cero con pulgar e indice unidos, tipo `OK`;
 * modo demo con botones de dedos, zonas y gesto de palma;
 * historial local por juego;
@@ -85,6 +89,7 @@ Incluye:
 * mecanicas de juego por movimiento:
   * mostrar el total con dedos;
   * mover la mano hacia la opcion correcta;
+  * dejar la mano sobre una zona para seleccionarla;
   * elegir ataque con 1 a 4 dedos;
   * comparar sectores de una rueda;
   * identificar mediana o moda;
@@ -176,7 +181,7 @@ No publicar como version final sin validacion editorial, legal e institucional.
 
 ## Proximos pasos
 
-* Probar el reconocimiento de dedos con ninos reales y ajustar tolerancias.
+* Probar el reconocimiento de dedos y la seleccion por permanencia con ninos reales y ajustar tolerancias.
 * Validar la nueva mision `La Maquina que Aprende` con tarjetas impresas y objetos reales en mesa de feria.
 * Crear imagenes especificas de Carlitos jugando con manos, camara y movimiento.
 * Agregar modo docente con guia de conceptos, seguridad y actividades sin camara.

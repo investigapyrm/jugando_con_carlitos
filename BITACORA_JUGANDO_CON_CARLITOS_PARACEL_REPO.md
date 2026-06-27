@@ -2231,3 +2231,122 @@
 
 * Mostrar una tarjeta visual de ejemplo: mano abierta para 5/10 y gesto `OK` para cero.
 * Indicar a los ninos que muestren la palma completa dentro del recuadro.
+
+## 2026-06-27 19:40
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* Rama de trabajo: `feature/maquina-que-aprende-feria`
+* Responsable: Codex
+* Version de rama: `v0.7.2`
+
+### Objetivo de la intervencion
+
+* Mejorar el seguimiento de manos reportado como lento o torpe.
+* Agregar seleccion de elementos por permanencia de la mano sobre zonas de la vista.
+* Modernizar el aspecto visual para que se sienta mas infantil, educativo y menos tosco.
+
+### Diagnostico inicial
+
+* El flujo de reconocimiento ya funcionaba, por lo que no convenia cambiar la fuente de MediaPipe ni el modelo.
+* El cursor de mano usaba una conversion de coordenadas que podia sentirse invertida respecto al video espejado.
+* Las zonas se confirmaban por gesto de palma o pinza, lo que podia seleccionar antes de que el participante apuntara bien.
+* El modo feria tenia bordes y sombras muy duros, con apariencia de tablero tecnico.
+* En vista compacta, el placeholder del sensor podia ensuciar el overlay del reto.
+
+### Acciones realizadas
+
+* Se actualizo la version a `v0.7.2`.
+* Se agrego control de ritmo de lectura del detector a `33 ms`.
+* Se agrego suavizado del cursor de mano.
+* Se alineo la coordenada de zona con el video espejado.
+* Se redujo la estabilidad requerida de dedos de `6` a `4` lecturas.
+* Se agrego seleccion por permanencia de mano sobre zona durante `720 ms`.
+* Se agrego barra visual de progreso de permanencia en cada zona.
+* Se cambio la confirmacion de zonas para que la permanencia sea el criterio principal; palma/pinza ya no confirma automaticamente.
+* Se modernizo la estetica:
+  * sombras mas suaves;
+  * botones menos pesados;
+  * encabezado de feria con Carlitos visible;
+  * escenario mas claro;
+  * tarjetas de reto y zonas con contraste mas amable;
+  * placeholders ocultos en visor de feria y visor compacto.
+* Se actualizo cache-busting:
+  * `styles.css?v=0.7.2`;
+  * `app.js?v=0.7.2`;
+  * cache `jugando-con-carlitos-v0-7-2`.
+* Se actualizo `README.md` y la secuencia de prompts.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `node --check app.js`
+* `node --check service-worker.js`
+* `python -m http.server 8799 --bind 127.0.0.1`
+* `python _tmp_v072_hover_check.py`
+
+### Resultados verificados
+
+* Sintaxis de `app.js`: valida.
+* Sintaxis de `service-worker.js`: valida.
+* Prueba Playwright Python con landmarks sinteticos:
+  * `handleHandResult` disponible;
+  * seleccion de zona ganadora por permanencia;
+  * feedback: `Respuesta tomada por zona`;
+  * modo feria con guia visual de Carlitos;
+  * tres zonas visibles;
+  * reto dentro de `.overlay-problem`;
+  * visor de feria con altura aproximada `610 px`.
+
+### Pruebas realizadas
+
+* URL local: `http://127.0.0.1:8799/?v=0.7.2#semillas`
+* URL local: `http://127.0.0.1:8799/?v=0.7.2#feria`
+* Capturas:
+  * `test-results/v072_local_semillas_hover.png`
+  * `test-results/v072_local_fair_visual.png`
+
+### Errores o incidentes
+
+* La primera prueba mostro que la seleccion seguia entrando por gesto `palma` antes de completar la permanencia.
+* Se corrigio para que las zonas se confirmen por permanencia, salvo acciones forzadas de demo.
+* La primera captura mostro superposicion del placeholder `Sensor de manos` sobre el reto; se corrigio ocultando ese placeholder en visor de feria y visor compacto.
+
+### Soluciones aplicadas
+
+* Suavizado y ritmo estable de lectura para reducir saltos.
+* Seleccion por permanencia de mano sobre zonas.
+* Correccion de coordenadas para que izquierda/centro/derecha coincidan con lo que ve el participante.
+* Redisenho visual liviano sin convertir la app en landing.
+
+### Pendientes
+
+* Validar con camara real, iluminacion y distancia del espacio fisico de feria.
+* Ajustar `ZONE_DWELL_MS` si los ninos necesitan mas o menos tiempo para seleccionar.
+* Disenar una siguiente fase para arrastrar/estirar objetos o poligonos con mano y gesto de pinza.
+* Revisar si conviene una calibracion inicial de posicion de participante.
+
+### Riesgos
+
+* La prueba automatizada usa landmarks sinteticos; no reemplaza la prueba con manos reales.
+* La seleccion por permanencia puede requerir ajuste si hay varias personas entrando al encuadre.
+* El suavizado mejora estabilidad visual, pero si la camara tiene pocos FPS o mala luz aun puede haber retardo.
+
+### Recomendaciones
+
+* Probar en el stand con una sola persona dentro del recuadro.
+* Marcar fisicamente el area donde debe pararse el participante.
+* Para la fase de poligonos, reservar `pinza` como gesto de agarre y usar permanencia solo para seleccion inicial.

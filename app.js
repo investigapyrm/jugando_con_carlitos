@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.7.1";
+const APP_VERSION = "v0.7.2";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -19,6 +19,11 @@ const HAND_CONNECTIONS = [
   [9, 13], [13, 14], [14, 15], [15, 16],
   [13, 17], [0, 17], [17, 18], [18, 19], [19, 20],
 ];
+
+const VISION_FRAME_INTERVAL_MS = 33;
+const FINGER_STABLE_FRAMES = 4;
+const HAND_SMOOTHING = 0.46;
+const ZONE_DWELL_MS = 720;
 
 const AGE_GROUPS = [
   {
@@ -220,6 +225,12 @@ const state = {
     stableValue: null,
     stableCount: 0,
     lastRaw: null,
+    lastDetectAt: 0,
+    smoothedHandX: null,
+    smoothedHandY: null,
+    hoverZone: null,
+    hoverStartedAt: 0,
+    hoverProgress: 0,
     lockedUntil: 0,
   },
 };
@@ -359,9 +370,12 @@ function renderFairView() {
     <main class="fair-view theme-${game.color}">
       <section class="fair-arena" aria-label="Estacion interactiva de feria">
         <div class="fair-stage-heading">
-          <div>
-            <p class="eyebrow">Semana de la Ciencia</p>
-            <p>Un participante entra al recuadro y responde con la mano.</p>
+          <div class="fair-guide-card">
+            <img src="${ASSETS.mascot}" alt="Carlitos">
+            <div>
+              <p class="eyebrow">Semana de la Ciencia</p>
+              <p>Un participante entra al recuadro y responde con la mano.</p>
+            </div>
           </div>
           <div class="fair-stage-title">
             <strong>Estacion Carlitos</strong>
@@ -594,7 +608,7 @@ function renderMotionOverlay() {
   const game = getGame(state.activeGame) || GAMES[0];
   const cursorStyle = pointerStyle();
   return `
-    <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}">
+    <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}" data-hover-zone="${escapeAttribute(state.vision.hoverZone || "")}" style="--zone-progress:${Math.round(state.vision.hoverProgress * 100)}%">
       <div class="overlay-grid-lines"></div>
       ${renderOverlayProblem(challenge)}
       ${renderOverlayTargets(game, challenge)}
@@ -660,9 +674,10 @@ function renderOverlayTargets(game, challenge) {
     return `
       <div class="camera-zones">
         ${challenge.options.map((option) => `
-          <div class="camera-zone ${state.vision.zone === option.value ? "active" : ""}" data-camera-zone="${escapeAttribute(option.value)}">
+          <div class="camera-zone ${state.vision.zone === option.value ? "active" : ""} ${state.vision.hoverZone === option.value ? "hovering" : ""}" data-camera-zone="${escapeAttribute(option.value)}" style="--zone-progress:${Math.round((state.vision.hoverZone === option.value ? state.vision.hoverProgress : 0) * 100)}%">
             <small>${escapeHtml(option.label)}</small>
             <strong>${escapeHtml(option.count ?? "")}</strong>
+            <span class="zone-hold-meter"><i></i></span>
           </div>
         `).join("")}
       </div>
@@ -715,14 +730,14 @@ function renderAiVisionOverlay() {
 
 function overlayHint(challenge) {
   if (challenge.input === "ai-trainer") return "Entrena con ejemplos variados y luego prueba la matriz.";
-  if (challenge.input === "zone") return "Abre la palma o haz pinza para confirmar.";
+  if (challenge.input === "zone") return "Mantén la mano sobre una zona para seleccionar.";
   if (challenge.input === "fingers-option") return "1 a 4 dedos seleccionan las tarjetas.";
   return "Mano abierta cuenta dedos; OK significa cero.";
 }
 
 function pointerStyle() {
   if (state.vision.handX === null || state.vision.handY === null) return "";
-  const x = clamp(Math.round((1 - state.vision.handX) * 100), 4, 96);
+  const x = clamp(Math.round(state.vision.handX * 100), 4, 96);
   const y = clamp(Math.round(state.vision.handY * 100), 8, 92);
   return `left:${x}%;top:${y}%`;
 }
@@ -1283,10 +1298,13 @@ function startVisionLoop() {
   if (animationFrame) cancelAnimationFrame(animationFrame);
   const loop = () => {
     if (!state.vision.enabled || !state.vision.landmarker || !videoElement) return;
-    if (videoElement.readyState >= 2 && videoElement.currentTime !== state.vision.videoTime) {
+    const now = performance.now();
+    const shouldReadFrame = now - state.vision.lastDetectAt >= VISION_FRAME_INTERVAL_MS;
+    if (shouldReadFrame && videoElement.readyState >= 2 && videoElement.currentTime !== state.vision.videoTime) {
       state.vision.videoTime = videoElement.currentTime;
+      state.vision.lastDetectAt = now;
       if (state.activeGame === "ia") updateAiLivePrediction();
-      const result = state.vision.landmarker.detectForVideo(videoElement, performance.now());
+      const result = state.vision.landmarker.detectForVideo(videoElement, now);
       handleHandResult(result);
     }
     animationFrame = requestAnimationFrame(loop);
@@ -1305,6 +1323,8 @@ function stopCamera(shouldRender = true) {
   state.vision.status = "Camara apagada";
   state.vision.error = "";
   state.vision.errorCode = "";
+  state.vision.lastDetectAt = 0;
+  resetHandTracking();
   if (videoElement) videoElement.srcObject = null;
   if (canvasContext && canvasElement) canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
   if (shouldRender) renderApp();
@@ -1320,17 +1340,16 @@ function stopCameraTracks() {
 function handleHandResult(result) {
   const hands = result.landmarks || [];
   if (!hands.length) {
-    state.vision.handX = null;
-    state.vision.handY = null;
+    resetHandTracking();
     updateVisionReading(null, state.vision.zone, "sin mano", 0);
     clearVisionCanvas();
     return;
   }
 
   const fingers = hands.reduce((total, landmarks) => total + countExtendedFingers(landmarks), 0);
-  const zone = handZone(hands[0]);
+  const center = smoothHandCenter(displayHandCenter(hands[0]));
+  const zone = handZone(center);
   const gesture = detectGesture(hands[0], fingers);
-  const center = handCenter(hands[0]);
   state.vision.handX = center.x;
   state.vision.handY = center.y;
   updateVisionReading(fingers, zone, gesture, Math.min(1, hands.length / 2 + 0.5));
@@ -1351,9 +1370,10 @@ function updateVisionReading(fingers, zone, gesture, confidence = 1) {
   state.vision.zone = zone || "centro";
   state.vision.gesture = gesture || "demo";
   state.vision.confidence = confidence;
-  if (state.vision.stableCount >= 6 && fingers !== null && fingers !== undefined) {
+  if (state.vision.stableCount >= FINGER_STABLE_FRAMES && fingers !== null && fingers !== undefined) {
     state.vision.stableValue = fingers;
   }
+  updateZoneHover(state.vision.zone);
   updateVisionWidgets();
 }
 
@@ -1379,8 +1399,11 @@ function processVisionAnswer(force) {
     return;
   }
 
-  if (challenge.input === "zone" && (force || state.vision.gesture === "palma" || state.vision.gesture === "pinza")) {
-    submitAnswer(state.vision.zone, "mano");
+  if (challenge.input === "zone") {
+    const selectedByHover = state.vision.hoverProgress >= 1;
+    if (force || selectedByHover) {
+      submitAnswer(state.vision.zone, selectedByHover && !force ? "zona" : "mano");
+    }
   }
 }
 
@@ -1402,7 +1425,11 @@ function updateVisionWidgets() {
     if (node) node.textContent = value;
   });
   const overlay = document.querySelector("#motionOverlay");
-  if (overlay) overlay.dataset.zone = state.vision.zone;
+  if (overlay) {
+    overlay.dataset.zone = state.vision.zone;
+    overlay.dataset.hoverZone = state.vision.hoverZone || "";
+    overlay.style.setProperty("--zone-progress", `${Math.round(state.vision.hoverProgress * 100)}%`);
+  }
   const cursor = document.querySelector("#handCursor");
   if (cursor) {
     const style = pointerStyle();
@@ -1410,9 +1437,50 @@ function updateVisionWidgets() {
     if (style) cursor.setAttribute("style", style);
   }
   document.querySelectorAll("[data-camera-zone]").forEach((node) => {
-    node.classList.toggle("active", node.dataset.cameraZone === state.vision.zone);
+    const isActive = node.dataset.cameraZone === state.vision.zone;
+    const isHovering = node.dataset.cameraZone === state.vision.hoverZone;
+    node.classList.toggle("active", isActive);
+    node.classList.toggle("hovering", isHovering);
+    node.style.setProperty("--zone-progress", `${Math.round((isHovering ? state.vision.hoverProgress : 0) * 100)}%`);
   });
   updateAiLiveWidgets();
+}
+
+function updateZoneHover(zone) {
+  const challenge = state.challenge;
+  const canHoverSelect = challenge?.input === "zone"
+    && !state.answered
+    && state.vision.handX !== null
+    && state.vision.handY !== null
+    && Date.now() >= state.vision.lockedUntil;
+  if (!canHoverSelect) {
+    resetZoneHover();
+    return;
+  }
+
+  const now = Date.now();
+  if (state.vision.hoverZone !== zone) {
+    state.vision.hoverZone = zone;
+    state.vision.hoverStartedAt = now;
+    state.vision.hoverProgress = 0;
+    return;
+  }
+
+  state.vision.hoverProgress = clamp((now - state.vision.hoverStartedAt) / ZONE_DWELL_MS, 0, 1);
+}
+
+function resetHandTracking() {
+  state.vision.handX = null;
+  state.vision.handY = null;
+  state.vision.smoothedHandX = null;
+  state.vision.smoothedHandY = null;
+  resetZoneHover();
+}
+
+function resetZoneHover() {
+  state.vision.hoverZone = null;
+  state.vision.hoverStartedAt = 0;
+  state.vision.hoverProgress = 0;
 }
 
 function drawHands(hands) {
@@ -1514,8 +1582,8 @@ function isOkZeroGesture(landmarks) {
   return threeFingersUp >= 2 && indexBent;
 }
 
-function handZone(landmarks) {
-  const center = landmarks.reduce((total, point) => total + point.x, 0) / landmarks.length;
+function handZone(point) {
+  const center = point?.x ?? 0.5;
   if (center < 0.36) return "izquierda";
   if (center > 0.64) return "derecha";
   return "centro";
@@ -1525,6 +1593,29 @@ function handCenter(landmarks) {
   return {
     x: landmarks.reduce((total, point) => total + point.x, 0) / landmarks.length,
     y: landmarks.reduce((total, point) => total + point.y, 0) / landmarks.length,
+  };
+}
+
+function displayHandCenter(landmarks) {
+  const center = handCenter(landmarks);
+  return {
+    x: 1 - center.x,
+    y: center.y,
+  };
+}
+
+function smoothHandCenter(point) {
+  if (state.vision.smoothedHandX === null || state.vision.smoothedHandY === null) {
+    state.vision.smoothedHandX = point.x;
+    state.vision.smoothedHandY = point.y;
+  } else {
+    state.vision.smoothedHandX += (point.x - state.vision.smoothedHandX) * HAND_SMOOTHING;
+    state.vision.smoothedHandY += (point.y - state.vision.smoothedHandY) * HAND_SMOOTHING;
+  }
+
+  return {
+    x: state.vision.smoothedHandX,
+    y: state.vision.smoothedHandY,
   };
 }
 
@@ -1987,6 +2078,7 @@ function submitAnswer(value, source) {
   const concept = conceptStats(state.challenge.conceptKey || game.conceptKey);
 
   state.answered = true;
+  resetZoneHover();
   state.vision.lockedUntil = Date.now() + 1200;
   state.progress.played += 1;
   stats.played += 1;
@@ -2042,6 +2134,7 @@ function newChallenge() {
   state.challenge = createChallenge(state.activeGame);
   state.answered = false;
   state.feedback = null;
+  resetZoneHover();
   renderApp();
 }
 

@@ -74,3 +74,20 @@ Referencia adjunta: prototipo HTML de juego tipo ritmo con estetica arcade infan
   * clasifica por similitud con centroides de entrenamiento;
   * muestra confianza, matriz Real/Predicho y exactitud.
 * La implementacion se inspira en la logica pedagogica de Teachable Machine, pero no depende de una cuenta ni de entrenamiento externo.
+
+## Prompt de mejora - seguimiento de manos y aspecto visual
+
+Fecha de registro: 2026-06-27
+
+> ya funciona el reconocimiento, solo que es lento y medio torpe en seguimiento, mejoralo. Luego debenos lograr que los se puedan seleccionar elementos enla vista llevando la mano sobre una zona o algo asi, luego pensaremos en otras posibilidades como mover objetos como poligonons estirando con la mano a partir del reconocimentro de las manos. Ademas el aspecto es muy toco noada infantil ni moderno
+
+### Decision de implementacion
+
+* Se mantiene la carga MediaPipe estable que ya funcionaba en celular.
+* Se mejora seguimiento sin cambiar modelo:
+  * lectura limitada a ritmo estable;
+  * suavizado del cursor de mano;
+  * coordenadas de seleccion alineadas con el video espejado.
+* Se agrega seleccion por permanencia de la mano sobre zonas del escenario.
+* Se deja planteado como siguiente etapa el arrastre o estiramiento de objetos/poligonos con mano y pinza.
+* Se moderniza la interfaz de feria con una estetica mas suave, infantil y educativa.
