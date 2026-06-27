@@ -1,5 +1,5 @@
-const APP_VERSION = "v0.4.0";
-const BUILD_DATE = "2026-06-26";
+const APP_VERSION = "v0.5.0";
+const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:progress:v2";
 const LEGACY_STORAGE_KEY = "jugando-carlitos:progress:v1";
 
@@ -7,6 +7,8 @@ const ASSETS = {
   hero: "assets/generated/hero_jugando_con_carlitos.png",
   mascot: "assets/generated/carlitos_character_sheet_v01.png",
 };
+
+const ROBOT_MAX_HP = 100;
 
 const DIFFICULTIES = {
   explorar: {
@@ -35,6 +37,39 @@ const DIFFICULTIES = {
   },
 };
 
+const AGE_GROUPS = [
+  {
+    id: "peques",
+    label: "4 a 7",
+    navTitle: "Peques",
+    title: "Pequenos exploradores",
+    subtitle: "Juegos visuales, cortos y manipulables para contar, ordenar y descubrir patrones.",
+    goal: "Reconocer cantidades, comparar, tocar piezas y ganar confianza sin presion.",
+    recommendedDifficulty: "explorar",
+    gameIds: ["semillas", "rio", "patrones"],
+  },
+  {
+    id: "ninos",
+    label: "8 a 12",
+    navTitle: "Ninos",
+    title: "Aventureros matematicos",
+    subtitle: "Retos con calculo mental, fracciones, datos, probabilidad y batalla matematica.",
+    goal: "Practicar velocidad, estrategia, lectura de datos y operaciones combinadas.",
+    recommendedDifficulty: "desafio",
+    gameIds: ["semillas", "rio", "fracciones", "datos", "azar", "barras", "patrones", "robots"],
+  },
+  {
+    id: "mayores",
+    label: "12+",
+    navTitle: "Mayores",
+    title: "Desafio avanzado",
+    subtitle: "Misiones de analisis, patrones, estadistica y estrategia para estudiantes mayores.",
+    goal: "Resolver con argumentos, comparar escenarios y tomar decisiones con datos.",
+    recommendedDifficulty: "experto",
+    gameIds: ["datos", "azar", "barras", "patrones", "robots"],
+  },
+];
+
 const GAMES = [
   {
     id: "semillas",
@@ -45,6 +80,7 @@ const GAMES = [
     level: "Nivel 1",
     mission: "Reunir semillas para abrir la huerta matematica.",
     color: "gold",
+    ages: ["peques", "ninos"],
     mechanic: "El reto aparece como una tarjeta de operacion. Mira los dos grupos, suma y toca la respuesta correcta.",
   },
   {
@@ -56,6 +92,7 @@ const GAMES = [
     level: "Nivel 2",
     mission: "Cruzar el rio construyendo una ruta numerica segura.",
     color: "sky",
+    ages: ["peques", "ninos"],
     mechanic: "Toca las piedras en orden ascendente y luego pulsa comprobar.",
   },
   {
@@ -67,6 +104,7 @@ const GAMES = [
     level: "Nivel 3",
     mission: "Repartir una huerta en partes iguales sin perder el todo.",
     color: "green",
+    ages: ["ninos", "mayores"],
     mechanic: "Pinta la cantidad de partes pedidas y comprueba la fraccion.",
   },
   {
@@ -78,6 +116,7 @@ const GAMES = [
     level: "Nivel 4",
     mission: "Ayudar al vivero a entender sus registros diarios.",
     color: "plum",
+    ages: ["ninos", "mayores"],
     mechanic: "Mira las tarjetas de datos y responde promedio, mediana o moda.",
   },
   {
@@ -89,6 +128,7 @@ const GAMES = [
     level: "Nivel 5",
     mission: "Descubrir que opcion tiene mas oportunidades de aparecer.",
     color: "coral",
+    ages: ["ninos", "mayores"],
     mechanic: "Observa cuantos sectores tiene cada color y elige el mas probable.",
   },
   {
@@ -100,6 +140,7 @@ const GAMES = [
     level: "Nivel 6",
     mission: "Leer un reporte visual de materiales recuperados.",
     color: "green",
+    ages: ["ninos", "mayores"],
     mechanic: "Compara las barras para hallar total o diferencia.",
   },
   {
@@ -111,7 +152,20 @@ const GAMES = [
     level: "Nivel 7",
     mission: "Escuchar la regla secreta de una secuencia numerica.",
     color: "navy",
+    ages: ["peques", "ninos", "mayores"],
     mechanic: "Busca la regla: sumar, restar, duplicar o crecer por cuadrados.",
+  },
+  {
+    id: "robots",
+    title: "Guerra de Robots",
+    concept: "Multiplicacion, parentesis y estrategia",
+    short: "Ataca el escudo rival resolviendo cartas, poderes y calculo mental.",
+    badge: "Piloto de robots",
+    level: "Nivel 8",
+    mission: "Reducir los puntos de vida del robot enemigo con multiplicaciones correctas.",
+    color: "steel",
+    ages: ["ninos", "mayores"],
+    mechanic: "Resuelve tu operacion de cartas. Si aciertas, tu robot ataca; si fallas, el disparo rebota.",
   },
 ];
 
@@ -121,6 +175,7 @@ let challengeTimer = null;
 const state = {
   route: "inicio",
   activeGame: "semillas",
+  activeCategory: "ninos",
   challenge: null,
   answered: false,
   feedback: null,
@@ -132,6 +187,7 @@ initApp();
 
 function initApp() {
   state.activeGame = state.progress.lastGame || "semillas";
+  state.activeCategory = normalizeCategoryId(state.progress.lastCategory || "ninos");
   syncRoute();
   renderApp();
   registerServiceWorker();
@@ -147,9 +203,19 @@ function syncRoute() {
   const hash = decodeURIComponent(window.location.hash.replace(/^#/, "") || "inicio");
   const clean = hash.replace(/^juego-/, "");
   const game = getGame(clean);
+  const category = getAgeGroup(clean);
+
+  if (category) {
+    state.route = "category";
+    state.activeCategory = category.id;
+    state.progress.lastCategory = category.id;
+    writeProgress();
+    return;
+  }
 
   if (game && clean !== "inicio") {
     state.route = "game";
+    state.activeCategory = categoryForGame(game.id, state.progress.lastCategory).id;
     if (state.activeGame !== game.id || !state.challenge) {
       state.activeGame = game.id;
       state.challenge = createChallenge(game.id);
@@ -158,6 +224,7 @@ function syncRoute() {
       state.picked = [];
     }
     state.progress.lastGame = game.id;
+    state.progress.lastCategory = state.activeCategory;
     writeProgress();
     return;
   }
@@ -173,10 +240,10 @@ function renderApp() {
     <header class="app-top">
       <div class="top-inner">
         <a class="brand" href="#inicio">Jugando con Carlitos</a>
-        <nav class="top-game-tabs" aria-label="Pestanas de juegos">
-          ${GAMES.map((game) => `
-            <a href="#${game.id}" class="${state.route === "game" && state.activeGame === game.id ? "active" : ""}">
-              ${escapeHtml(game.title)}
+        <nav class="top-game-tabs" aria-label="Categorias por edad">
+          ${AGE_GROUPS.map((category) => `
+            <a href="#${category.id}" class="${state.activeCategory === category.id && state.route !== "inicio" ? "active" : ""}">
+              ${escapeHtml(category.label)} <span>${escapeHtml(category.navTitle)}</span>
             </a>
           `).join("")}
         </nav>
@@ -191,7 +258,7 @@ function renderApp() {
       </div>
     </header>
 
-    ${state.route === "game" ? renderGameView() : renderHomeView()}
+    ${state.route === "game" ? renderGameView() : state.route === "category" ? renderCategoryView() : renderHomeView()}
 
     <footer class="footer">
       <span>Borrador interno. Personaje e imagenes requieren autorizacion antes de publicacion final.</span>
@@ -212,10 +279,10 @@ function renderHomeView() {
         <div class="hero-copy">
           <p class="eyebrow">Matematicas y estadistica jugando</p>
           <h1>Jugando con Carlitos</h1>
-          <p>Cada juego ahora es una vista propia: entra a una pestana, elige dificultad, resuelve retos, mira tu historial y cambia de juego cuando quieras.</p>
+          <p>Ahora la app se organiza por edades: juegos visuales para 4 a 7, retos activos para 8 a 12 y desafios avanzados para mayores de 12.</p>
           <div class="hero-actions">
-            <a class="hero-button" href="#${last.id}">Continuar: ${escapeHtml(last.title)}</a>
-            <a class="hero-button secondary" href="#mapa">Ver juegos</a>
+            <a class="hero-button" href="#${state.progress.lastCategory || "ninos"}">Entrar por edad</a>
+            <a class="hero-button secondary" href="#${last.id}">Continuar: ${escapeHtml(last.title)}</a>
           </div>
         </div>
         ${renderPlayerCard(unlockedBadges)}
@@ -224,9 +291,13 @@ function renderHomeView() {
 
     <main class="home-view" id="mapa">
       <section class="hub-intro">
-        <p class="eyebrow">Pestanas independientes</p>
-        <h2>Elige una mision</h2>
-        <p>Los juegos no dependen entre si. Puedes practicar una sola habilidad o saltar entre vistas como en una app de juegos.</p>
+        <p class="eyebrow">Vistas por edad</p>
+        <h2>Elige la categoria de aprendizaje</h2>
+        <p>Cada grupo tiene una ruta propia, dificultad sugerida y juegos que calzan mejor con su nivel de lectura, calculo y abstraccion.</p>
+      </section>
+
+      <section class="category-grid" aria-label="Categorias por edad">
+        ${AGE_GROUPS.map((category) => renderCategoryCard(category)).join("")}
       </section>
 
       <section class="game-hub" aria-label="Juegos disponibles">
@@ -245,6 +316,61 @@ function renderHomeView() {
         </div>
       </section>
     </main>
+  `;
+}
+
+function renderCategoryView() {
+  const category = getAgeGroup(state.activeCategory) || AGE_GROUPS[1];
+  const games = gamesForCategory(category.id);
+  const recommended = DIFFICULTIES[category.recommendedDifficulty] || DIFFICULTIES.desafio;
+
+  return `
+    <main class="category-view theme-category-${category.id}">
+      <section class="category-hero">
+        <div>
+          <p class="eyebrow">Categoria ${escapeHtml(category.label)}</p>
+          <h1>${escapeHtml(category.title)}</h1>
+          <p>${escapeHtml(category.subtitle)}</p>
+          <span>${escapeHtml(category.goal)}</span>
+        </div>
+        <aside>
+          <strong>${escapeHtml(recommended.label)}</strong>
+          <p>Dificultad sugerida para esta categoria.</p>
+          <button type="button" data-category-difficulty="${escapeAttribute(category.recommendedDifficulty)}">
+            Usar modo ${escapeHtml(recommended.label)}
+          </button>
+        </aside>
+      </section>
+
+      <section class="category-path">
+        <div class="section-minihead">
+          <p class="eyebrow">Ruta recomendada</p>
+          <h2>Juegos para ${escapeHtml(category.label)}</h2>
+        </div>
+        <div class="game-hub">
+          ${games.map((game) => renderHubCard(game)).join("")}
+        </div>
+      </section>
+    </main>
+  `;
+}
+
+function renderCategoryCard(category) {
+  const games = gamesForCategory(category.id);
+  const stars = games.reduce((total, game) => total + gameStars(game.id), 0);
+  return `
+    <article class="category-card theme-category-${category.id}">
+      <span>${escapeHtml(category.label)}</span>
+      <h3>${escapeHtml(category.title)}</h3>
+      <p>${escapeHtml(category.subtitle)}</p>
+      <div class="category-card-meta">
+        <strong>${games.length}</strong>
+        <small>juegos</small>
+        <strong>${stars}</strong>
+        <small>estrellas</small>
+      </div>
+      <a class="play-link" href="#${category.id}">Abrir categoria</a>
+    </article>
   `;
 }
 
@@ -283,6 +409,7 @@ function renderHubCard(game) {
   const stats = getGameStats(game.id);
   const stars = gameStars(game.id);
   const progress = gameProgressPercent(game.id);
+  const ageLabels = game.ages.map((age) => getAgeGroup(age)?.label).filter(Boolean).join(" / ");
 
   return `
     <article class="hub-card theme-${game.color}">
@@ -294,6 +421,7 @@ function renderHubCard(game) {
       <p>${escapeHtml(game.short)}</p>
       <div class="hub-meta">
         <span>${escapeHtml(game.concept)}</span>
+        <span>${escapeHtml(ageLabels)}</span>
         <span>${stats.correct}/${DIFFICULTIES[state.progress.difficulty].target} aciertos</span>
       </div>
       <div class="mini-progress" aria-label="Progreso del juego">
@@ -419,6 +547,7 @@ function renderBoard(gameId, challenge) {
   if (gameId === "datos") return renderDataBoard(challenge);
   if (gameId === "azar") return renderChanceBoard(challenge);
   if (gameId === "barras") return renderBarBoard(challenge);
+  if (gameId === "robots") return renderRobotBoard(challenge);
   return renderPatternBoard(challenge);
 }
 
@@ -489,6 +618,15 @@ function renderChallengeTools(gameId, challenge) {
     `;
   }
 
+  if (gameId === "robots") {
+    return `
+      <div class="challenge-tools">
+        <button type="button" data-reset-robot-battle>Reparar robots</button>
+        <span>Escudo negro divide el dano recibido. Par igual duplica el ataque.</span>
+      </div>
+    `;
+  }
+
   return "";
 }
 
@@ -539,6 +677,12 @@ function bindEvents() {
     });
   });
 
+  document.querySelector("[data-category-difficulty]")?.addEventListener("click", (event) => {
+    state.progress.difficulty = event.currentTarget.dataset.categoryDifficulty;
+    writeProgress();
+    renderApp();
+  });
+
   document.querySelectorAll("[data-answer]").forEach((button) => {
     button.addEventListener("click", () => submitAnswer(button.dataset.answer, button));
   });
@@ -579,6 +723,11 @@ function bindEvents() {
     state.challenge.playing = true;
     renderApp();
   });
+  document.querySelector("[data-reset-robot-battle]")?.addEventListener("click", () => {
+    state.progress.robotBattle = defaultRobotBattle();
+    writeProgress();
+    newChallenge();
+  });
 
   scheduleChallengeTimeout();
 }
@@ -601,6 +750,7 @@ function createChallenge(gameId) {
   else if (gameId === "datos") challenge = createDataChallenge();
   else if (gameId === "azar") challenge = createChanceChallenge();
   else if (gameId === "barras") challenge = createBarChallenge();
+  else if (gameId === "robots") challenge = createRobotChallenge();
   else challenge = createPatternChallenge();
   return withChallengeMeta(challenge);
 }
@@ -869,6 +1019,167 @@ function renderPatternBoard(challenge) {
   `;
 }
 
+function createRobotChallenge() {
+  resetRobotBattleIfEnded();
+  const playerCards = drawRobotHand();
+  const enemyCards = drawRobotHand();
+  const playerProfile = robotAttackProfile(playerCards);
+  const enemyProfile = robotAttackProfile(enemyCards);
+  const playerShield = hasRobotShield(playerCards);
+  const enemyShield = hasRobotShield(enemyCards);
+  const damageToEnemy = enemyShield ? Math.ceil(playerProfile.damage / 2) : playerProfile.damage;
+  const damageToPlayer = playerShield ? Math.ceil(enemyProfile.damage / 2) : enemyProfile.damage;
+
+  return {
+    prompt: `Guerra de Robots: resuelve ${playerProfile.operation}. Cuanta energia carga tu ataque?`,
+    hint: "Multiplica primero. Si hay poder especial, mira como cambia el dano efectivo.",
+    summary: `Robot: ${robotHandLabel(playerCards)} -> ${playerProfile.operation}`,
+    answer: playerProfile.answer,
+    options: makeNumberOptions(playerProfile.answer, 4, 1, Math.max(120, playerProfile.answer + 120)),
+    playerCards,
+    enemyCards,
+    playerProfile,
+    enemyProfile,
+    playerShield,
+    enemyShield,
+    damageToEnemy,
+    damageToPlayer,
+  };
+}
+
+function renderRobotBoard(challenge) {
+  const battle = ensureRobotBattle();
+  return `
+    <div class="robot-board">
+      <div class="robot-hud">
+        ${renderRobotHp("Tu robot", battle.playerHp, "player")}
+        ${renderRobotHp("Robot rival", battle.enemyHp, "enemy")}
+      </div>
+      <div class="robot-arena">
+        <section class="robot-panel player">
+          <span class="robot-label">Tus cartas</span>
+          <div class="robot-cards">${challenge.playerCards.map(renderRobotCard).join("")}</div>
+          <strong>${escapeHtml(challenge.playerProfile.operation)}</strong>
+          <p>${escapeHtml(robotPowerText(challenge.playerProfile, challenge.playerShield))}</p>
+          <em>Dano efectivo: ${challenge.damageToEnemy}</em>
+        </section>
+        <section class="robot-panel enemy">
+          <span class="robot-label">Cartas del rival</span>
+          <div class="robot-cards">${challenge.enemyCards.map(renderRobotCard).join("")}</div>
+          <strong>${escapeHtml(challenge.enemyProfile.operation)}</strong>
+          <p>${escapeHtml(robotPowerText(challenge.enemyProfile, challenge.enemyShield))}</p>
+          <em>Dano que recibirias: ${challenge.damageToPlayer}</em>
+        </section>
+      </div>
+      <div class="robot-scoreline">
+        <span>Victorias: <strong>${battle.wins || 0}</strong></span>
+        <span>Derrotas: <strong>${battle.losses || 0}</strong></span>
+        <span>Rondas: <strong>${battle.rounds || 0}</strong></span>
+      </div>
+    </div>
+  `;
+}
+
+function renderRobotHp(label, hp, side) {
+  const safeHp = Math.max(0, Math.min(ROBOT_MAX_HP, Number(hp) || 0));
+  return `
+    <div class="robot-hp ${side}">
+      <div>
+        <strong>${escapeHtml(label)}</strong>
+        <span>${safeHp}/${ROBOT_MAX_HP} PV</span>
+      </div>
+      <i style="width:${safeHp}%"></i>
+    </div>
+  `;
+}
+
+function renderRobotCard(card) {
+  return `
+    <div class="robot-card ${card.color}">
+      <span>${escapeHtml(card.label)}</span>
+      <small>${escapeHtml(card.suitName)}</small>
+      <em>vale ${card.value}</em>
+    </div>
+  `;
+}
+
+function drawRobotHand() {
+  return [drawRobotCard(), drawRobotCard()];
+}
+
+function drawRobotCard() {
+  const simpleRanks = [
+    { label: "A", value: 1 },
+    { label: "2", value: 2 },
+    { label: "3", value: 3 },
+    { label: "4", value: 4 },
+    { label: "5", value: 5 },
+    { label: "6", value: 6 },
+    { label: "7", value: 7 },
+    { label: "8", value: 8 },
+    { label: "9", value: 9 },
+  ];
+  const advancedRanks = simpleRanks.concat([
+    { label: "10", value: 10 },
+    { label: "J", value: 11 },
+    { label: "Q", value: 12 },
+    { label: "K", value: 10 },
+  ]);
+  const suits = [
+    { symbol: "C", suitName: "trebol", color: "black" },
+    { symbol: "P", suitName: "pica", color: "black" },
+    { symbol: "H", suitName: "corazon", color: "red" },
+    { symbol: "D", suitName: "diamante", color: "red" },
+  ];
+  const ranks = state.progress.difficulty === "explorar" ? simpleRanks : advancedRanks;
+  const rank = ranks[rand(0, ranks.length - 1)];
+  const suit = suits[rand(0, suits.length - 1)];
+  return { ...rank, ...suit };
+}
+
+function robotAttackProfile(cards) {
+  const [first, second] = cards;
+  const sameValue = first.value === second.value;
+  const calculatorMode = first.color !== second.color
+    && first.value <= 9
+    && second.value <= 9
+    && state.progress.difficulty !== "explorar";
+  const product = first.value * second.value;
+  const answer = calculatorMode ? Number(`${first.value}${second.value}`) * 10 : product;
+  let damage = answer;
+  const powers = [];
+
+  if (calculatorMode) powers.push("Modo calculadora");
+  if (sameValue) {
+    powers.push("Mega-Robot");
+    damage *= 2;
+  }
+
+  return {
+    answer,
+    damage,
+    operation: calculatorMode
+      ? `(${first.value}${second.value}) x 10`
+      : `${first.value} x ${second.value}`,
+    powers,
+  };
+}
+
+function hasRobotShield(cards) {
+  return cards.every((card) => card.color === "black");
+}
+
+function robotPowerText(profile, shield) {
+  const powers = profile.powers.slice();
+  if (shield) powers.push("Escudo protector");
+  if (!powers.length) return "Ataque normal: calcula bien para disparar.";
+  return `Poderes activos: ${powers.join(", ")}.`;
+}
+
+function robotHandLabel(cards) {
+  return cards.map((card) => `${card.label}${card.symbol}`).join(" + ");
+}
+
 function submitAnswer(value, button) {
   if (state.answered) return;
   const answer = normalizeAnswer(state.challenge.answer);
@@ -919,6 +1230,12 @@ function scoreResult(ok, selectedValue) {
   const difficulty = DIFFICULTIES[state.progress.difficulty] || DIFFICULTIES.desafio;
   const elapsedMs = Date.now() - (state.challenge.startedAt || Date.now());
   const speedBonus = ok ? Math.max(0, Math.ceil((1 - Math.min(1, elapsedMs / state.challenge.timeLimit)) * 5)) : 0;
+
+  if (game.id === "robots") {
+    scoreRobotResult(ok, selectedValue, stats, difficulty, elapsedMs, speedBonus);
+    return;
+  }
+
   state.progress.played += 1;
   stats.played += 1;
 
@@ -952,6 +1269,80 @@ function scoreResult(ok, selectedValue) {
     prompt: state.challenge.summary || state.challenge.prompt,
     selected: selectedValue || "",
     answer: state.challenge.answer,
+    elapsed: Math.round(elapsedMs / 1000),
+    speedBonus,
+  });
+
+  writeProgress();
+  window.setTimeout(renderApp, 260);
+}
+
+function scoreRobotResult(ok, selectedValue, stats, difficulty, elapsedMs, speedBonus) {
+  const game = getGame("robots");
+  const battle = ensureRobotBattle();
+  const challenge = state.challenge;
+  state.progress.played += 1;
+  stats.played += 1;
+  battle.rounds = (battle.rounds || 0) + 1;
+
+  if (ok) {
+    state.progress.correct += 1;
+    stats.correct += 1;
+    state.progress.streak += 1;
+    stats.bestStreak = Math.max(stats.bestStreak || 0, state.progress.streak);
+    stats.bestSpeed = Math.max(stats.bestSpeed || 0, speedBonus);
+
+    battle.enemyHp = Math.max(0, battle.enemyHp - challenge.damageToEnemy);
+    battle.playerHp = Math.max(0, battle.playerHp - challenge.damageToPlayer);
+
+    let points = 12
+      + difficulty.bonus
+      + Math.min(8, state.progress.streak)
+      + speedBonus
+      + Math.min(25, Math.ceil(challenge.damageToEnemy / 8));
+    let outcome = `Hiciste ${challenge.damageToEnemy} de dano y recibiste ${challenge.damageToPlayer}.`;
+
+    if (battle.enemyHp <= 0 && battle.playerHp <= 0) {
+      battle.wins = (battle.wins || 0) + 1;
+      battle.losses = (battle.losses || 0) + 1;
+      points += 20;
+      outcome = `${outcome} Doble final: ambos robots quedaron sin energia.`;
+    } else if (battle.enemyHp <= 0) {
+      battle.wins = (battle.wins || 0) + 1;
+      points += 40;
+      outcome = `${outcome} Victoria: el escudo rival llego a 0.`;
+    } else if (battle.playerHp <= 0) {
+      battle.losses = (battle.losses || 0) + 1;
+      outcome = `${outcome} Tu robot quedo sin energia; toca reparar para seguir.`;
+    }
+
+    state.progress.score += points;
+    state.feedback = {
+      ok: true,
+      message: `Ataque correcto. +${points} puntos. ${outcome}`,
+    };
+  } else {
+    if (selectedValue === "tiempo") stats.timeouts = (stats.timeouts || 0) + 1;
+    state.progress.streak = 0;
+    const penalty = selectedValue === "tiempo" ? 15 : 10;
+    battle.playerHp = Math.max(0, battle.playerHp - penalty);
+    if (battle.playerHp <= 0) battle.losses = (battle.losses || 0) + 1;
+    state.feedback = {
+      ok: false,
+      message: selectedValue === "tiempo"
+        ? `Se agoto el turno. La energia correcta era ${challenge.answer}; tu robot recibe ${penalty} de rebote.`
+        : `Tu robot fallo el disparo. La energia correcta era ${challenge.answer}; rebote de ${penalty} PV.`,
+    };
+  }
+
+  playTone(ok);
+
+  state.progress.completed[game.id] = gameStars(game.id) > 0 || ok;
+  pushHistory(game.id, {
+    ok,
+    prompt: `${challenge.summary} | dano ${ok ? challenge.damageToEnemy : 0}`,
+    selected: selectedValue || "",
+    answer: challenge.answer,
     elapsed: Math.round(elapsedMs / 1000),
     speedBonus,
   });
@@ -1014,9 +1405,69 @@ function getGame(id) {
   return GAMES.find((game) => game.id === id);
 }
 
+function getAgeGroup(id) {
+  return AGE_GROUPS.find((group) => group.id === id);
+}
+
+function normalizeCategoryId(id) {
+  return getAgeGroup(id)?.id || "ninos";
+}
+
+function gamesForCategory(categoryId) {
+  const category = getAgeGroup(categoryId) || AGE_GROUPS[1];
+  return category.gameIds.map(getGame).filter(Boolean);
+}
+
+function categoryForGame(gameId, preferredCategoryId) {
+  const preferred = getAgeGroup(preferredCategoryId);
+  if (preferred?.gameIds.includes(gameId)) return preferred;
+  return AGE_GROUPS.find((category) => category.gameIds.includes(gameId)) || AGE_GROUPS[1];
+}
+
 function accuracy() {
   if (!state.progress.played) return 0;
   return state.progress.correct / state.progress.played;
+}
+
+function defaultRobotBattle() {
+  return {
+    playerHp: ROBOT_MAX_HP,
+    enemyHp: ROBOT_MAX_HP,
+    wins: 0,
+    losses: 0,
+    rounds: 0,
+  };
+}
+
+function normalizeRobotBattle(value) {
+  const base = defaultRobotBattle();
+  if (!value || typeof value !== "object") return base;
+  const playerHp = Number(value.playerHp);
+  const enemyHp = Number(value.enemyHp);
+  return {
+    playerHp: Number.isFinite(playerHp) ? Math.max(0, Math.min(ROBOT_MAX_HP, playerHp)) : ROBOT_MAX_HP,
+    enemyHp: Number.isFinite(enemyHp) ? Math.max(0, Math.min(ROBOT_MAX_HP, enemyHp)) : ROBOT_MAX_HP,
+    wins: Math.max(0, Number(value.wins) || 0),
+    losses: Math.max(0, Number(value.losses) || 0),
+    rounds: Math.max(0, Number(value.rounds) || 0),
+  };
+}
+
+function ensureRobotBattle() {
+  state.progress.robotBattle = normalizeRobotBattle(state.progress.robotBattle);
+  return state.progress.robotBattle;
+}
+
+function resetRobotBattleIfEnded() {
+  const battle = ensureRobotBattle();
+  if (battle.playerHp > 0 && battle.enemyHp > 0) return battle;
+  state.progress.robotBattle = {
+    ...defaultRobotBattle(),
+    wins: battle.wins || 0,
+    losses: battle.losses || 0,
+  };
+  writeProgress();
+  return state.progress.robotBattle;
 }
 
 function defaultProgress() {
@@ -1031,6 +1482,8 @@ function defaultProgress() {
     soundOn: false,
     difficulty: "desafio",
     lastGame: "semillas",
+    lastCategory: "ninos",
+    robotBattle: defaultRobotBattle(),
     statsByGame: {},
     historyByGame: {},
   };
@@ -1052,6 +1505,8 @@ function readProgress() {
       statsByGame: parsed.statsByGame || {},
       historyByGame: parsed.historyByGame || {},
       lastGame: parsed.lastGame || "semillas",
+      lastCategory: normalizeCategoryId(parsed.lastCategory || "ninos"),
+      robotBattle: normalizeRobotBattle(parsed.robotBattle),
     };
   } catch (error) {
     return base;

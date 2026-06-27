@@ -8,9 +8,9 @@ Repositorio:
 
 ## Estado
 
-Version actual: `v0.4.0`
+Version actual: `v0.5.0`
 
-La version `v0.4.0` mantiene cada juego como vista independiente (`#semillas`, `#rio`, `#fracciones`, `#datos`, `#azar`, `#barras`, `#patrones`) y agrega una capa mas jugable: temporizador visual, bonus por rapidez, sonido opcional, atajos de teclado, herramientas especificas por juego y distractores mas cercanos a la respuesta correcta.
+La version `v0.5.0` organiza la app por edades y mantiene cada juego como vista independiente. Agrega vistas de categoria (`#peques`, `#ninos`, `#mayores`) y suma el juego `Guerra de Robots`, una batalla matematica con cartas, puntos de vida, escudos, dano, poderes y calculo mental.
 
 Arquitectura:
 
@@ -32,6 +32,13 @@ assets/generated/       Imagenes de Carlitos reutilizadas como referencia visual
 * `Rueda del azar`: probabilidad.
 * `Grafico reciclador`: lectura de graficos de barras.
 * `Ritmo de patrones`: secuencias numericas.
+* `Guerra de Robots`: multiplicacion, parentesis, cartas, poderes y estrategia.
+
+## Categorias por edad
+
+* `#peques`: 4 a 7 anos. Juegos visuales y manipulables para contar, ordenar y reconocer patrones simples.
+* `#ninos`: 8 a 12 anos. Retos activos de calculo, fracciones, datos, probabilidad, graficos, patrones y batalla matematica.
+* `#mayores`: mayores de 12 anos. Desafios de analisis, estadistica, probabilidad, patrones y estrategia.
 
 ## Experiencia de usuario
 
@@ -56,6 +63,15 @@ Incluye:
   * girar rueda;
   * resaltar extremos del grafico;
   * marcar ritmo de patrones;
+  * reparar batalla de robots;
+* `Guerra de Robots` con:
+  * cartas con valores A=1, J=11, Q=12, K=10;
+  * 100 puntos de vida por robot;
+  * ataque por multiplicacion;
+  * escudo con dos cartas negras;
+  * dano doble con dos cartas del mismo valor;
+  * modo calculadora para cartas roja/negra de 1 a 9;
+  * rebote de dano cuando la respuesta es incorrecta;
 * puntos, racha, estrellas e insignias;
 * mision diaria y misiones por nivel;
 * control local para reducir animaciones;
@@ -91,6 +107,9 @@ Rutas utiles:
 
 ```text
 http://127.0.0.1:8790/#inicio
+http://127.0.0.1:8790/#peques
+http://127.0.0.1:8790/#ninos
+http://127.0.0.1:8790/#mayores
 http://127.0.0.1:8790/#semillas
 http://127.0.0.1:8790/#rio
 http://127.0.0.1:8790/#fracciones
@@ -98,6 +117,7 @@ http://127.0.0.1:8790/#datos
 http://127.0.0.1:8790/#azar
 http://127.0.0.1:8790/#barras
 http://127.0.0.1:8790/#patrones
+http://127.0.0.1:8790/#robots
 ```
 
 ## Publicacion

@@ -620,3 +620,132 @@
 * Mantener microinteracciones por juego: cada vista debe ofrecer al menos una accion propia adicional al boton de responder.
 * No copiar codigo de repositorios externos; adaptar patrones pedagogicos y ludicos.
 * Para nuevos juegos, exigir prueba headless que confirme que cada herramienta cambia estado real en pantalla.
+
+## 2026-06-27 07:22
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.5.0`
+
+### Objetivo de la intervencion
+
+* Volver a la app de juegos y separar la experiencia por categorias de edad:
+  * 4 a 7 anos;
+  * 8 a 12 anos;
+  * mayores de 12 anos.
+* Mejorar la calidad e interactividad de los juegos.
+* Incorporar la idea de `Guerra de Robots: La Batalla Matematica` como juego interactivo de multiplicacion, estrategia y calculo mental.
+
+### Diagnostico inicial
+
+* La app `v0.4.0` ya tenia vistas independientes por juego y una capa arcade con temporizador, sonido opcional, atajos y herramientas.
+* Faltaba una organizacion pedagogica por edad.
+* Faltaba un juego con mecanica mas rica que combinara operaciones, consecuencias, estrategia y estado persistente de una partida.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.5.0`.
+* Se agregaron categorias por edad:
+  * `#peques`: pequenos exploradores, 4 a 7 anos;
+  * `#ninos`: aventureros matematicos, 8 a 12 anos;
+  * `#mayores`: desafio avanzado, mayores de 12 anos.
+* Se agregaron tarjetas de categoria en el inicio.
+* Se agregaron vistas separadas por categoria con dificultad sugerida.
+* Se agrego el juego `#robots`, `Guerra de Robots`.
+* Se implemento en `Guerra de Robots`:
+  * cartas con valores A=1, J=11, Q=12 y K=10;
+  * puntos de vida de jugador y rival;
+  * ataque por multiplicacion;
+  * escudo si las dos cartas son negras;
+  * dano doble si las cartas tienen el mismo valor;
+  * modo calculadora para cartas roja/negra de 1 a 9;
+  * rebote de dano por error o por tiempo agotado;
+  * victorias, derrotas y rondas persistidas en `localStorage`;
+  * boton `Reparar robots`.
+* Se actualizo cache-busting en `index.html` y `service-worker.js`.
+* Se actualizo `README.md`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `node --check app.js`
+* `node --check service-worker.js`
+
+### Resultados verificados
+
+* `app.js` no presenta errores de sintaxis.
+* `service-worker.js` no presenta errores de sintaxis.
+* Pendiente: validacion HTTP local, prueba Playwright y verificacion publica despues del push.
+
+### Pruebas realizadas
+
+* Validacion de sintaxis inicial.
+
+### Errores o incidentes
+
+* No se detectaron errores de sintaxis en la primera validacion.
+* Persisten advertencias normales de Git por LF/CRLF en Windows.
+
+### Soluciones aplicadas
+
+* La separacion por edades se implemento con rutas hash y estado local, sin backend ni datos personales.
+* La batalla de robots se integro al motor existente de retos, progreso, historial, temporizador y dificultad.
+* La version `v0.5.0` mantiene la app como GitHub Pages estatica y PWA basica.
+
+### Pendientes
+
+* Validar visualmente en escritorio y movil.
+* Probar navegacion por `#peques`, `#ninos`, `#mayores` y `#robots`.
+* Publicar y verificar `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.5.0`.
+* Completar esta bitacora con evidencia de verificacion final.
+
+### Riesgos
+
+* La figura de Carlitos requiere autorizacion formal antes de publicacion final.
+* El modo de batalla puede requerir ajuste pedagogico despues de probar con ninos reales.
+* El temporizador puede generar presion en algunos estudiantes; se conserva control para reducir animaciones y dificultad `Explorar`.
+
+### Recomendaciones
+
+* En futuras iteraciones, crear modo docente por edad con objetivos curriculares y sugerencias de acompanamiento.
+* Agregar variantes sin temporizador para estudiantes que requieran mayor tiempo.
+* Preparar imagenes especificas de Carlitos para la batalla de robots y para cada categoria de edad.
+
+### Actualizacion de verificacion local
+
+* Se ejecuto `git diff --check` sin errores de whitespace, solo con advertencias normales LF/CRLF de Windows.
+* Se ejecuto servidor local:
+  * `python -m http.server 8790 --bind 127.0.0.1`
+* Se verificaron respuestas HTTP `200`:
+  * `http://127.0.0.1:8790/`
+  * `http://127.0.0.1:8790/app.js?v=0.5.0`
+  * `http://127.0.0.1:8790/styles.css?v=0.5.0`
+  * `http://127.0.0.1:8790/service-worker.js`
+* Se ejecuto prueba Playwright con Python mediante script temporal `_tmp_v050_check.py`.
+* Resultado de prueba funcional: `jugando v0.5.0 age categories and robots check OK`.
+* La prueba verifico:
+  * `#peques` muestra `Pequenos exploradores` y no muestra `Guerra de Robots`;
+  * `#ninos` muestra `Aventureros matematicos` e incluye `Guerra de Robots`;
+  * `#mayores` muestra `Desafio avanzado` e incluye juegos de analisis;
+  * `#robots` muestra tablero, 2 barras de vida, 4 cartas, 4 opciones, feedback e historial despues de responder;
+  * `Reparar robots` devuelve la vida a `100/100 PV`.
+* Se generaron capturas locales ignoradas por Git:
+  * `test-results/v050_local_ninos.png`;
+  * `test-results/v050_local_robots.png`;
+  * `test-results/v050_local_mobile_peques.png`.
+* La revision visual no detecto solapes criticos en escritorio ni movil.
