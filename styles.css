@@ -331,7 +331,7 @@ h3 {
 .fair-mission-grid {
   display: grid;
   gap: 0.32rem;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .fair-mission-card {
@@ -385,6 +385,216 @@ h3 {
 .fair-demo {
   color: var(--green-950);
   grid-column: 1 / -1;
+}
+
+.ai-trainer-panel {
+  background: #f8fbfa;
+  border: 2px solid rgba(5, 39, 25, 0.16);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.fair-ai-trainer {
+  grid-column: 1 / -1;
+}
+
+.ai-trainer-head {
+  align-items: end;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.48fr);
+}
+
+.ai-trainer-head span,
+.ai-test-row span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ai-trainer-head strong {
+  color: var(--green-950);
+  display: block;
+  font-size: 1.05rem;
+  line-height: 1.05;
+}
+
+.ai-trainer-head em {
+  color: var(--green-900);
+  font-size: 0.86rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.ai-class-grid,
+.ai-action-row,
+.ai-test-row {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ai-class-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ai-class-card {
+  align-items: center;
+  background: var(--white);
+  box-shadow: none;
+  color: var(--green-950);
+  display: grid;
+  gap: 0.12rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  justify-items: start;
+  min-height: 58px;
+  padding: 0.45rem 0.58rem;
+}
+
+.ai-class-card.active {
+  background: var(--yellow);
+}
+
+.ai-class-card b {
+  font-size: 1.55rem;
+  grid-row: span 2;
+  line-height: 1;
+}
+
+.ai-class-card span {
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ai-class-card small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.ai-action-row {
+  grid-template-columns: minmax(180px, 1.2fr) repeat(3, minmax(130px, 0.7fr));
+}
+
+.ai-test-row {
+  align-items: center;
+  grid-template-columns: auto repeat(3, minmax(120px, 1fr));
+}
+
+.ai-results-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.2fr);
+}
+
+.ai-board {
+  background: linear-gradient(135deg, rgba(99, 83, 128, 0.1), rgba(99, 183, 208, 0.14));
+  border: 2px solid rgba(5, 39, 25, 0.14);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(3, minmax(90px, 0.5fr)) minmax(180px, 1fr);
+  padding: 0.75rem;
+}
+
+.ai-board-kpi,
+.ai-board-prediction,
+.ai-confidence,
+.ai-matrix {
+  background: var(--white);
+  border: 2px solid rgba(5, 39, 25, 0.12);
+  border-radius: 8px;
+  padding: 0.55rem;
+}
+
+.ai-board-kpi strong,
+.ai-board-prediction strong {
+  color: var(--green-950);
+  display: block;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.ai-board-kpi span,
+.ai-board-prediction span,
+.ai-board-prediction small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.ai-confidence {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ai-confidence > strong,
+.ai-matrix-title strong {
+  color: var(--green-950);
+}
+
+.ai-confidence-row {
+  align-items: center;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 86px minmax(0, 1fr) 42px;
+}
+
+.ai-confidence-row span,
+.ai-confidence-row em,
+.ai-matrix-title span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.ai-confidence-row i {
+  background: linear-gradient(90deg, var(--plum), var(--sky-strong));
+  border-radius: 999px;
+  display: block;
+  height: 12px;
+  min-width: 3px;
+}
+
+.ai-matrix {
+  overflow-x: auto;
+}
+
+.ai-matrix-title {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+}
+
+.ai-matrix table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.ai-matrix th,
+.ai-matrix td {
+  border: 1px solid rgba(5, 39, 25, 0.16);
+  font-weight: 900;
+  padding: 0.38rem;
+  text-align: center;
+}
+
+.ai-matrix th {
+  background: var(--mint);
+  color: var(--green-950);
+  font-size: 0.76rem;
+}
+
+.ai-matrix td.hit {
+  background: rgba(21, 245, 154, 0.18);
+  color: var(--green-950);
 }
 
 .fair-demo summary {
@@ -857,6 +1067,72 @@ h3 {
   color: #ffe68a;
   font-size: clamp(1.7rem, 5vw, 4.2rem);
   line-height: 0.95;
+}
+
+.ai-vision-overlay {
+  display: grid;
+  gap: 0.65rem;
+  left: 50%;
+  max-width: min(860px, calc(100% - 2rem));
+  pointer-events: none;
+  position: absolute;
+  top: 33%;
+  transform: translateX(-50%);
+  width: min(860px, calc(100% - 2rem));
+  z-index: 3;
+}
+
+.ai-live-card,
+.ai-question-card {
+  background: rgba(5, 39, 25, 0.7);
+  border: 2px solid rgba(255, 210, 63, 0.58);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.18rem;
+  justify-items: center;
+  padding: 0.62rem;
+  text-align: center;
+}
+
+.ai-live-card span,
+.ai-live-card small,
+.ai-question-card span {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.ai-live-card strong {
+  color: #ffe68a;
+  font-size: clamp(1.9rem, 4.2vw, 3.4rem);
+  line-height: 1;
+}
+
+.ai-sample-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: center;
+}
+
+.ai-sample-strip span {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(5, 39, 25, 0.14);
+  border-radius: 999px;
+  color: var(--green-950);
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.24rem 0.6rem;
+}
+
+.ai-question-card {
+  justify-self: center;
+  max-width: 440px;
+  padding: 0.5rem 0.7rem;
+}
+
+.ai-question-card strong {
+  color: var(--yellow);
 }
 
 .overlay-grid-lines {
@@ -1867,6 +2143,14 @@ h3 {
     justify-items: start;
     text-align: left;
   }
+
+  .ai-trainer-head,
+  .ai-action-row,
+  .ai-test-row,
+  .ai-results-grid,
+  .ai-board {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1937,10 +2221,18 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .ai-class-grid {
+    grid-template-columns: 1fr;
+  }
+
   .overlay-problem {
     max-width: calc(100% - 1.4rem);
     min-width: 0;
     top: 3.15rem;
+  }
+
+  .ai-vision-overlay {
+    top: 38%;
   }
 
   .camera-zones {
@@ -1991,6 +2283,12 @@ h3 {
   .overlay-problem span,
   .overlay-problem small {
     font-size: 0.68rem;
+  }
+
+  .ai-matrix th,
+  .ai-matrix td {
+    font-size: 0.72rem;
+    padding: 0.3rem;
   }
 
   .camera-choice {

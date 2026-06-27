@@ -1,6 +1,6 @@
 # Secuencia de prompts - Jugando con Carlitos
 
-Fecha de ultima edicion: 2026-06-25
+Fecha de ultima edicion: 2026-06-27
 
 Proyecto: Jugando con Carlitos
 
@@ -53,3 +53,24 @@ Referencia adjunta: prototipo HTML de juego tipo ritmo con estetica arcade infan
 * Priorizar juegos cortos, visuales, verificables y aptos para celular.
 * Mantener version visible y cache-busting.
 * Adaptar la inspiracion visual sin copiar el codigo ni el tema musical original: la app conserva foco en matematicas, estadistica y aprendizaje con Carlitos.
+
+## Prompt de nueva rama - La Maquina que Aprende
+
+> procura incorporar esta idea en una nueva rama del mismo repo
+>
+> 5. “La Máquina que Aprende”: niños entrenan una IA en vivo
+>
+> Los propios niños entrenan un modelo de clasificación. Por ejemplo: piedra lisa vs piedra rugosa, hoja alargada vs hoja redondeada, triángulo vs cuadrado vs círculo, objeto natural vs objeto artificial, reciclable vs no reciclable, sólido, líquido representado en tarjeta, gas representado en tarjeta.
+>
+> Misión: responder preguntas científicas sobre pocos datos, luz, color, sesgo, error y generalización. Conceptos: aprendizaje supervisado, datos de entrenamiento, etiquetas, error de clasificación, sesgo de datos, generalización, matriz de confusión.
+
+### Decision de implementacion
+
+* Se creo la rama `feature/maquina-que-aprende-feria`.
+* Se incorporo una mision 7 experimental: `La Maquina que Aprende`.
+* Para sostener la feria sin depender de servicios externos, se implemento un clasificador local didactico:
+  * captura caracteristicas simples del cuadro de camara;
+  * guarda ejemplos etiquetados por clase;
+  * clasifica por similitud con centroides de entrenamiento;
+  * muestra confianza, matriz Real/Predicho y exactitud.
+* La implementacion se inspira en la logica pedagogica de Teachable Machine, pero no depende de una cuenta ni de entrenamiento externo.
