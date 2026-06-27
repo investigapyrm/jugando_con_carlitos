@@ -12,11 +12,11 @@ URL publica:
 
 ## Estado
 
-Version actual: `v0.6.3`
+Version actual: `v0.6.4`
 
-La version `v0.6.3` mantiene la experiencia de juego corporal y agrega una capa de `portales conceptuales`: cada reto muestra la estrategia antes de responder y, al finalizar, explica los pasos, el modelo mental y el concepto trabajado.
+La version `v0.6.4` mantiene la experiencia de juego corporal y agrega una capa de `portales conceptuales`: cada reto muestra la estrategia antes de responder y, al finalizar, explica los pasos, el modelo mental y el concepto trabajado.
 
-Tambien mejora el flujo de camara: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva siempre el modo demo. El detector de manos intenta cargar desde `jsDelivr` y, si esa fuente falla, usa `unpkg` como respaldo.
+Tambien conserva el flujo de camara estable de la version anterior que funcionaba en celular: si el navegador bloquea permisos o no encuentra video, la app muestra pasos concretos para habilitar la camara y conserva siempre el modo demo.
 
 La camara es opcional: todos los juegos conservan controles tactiles y modo demo para aula, proyector, navegadores sin permisos o dispositivos sin camara.
 
@@ -91,8 +91,6 @@ La camara y el detector se tratan como dos estados separados:
 * `Manos listas`: el detector de dedos y movimientos esta funcionando.
 
 Si la camara no esta disponible o falla el permiso, la app cambia a modo demo y sigue funcionando con botones. En ese caso muestra una guia breve para revisar candado/icono de camara, permisos del sitio, recarga y origen HTTPS. Si el video funciona pero no carga el detector, la app mantiene la vista de camara activa y permite jugar con modo demo.
-
-La app incluye `favicon.svg` para evitar errores 404 de icono del navegador que pueden confundirse con fallos de camara en la consola.
 
 ## Ideas tomadas de repositorios Git
 

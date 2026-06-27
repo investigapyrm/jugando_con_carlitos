@@ -1399,3 +1399,101 @@
 * URL recomendada para prueba: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.3`
 * No se reprodujo el 404 en prueba publica automatizada; se elimino el 404 probable de favicon y se agrego respaldo de CDN para el detector.
 * Pendiente: prueba con camara fisica real del usuario y, si falla, capturar la URL exacta del recurso 404.
+
+## 2026-06-27 10:52
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.6.4`
+
+### Objetivo de la intervencion
+
+* Atender el reporte del usuario: `v0.6.3` no funciona en celular y la version anterior si funcionaba.
+
+### Diagnostico inicial
+
+* El repo local estaba limpio y sincronizado.
+* El cambio `v0.6.3` agrego fuente alternativa para MediaPipe y `favicon.svg`.
+* Aunque la prueba automatizada con camara falsa pasaba, el usuario confirmo que en celular dejo de funcionar.
+* Criterio adoptado: restaurar el flujo de camara estable de la version anterior y publicar como cache nuevo.
+
+### Acciones realizadas
+
+* Se actualizo la app a `v0.6.4`.
+* Se restauro el cargador MediaPipe simple:
+  * `VISION_BUNDLE_URL`;
+  * `VISION_WASM_URL`;
+  * `loadHandLandmarker()` con el mismo flujo estable previo.
+* Se retiro el fallback `unpkg`.
+* Se retiro `favicon.svg` del HTML, del service worker y del repo.
+* Se mantuvieron los portales conceptuales de `v0.6.2`.
+* Se actualizo cache-busting:
+  * `styles.css?v=0.6.4`;
+  * `app.js?v=0.6.4`;
+  * cache `jugando-con-carlitos-v0-6-4`.
+
+### Archivos modificados
+
+* `app.js`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+* `favicon.svg` eliminado.
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `git show 71ef53b:app.js`
+* `git show 71ef53b:index.html`
+* `git show 71ef53b:service-worker.js`
+
+### Resultados verificados
+
+* La sintaxis de `app.js` y `service-worker.js` es valida.
+* El flujo MediaPipe vuelve a usar `VISION_BUNDLE_URL` y `VISION_WASM_URL`, como en la version estable anterior.
+* La prueba local con camara falsa llego a:
+  * `enabled: true`;
+  * `ready: true`;
+  * `status: Manos listas`;
+  * `error: ""`.
+
+### Pruebas realizadas
+
+* `node --check app.js`: sin errores.
+* `node --check service-worker.js`: sin errores.
+* `git diff --check`: sin errores de whitespace, solo advertencias normales LF/CRLF de Windows.
+* Servidor local:
+  * `python -m http.server 8794 --bind 127.0.0.1`
+* Prueba Playwright local temporal `_tmp_v064_camera_stable_check.py`.
+* Resultado: `local v0.6.4 stable camera check OK`.
+
+### Errores o incidentes
+
+* El error no se reproduce en Playwright con camara falsa, pero se prioriza la evidencia del usuario en celular.
+
+### Soluciones aplicadas
+
+* Rollback funcional del flujo de camara a la version anterior estable.
+* Cache-busting nuevo para forzar despliegue limpio.
+
+### Pendientes
+
+* Ejecutar validaciones locales y publicas.
+* Probar `v0.6.4` en el celular del usuario.
+
+### Riesgos
+
+* Puede quedar un 404 de favicon del navegador, pero no afecta el stream de camara.
+* Si el celular conserva service worker anterior, puede requerir recarga fuerte o limpiar datos del sitio.
+
+### Recomendaciones
+
+* Probar desde `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.4`.
+* Si no carga la version nueva, cerrar pestaña, abrir en incognito o limpiar datos del sitio.
