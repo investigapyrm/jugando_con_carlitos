@@ -1069,3 +1069,34 @@
 * Mantener siempre el panel de video visible antes de exigir deteccion.
 * Explicar en modo docente la diferencia entre `Video activo` y `Manos listas`.
 * Probar en celular real antes de usar en aula.
+
+### Actualizacion de verificacion publica 2026-06-27 09:25
+
+* Commit principal de la version: `dfa1d59`.
+* Push exitoso a `origin/main`.
+* GitHub Pages verificado:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.1&check=dfa1d59`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.6.1&check=dfa1d59`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.6.1&check=dfa1d59`
+* La URL publica sirve `index.html` con:
+  * `styles.css?v=0.6.1`;
+  * `app.js?v=0.6.1`.
+* La URL publica sirve `app.js` con `APP_VERSION = "v0.6.1"`.
+* La URL publica sirve `service-worker.js` con cache `jugando-con-carlitos-v0-6-1`.
+* Se ejecuto prueba Playwright publica temporal `_tmp_public_camera_v061_check.py` con camara falsa.
+* Resultado: `public camera panel v0.6.1 fake camera check OK`.
+* La prueba publica verifico:
+  * permiso de camara simulado;
+  * `#visionVideo` con `srcObject`;
+  * `videoWidth > 0` y `videoHeight > 0`;
+  * panel `#cameraPanel` visible;
+  * cinta `.capture-ribbon` con texto `Video`.
+* Captura publica revisada:
+  * `test-results/v061_public_fake_camera_panel.png`.
+
+### Estado de cierre
+
+* Version publicada y verificada: `v0.6.1`.
+* URL recomendada para prueba: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.1`
+* La activacion visible de camara queda corregida.
+* Pendiente: prueba final con camara fisica real en celular o notebook.
