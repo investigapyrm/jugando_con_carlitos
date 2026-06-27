@@ -1497,3 +1497,32 @@
 
 * Probar desde `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.4`.
 * Si no carga la version nueva, cerrar pestaña, abrir en incognito o limpiar datos del sitio.
+
+### Actualizacion de verificacion publica 2026-06-27 11:00
+
+* Commit principal de la version: `e8066e7`.
+* Push exitoso a `origin/main`.
+* GitHub Pages verificado con HTTP `200`:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.4&check=e8066e7`;
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.6.4&check=e8066e7`;
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.6.4&check=e8066e7`.
+* La URL publica sirve:
+  * `styles.css?v=0.6.4`;
+  * `app.js?v=0.6.4`;
+  * no referencia `favicon.svg`.
+* La URL publica sirve `app.js` con:
+  * `APP_VERSION = "v0.6.4"`;
+  * `VISION_BUNDLE_URL`;
+  * sin `VISION_SOURCES`.
+* La URL publica sirve `service-worker.js` con cache `jugando-con-carlitos-v0-6-4`.
+* Se ejecuto prueba Playwright publica temporal `_tmp_public_v064_camera_stable_check.py`.
+* Resultado:
+  * `STATE {"enabled":true,"ready":true,"status":"Manos listas","error":""}`;
+  * `public v0.6.4 stable camera check OK`.
+
+### Estado de cierre
+
+* Version publicada y verificada: `v0.6.4`.
+* URL recomendada para prueba en celular: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.4`
+* Se restauro el flujo de camara estable previo.
+* Pendiente: validar en el celular real del usuario.
