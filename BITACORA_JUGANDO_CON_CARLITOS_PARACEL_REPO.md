@@ -749,3 +749,25 @@
   * `test-results/v050_local_robots.png`;
   * `test-results/v050_local_mobile_peques.png`.
 * La revision visual no detecto solapes criticos en escritorio ni movil.
+
+### Actualizacion de verificacion publica 2026-06-27 07:30
+
+* Commit principal de la version: `4b148a05943914f9884f4d54c507d6cbe3c4a2cc`.
+* Push exitoso a `origin/main`.
+* GitHub Pages verificado con HTTP `200`:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.5.0`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.5.0`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.5.0`
+* La URL publica sirve `index.html` con:
+  * `styles.css?v=0.5.0`;
+  * `app.js?v=0.5.0`.
+* La URL publica sirve `app.js` con `APP_VERSION = "v0.5.0"`.
+* La URL publica sirve `service-worker.js` con cache `jugando-con-carlitos-v0-5-0`.
+* Se ejecuto prueba Playwright publica temporal `_tmp_public_v050_check.py`.
+* Resultado: `public jugando v0.5.0 robots check OK`.
+* La prueba publica verifico:
+  * `#ninos` carga `Aventureros matematicos`;
+  * la categoria 8 a 12 incluye `Guerra de Robots`;
+  * `#robots` carga tablero, barras de vida, cartas y feedback despues de responder.
+* Se genero captura publica ignorada por Git:
+  * `test-results/v050_public_robots.png`.
