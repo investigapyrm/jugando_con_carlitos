@@ -1640,3 +1640,35 @@
   * En movil, `vision-panel` se muestra antes del tablero del reto.
   * En movil, `.app-top` deja de ser sticky para no cubrir el escenario de camara.
 * Resultado: validacion local de `v0.6.5` correcta.
+
+### Actualizacion de verificacion publica 2026-06-27 11:55
+
+* Commit principal de la version: `dc91d2c`.
+* Push exitoso a `origin/main`.
+* GitHub Pages verificado con HTTP `200` y cache-busting:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.5&check=dc91d2c`;
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.6.5&check=dc91d2c`;
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.6.5&check=dc91d2c`.
+* La URL publica sirve:
+  * `styles.css?v=0.6.5`;
+  * `app.js?v=0.6.5`;
+  * cache `jugando-con-carlitos-v0-6-5`.
+* La URL publica sirve `app.js` con:
+  * `APP_VERSION = "v0.6.5"`;
+  * `renderMotionOverlay`;
+  * `handCenter`;
+  * sin `VISION_SOURCES`.
+* Prueba Playwright publica con camara simulada y Edge:
+  * `#dedos`: estado `Manos listas`, video activo `640px`, opacidad `0.16`, filtro de privacidad aplicado, capa `.motion-overlay` y objetivo `.camera-number-target` visibles.
+  * `#semillas`: estado `Manos listas`, video activo, capa `.motion-overlay` y portales `.camera-zones` visibles.
+* Capturas publicas generadas como evidencia:
+  * `test-results/v065_public_camera_overlay_viewport.png`
+  * `test-results/v065_public_camera_zones_viewport.png`
+
+### Estado de cierre
+
+* Version publicada y verificada: `v0.6.5`.
+* URL recomendada para prueba en celular: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.5`
+* La camara conserva el flujo estable confirmado por el usuario en celular.
+* La imagen del nino queda atenuada; el foco visual pasa a los puntos de mano, cursor y objetos del juego sobre el visor.
+* Pendiente: validacion final del usuario con camara real en celular.
