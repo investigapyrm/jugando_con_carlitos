@@ -929,3 +929,33 @@
   * `test-results/v060_local_robots_after_layout.png`;
   * `test-results/v060_local_mobile_semillas_after_layout.png`.
 * La revision visual confirmo que el reto activo queda primero y el sensor funciona como panel de apoyo.
+
+### Actualizacion de verificacion publica 2026-06-27 08:35
+
+* Commit principal de la version: `c7f40ba`.
+* Push exitoso a `origin/main`.
+* GitHub Pages verificado con HTTP `200`:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.0&check=c7f40ba`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.6.0&check=c7f40ba`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.6.0&check=c7f40ba`
+* La URL publica sirve `index.html` con:
+  * `styles.css?v=0.6.0`;
+  * `app.js?v=0.6.0`.
+* La URL publica sirve `app.js` con `APP_VERSION = "v0.6.0"`.
+* La URL publica sirve `service-worker.js` con cache `jugando-con-carlitos-v0-6-0`.
+* Se ejecuto prueba Playwright publica temporal `_tmp_public_v060_motion_check.py`.
+* Resultado: `public jugando v0.6.0 motion check OK`.
+* La prueba publica verifico:
+  * `#ninos` carga `Aventura gestual`;
+  * la categoria 8 a 12 incluye `Robot gestual`;
+  * `#dedos` permite resolver una suma con dedos demo;
+  * `#robots` permite resolver multiplicacion usando dedos demo;
+  * aparece feedback correcto despues de responder.
+* Se genero captura publica ignorada por Git:
+  * `test-results/v060_public_robots.png`.
+
+### Estado de cierre
+
+* Version publicada y verificada: `v0.6.0`.
+* URL recomendada para prueba: `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.6.0`
+* Pendiente importante: probar camara real en celular o notebook con autorizacion del navegador.
