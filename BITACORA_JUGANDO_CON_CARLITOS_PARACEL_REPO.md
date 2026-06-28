@@ -2841,7 +2841,13 @@
 * `git diff --check`
 * `python -m http.server 8804 --bind 127.0.0.1`
 * `python _tmp_v076_flow_check.py`
-* Pendiente: commit y push a `origin/main`.
+* `git commit -m "Mejora ruleta y laboratorio de formas"`
+* `git push origin main`
+* Verificacion HTTP publica con `Invoke-WebRequest` sobre:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.7.6`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.7.6`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.7.6`
+* Verificacion Playwright publica de `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.7.6#formas`
 
 ### Resultados verificados
 
@@ -2856,7 +2862,16 @@
   * etiqueta de ruleta al segundo 1: `GIRANDO RAPIDO`;
   * feedback de ruleta aparece despues de 3.94 segundos;
   * mensaje final sin mojibake: `Logrado / Bien`.
-* Pendiente: validacion publica posterior al push.
+* Commit funcional generado: `c7f6a0e` (`Mejora ruleta y laboratorio de formas`).
+* Push aplicado a `origin/main`.
+* URL publica verificada en el cuarto intento de despliegue:
+  * `indexUses076: True`;
+  * `appVersion076: True`;
+  * `serviceWorker076: True`.
+* Ruta publica `#formas` verificada con Playwright:
+  * `route: object-lab`;
+  * `shapes: 4`;
+  * version visible: `v0.7.6 | 2026-06-27`.
 
 ### Pruebas realizadas
 
