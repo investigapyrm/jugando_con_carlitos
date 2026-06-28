@@ -2350,3 +2350,73 @@
 * Probar en el stand con una sola persona dentro del recuadro.
 * Marcar fisicamente el area donde debe pararse el participante.
 * Para la fase de poligonos, reservar `pinza` como gesto de agarre y usar permanencia solo para seleccion inicial.
+
+## 2026-06-27 20:06
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.7.2`
+
+### Objetivo de la intervencion
+
+* Publicar en la rama `main` los cambios ya validados en `feature/maquina-que-aprende-feria`, para que lleguen a la URL publica de GitHub Pages.
+
+### Diagnostico inicial
+
+* `main` estaba en `v0.6.7`.
+* `feature/maquina-que-aprende-feria` estaba en `v0.7.2` y alineada con su remoto.
+* No habia divergencia entre `main` y la rama de trabajo; el avance podia hacerse por fast-forward.
+
+### Acciones realizadas
+
+* Se cambio a la rama `main`.
+* Se aplico `git merge --ff-only feature/maquina-que-aprende-feria`.
+* Se preparo esta entrada de bitacora para documentar la publicacion.
+
+### Archivos modificados
+
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git switch main`
+* `git merge --ff-only feature/maquina-que-aprende-feria`
+
+### Resultados verificados
+
+* Merge fast-forward aplicado desde `57c0638` hasta `a1165d1`.
+* Pendiente de esta misma intervencion: commit de bitacora, push a `origin/main` y verificacion HTTP de GitHub Pages.
+
+### Pruebas realizadas
+
+* Pendiente de verificacion publica posterior al push.
+
+### Errores o incidentes
+
+* Sin incidentes.
+
+### Soluciones aplicadas
+
+* Publicacion por fast-forward para conservar historial lineal.
+
+### Pendientes
+
+* Empujar `main`.
+* Confirmar que `https://investigapyrm.github.io/jugando_con_carlitos/` sirve `APP_VERSION = "v0.7.2"`.
+* Validar con camara real en el espacio fisico de feria.
+
+### Riesgos
+
+* GitHub Pages puede tardar algunos segundos o minutos en servir la nueva version.
+* El service worker de navegadores que ya visitaron la app puede requerir recarga o cache-busting.
+
+### Recomendaciones
+
+* Abrir la URL publica con `?v=0.7.2`.
+* Si un dispositivo conserva version vieja, recargar y limpiar datos del sitio o esperar a que el service worker tome el cache nuevo.
