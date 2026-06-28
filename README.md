@@ -12,9 +12,9 @@ URL publica:
 
 ## Estado
 
-Version actual en esta rama independiente: `v0.8.0-visionai`
+Version actual en esta rama independiente: `v0.8.1-visionai`
 
-La rama `feature/visionai-laboratorio-carlitos` incorpora una vista experimental `#visionai` inspirada en una app VisionAI de reconocimiento de objetos. El laboratorio carga TensorFlow.js y COCO-SSD bajo demanda, abre la camara, dibuja recuadros de deteccion, muestra confianza, lista objetos reconocidos y permite capturas temporales de sesion.
+La rama `feature/visionai-laboratorio-carlitos` incorpora una vista experimental `#visionai` inspirada en una app VisionAI de reconocimiento de objetos. El laboratorio carga TensorFlow.js y COCO-SSD bajo demanda, abre la camara, dibuja recuadros de deteccion, muestra confianza, lista objetos reconocidos y permite capturas temporales de sesion. Desde `v0.8.1-visionai`, la vista tambien estima de manera didactica la altura aproximada de personas detectadas y calcula numero de personas, promedio, mediana y moda para trabajar estadistica en vivo.
 
 La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
 
@@ -34,7 +34,9 @@ La version `v0.7.5` vuelve el flujo mas automatico para feria: el objeto sigue l
 
 La version `v0.7.6` hace mas comprensible la accion gestual: la ruleta gira rapido durante unos segundos al pasar la mano por encima y recien toma la respuesta cuando se detiene; ademas agrega la vista `#formas` para probar traslado de objetos geometricos con la mano sin puntaje ni preguntas.
 
-La version `v0.7.7` simplifica toda la interaccion: el reconocimiento muestra un solo punto tipo cursor, que sigue el dedo indice o la mano y selecciona opciones por permanencia, como un mouse aereo. Se ocultan las marcas tecnicas de landmarks y se eliminan gestos principales de palma, pinza, empuje o arrastre.
+La version `v0.7.7` simplifica toda la interaccion: el reconocimiento muestra un solo punto tipo cursor, que sigue el dedo indice o la mano y selecciona opciones por permanencia, como un cursor aereo. Se ocultan las marcas tecnicas de landmarks y se eliminan gestos principales de palma, pinza, empuje o arrastre.
+
+La version `v0.8.1-visionai` mejora la rama VisionAI: traduce la experiencia visible al castellano, agrega estadisticas de personas y alturas aproximadas, incorpora controles de calibracion por distancia/campo visual, hace que la ruleta gire al pasar la mano sobre ella y vuelve mas claro el traslado de formas/semillas con el cursor.
 
 Uso previsto: notebook o computadora conectada a proyector/pantalla grande, con camara integrada o externa apuntando al espacio donde participa el nino. No esta pensada principalmente como experiencia individual de celular.
 
@@ -62,6 +64,10 @@ La app sigue siendo estatica, sin backend obligatorio. El progreso se guarda loc
 * `La Maquina que Aprende`: entrenamiento supervisado local con ejemplos, clasificacion por camara, matriz de confusion y exactitud.
 * `#formas`: banco de prueba para usar la mano o un dedo como cursor antes de jugar.
 * `#visionai`: laboratorio experimental de vision artificial con reconocimiento de objetos reales usando COCO-SSD.
+  * conteo de personas detectadas;
+  * altura aproximada segun distancia y campo visual configurados;
+  * promedio, mediana y moda de alturas agrupadas;
+  * lista de objetos reconocidos con etiquetas en castellano;
 
 ## Categorias por edad
 
@@ -87,6 +93,8 @@ Incluye:
 * un unico cursor que sigue el dedo indice o la mano;
 * seguimiento suavizado para reducir saltos visuales;
 * seleccion por permanencia sobre respuestas grandes;
+* objeto de semillas que acompana el cursor en retos de comparacion;
+* ruleta que gira al pasar la mano sobre ella antes de seleccionar la respuesta;
 * feedback emergente en esquina cuando una seleccion queda tomada;
 * avance automatico al siguiente reto despues de responder;
 * modo demo con botones de numeros y cursor por zonas;
@@ -107,6 +115,9 @@ Incluye:
   * carga bajo demanda de TensorFlow.js y COCO-SSD;
   * deteccion de objetos reales en video local;
   * recuadros sobre canvas, etiquetas y confianza;
+  * estimacion didactica de altura aproximada de personas;
+  * numero de personas, promedio, mediana y moda de alturas;
+  * calibracion simple de distancia a camara y campo visual vertical;
   * filtros de confianza minima y tamano maximo;
   * captura temporal de frames dentro de la sesion;
 * mecanicas de juego por cursor:
@@ -128,6 +139,8 @@ La camara se activa solo si el usuario presiona `Activar camara` y acepta el per
 El reconocimiento de manos usa MediaPipe Hand Landmarker en el navegador. El video no se envia a un backend del proyecto y la app no guarda imagenes ni videos.
 
 En la rama `feature/visionai-laboratorio-carlitos`, la vista `#visionai` usa TensorFlow.js y COCO-SSD en el navegador. El procesamiento tambien ocurre localmente; la primera carga del modelo necesita Internet por CDN. Las capturas de `#visionai` quedan solo en memoria de la sesion del navegador y no se suben al proyecto.
+
+La altura estimada en `#visionai` no es una medicion biometrica ni oficial. Es una aproximacion para aula/feria que depende de la distancia real a la camara, el encuadre, si la persona esta completa en imagen y el campo visual configurado.
 
 Para reducir exposicion visual en aula o celular, la vista de camara no se muestra como espejo principal: el video queda desenfocado, con baja opacidad y una capa oscura suave. Lo importante en pantalla es un unico punto de cursor y los objetivos grandes de respuesta.
 

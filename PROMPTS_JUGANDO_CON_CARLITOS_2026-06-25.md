@@ -237,3 +237,31 @@ Fecha de registro: 2026-06-28
   * capturas temporales de sesion;
   * panel pedagogico para hablar de datos, sesgo y calidad de imagen.
 * Versionar la rama como `v0.8.0-visionai`.
+
+## Prompt de ajuste - VisionAI estadistico y juegos con cursor
+
+Fecha de registro: 2026-06-28
+
+> funciona bastante bien https://investigapyrm.github.io/jugando_con_carlitos/#visionai
+> pero necesitamos hacer ajsutes
+> todo el contenido textual en español
+> luego estimar medidas como altura de la persona parada frente a la cámara, luego si muchas personas se paran ferente a la camara halla estadisiticas como el nro de personas, su altura promedio, mediana y moda
+> casas asi que sean utiles para que los niños aprendan conceptos divirtiendose
+> usa esta misma forma de reconocimiento de imagenes para que los otros juegos como el agarrar objetos y moverlos funciones mejor, tambien en el juego donde los niñpos deben hacer jirar la ruleta con un gesto de la mano
+> luego ell estilo, colores y formatos es muy pobre y poco atractivo
+
+### Decision de implementacion
+
+* Mantener la rama independiente `feature/visionai-laboratorio-carlitos`.
+* Versionar el ajuste como `v0.8.1-visionai`.
+* Traducir la interfaz visible de `#visionai` y evitar etiquetas crudas en ingles del modelo.
+* Convertir `#visionai` en laboratorio estadistico:
+  * detectar personas;
+  * estimar altura aproximada segun distancia y campo visual configurados;
+  * calcular numero de personas, promedio, mediana y moda;
+  * aclarar que la medicion es didactica, no oficial.
+* Mejorar la mecanica con cursor:
+  * semillas con objeto visual que sigue la mano;
+  * formas del laboratorio que pueden seguir el cursor cuando se enfocan;
+  * ruleta que gira al pasar la mano sobre ella y bloquea la seleccion mientras gira.
+* Reforzar estilo visual con tarjetas estadisticas, header mas atractivo, colores de feria educativa y mayor jerarquia visual.

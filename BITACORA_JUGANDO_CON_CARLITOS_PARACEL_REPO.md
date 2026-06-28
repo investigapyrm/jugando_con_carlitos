@@ -1949,7 +1949,7 @@
 
 ### Recomendaciones
 
-* Llevar mouse o teclado para el facilitador.
+* Llevar raton o teclado para el facilitador.
 * Probar pantalla completa y distancia a camara antes de iniciar la actividad con ninos.
 
 ## 2026-06-27 13:10
@@ -2921,7 +2921,7 @@
 
 ### Objetivo de la intervencion
 
-* Simplificar toda la experiencia gestual a un solo cursor tipo mouse aereo.
+* Simplificar toda la experiencia gestual a un solo cursor aereo.
 * Permitir que ninos usen la mano o un dedo para apuntar y seleccionar.
 
 ### Diagnostico inicial
@@ -3117,3 +3117,104 @@
 * Usar `#visionai` para explicar vision artificial, confianza, sesgo y calidad de datos.
 * No reemplazar con esto la mision didactica `Maquina que Aprende`; son experiencias complementarias.
 * Validar con objetos de aula: botella, libro, mochila, silla, celular y maceta.
+
+## 2026-06-28 13:31
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Semana de la Ciencia
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica estable: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Rama de trabajo: `feature/visionai-laboratorio-carlitos`
+* Responsable: Codex
+* Version de rama: `v0.8.1-visionai`
+
+### Objetivo de la intervencion
+
+* Ajustar la vista `#visionai` tras prueba publica inicial.
+* Convertir el reconocimiento de personas en una actividad estadistica para ninos.
+* Mejorar ruleta, traslado de objetos y atractivo visual sin abandonar el cursor unico.
+
+### Diagnostico inicial
+
+* `#visionai` funcionaba, pero aun estaba centrado en objetos generales y confianza.
+* La experiencia necesitaba textos completamente en castellano.
+* Faltaban indicadores educativos de estadistica en vivo: personas, altura promedio, mediana y moda.
+* La ruleta y el traslado de objetos debian reaccionar con mayor claridad al cursor de mano.
+
+### Acciones realizadas
+
+* Se actualizo la rama a `v0.8.1-visionai`.
+* Se amplio la traduccion de clases COCO-SSD visibles al usuario.
+* Se agrego estimacion didactica de altura por persona detectada.
+* Se agregaron metricas de personas: cantidad, promedio, mediana y moda.
+* Se agregaron controles de calibracion de distancia a camara y campo visual vertical.
+* Se hizo que la ruleta gire al pasar la mano sobre ella y bloquee la seleccion mientras gira.
+* Se agrego objeto de semillas que acompana el cursor en comparacion.
+* Se ajusto `#formas` para que la forma enfocada pueda seguir el cursor.
+* Se reforzo la interfaz con tarjetas estadisticas, mejor header, colores y jerarquia visual.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+* `G:\Mi unidad\MANUAL_MAESTRO_FORMATOS_FUNCIONES_APPWEB\APRENDIZAJE_CARLITOS_VISIONAI_COCO_SSD_2026-06-28.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --branch --short`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `npx -y -p playwright@1.54.2 playwright install chromium`
+* Script temporal Playwright local ejecutado con `NODE_PATH` del cache de `npx`.
+
+### Resultados verificados
+
+* Sintaxis JavaScript de `app.js` valida despues de los cambios principales.
+* Sintaxis JavaScript de `service-worker.js` valida.
+* Cache-busting actualizado a `v0.8.1-visionai`.
+* Playwright local verifico `#visionai` con 3 personas sinteticas: promedio `169 cm`, mediana `170 cm`, moda `165 cm`.
+* Playwright local verifico objeto de semillas siguiendo cursor: `left:78%;top:58%`.
+* Playwright local verifico ruleta con giro por barrido: angulo mayor a 3000 grados y etiqueta `girando, espera`.
+* Playwright local verifico `#formas`: `circulo` queda como objetivo de traslado y sigue a `left:55%;top:52%`.
+
+### Pruebas realizadas
+
+* Validacion de sintaxis local.
+* Prueba automatizada local de rutas `#visionai`, `#semillas`, `#azar` y `#formas`.
+* Captura local generada: `test-results/v081_visionai_stats_local.png`.
+
+### Errores o incidentes
+
+* El archivo `app.js` mantiene BOM inicial UTF-8; el primer parche requirio conservar ese caracter para actualizar `APP_VERSION`.
+
+### Soluciones aplicadas
+
+* Se mantuvo interaccion por cursor unico para evitar volver a gestos complejos.
+* La altura se documento como aproximacion didactica, dependiente de calibracion.
+* La ruleta usa giro prolongado por barrido de mano y espera antes de permitir seleccion.
+
+### Pendientes
+
+* Validar con camara real, ninos/personas reales y distancia conocida.
+* Ajustar valores de distancia/campo visual segun la camara usada en feria.
+* Confirmar si la rama se fusionara a `main` para publicacion estable.
+
+### Riesgos
+
+* La altura puede subestimar si la persona no aparece completa o si la distancia configurada no corresponde al aula.
+* COCO-SSD puede fallar con varias personas solapadas, poca luz o fondo cargado.
+* La ruleta depende de que el cursor detecte suficiente desplazamiento sobre la zona central.
+
+### Recomendaciones
+
+* Usar `#visionai` como juego de conceptos estadisticos, no como medicion oficial.
+* Antes de la actividad, calibrar distancia real con una persona de referencia.
+* Mantener `#formas` como prueba rapida del cursor antes de usar juegos con puntaje.

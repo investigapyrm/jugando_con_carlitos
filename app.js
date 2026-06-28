@@ -1,4 +1,4 @@
-﻿const APP_VERSION = "v0.8.0-visionai";
+﻿const APP_VERSION = "v0.8.1-visionai";
 const BUILD_DATE = "2026-06-28";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -21,6 +21,11 @@ const HAND_SMOOTHING = 0.72;
 const ZONE_DWELL_MS = 420;
 const AUTO_NEXT_OK_MS = 3200;
 const AUTO_NEXT_REVIEW_MS = 4400;
+const HEIGHT_MODE_BUCKET_CM = 5;
+const DEFAULT_CAMERA_DISTANCE_M = 2.8;
+const DEFAULT_CAMERA_FOV_DEG = 55;
+const WHEEL_SPIN_MS = 2200;
+const WHEEL_SPIN_COOLDOWN_MS = 2800;
 
 const LAB_SHAPES = [
   { id: "circulo", label: "circulo", type: "circle", x: 28, y: 36, color: "gold" },
@@ -139,52 +144,96 @@ const GAMES = [
 const FAIR_GAME_IDS = ["dedos", "semillas", "robots", "azar", "datos", "ritmo", "ia"];
 
 const AI_CLASSES = [
-  { id: "circulo", label: "Circulo", mark: "â—", prototype: [0.9, 0.18, 0.18, 0.42, 0.22, 0.72, 0.2] },
-  { id: "cuadrado", label: "Cuadrado", mark: "â– ", prototype: [0.18, 0.58, 0.92, 0.48, 0.28, 0.62, 0.48] },
-  { id: "triangulo", label: "Triangulo", mark: "â–²", prototype: [0.95, 0.78, 0.18, 0.58, 0.24, 0.68, 0.36] },
+  { id: "circulo", label: "Circulo", mark: "O", prototype: [0.9, 0.18, 0.18, 0.42, 0.22, 0.72, 0.2] },
+  { id: "cuadrado", label: "Cuadrado", mark: "[]", prototype: [0.18, 0.58, 0.92, 0.48, 0.28, 0.62, 0.48] },
+  { id: "triangulo", label: "Triangulo", mark: "^", prototype: [0.95, 0.78, 0.18, 0.58, 0.24, 0.68, 0.36] },
 ];
 
 const AI_MIN_SAMPLES = 2;
 
 const OBJECT_CLASS_LABELS = {
-  person: "persona",
-  backpack: "mochila",
-  umbrella: "paraguas",
-  handbag: "bolso",
-  tie: "corbata",
-  suitcase: "maleta",
-  bottle: "botella",
-  cup: "vaso",
-  fork: "tenedor",
-  knife: "cuchillo",
-  spoon: "cuchara",
-  bowl: "cuenco",
-  banana: "banana",
+  airplane: "avion",
   apple: "manzana",
-  orange: "naranja",
-  sandwich: "sandwich",
-  book: "libro",
-  clock: "reloj",
-  vase: "florero",
-  scissors: "tijera",
-  "cell phone": "celular",
-  laptop: "notebook",
-  mouse: "mouse",
-  keyboard: "teclado",
-  remote: "control remoto",
-  chair: "silla",
-  couch: "sofa",
-  "potted plant": "maceta",
-  diningtable: "mesa",
-  tv: "pantalla",
-  car: "auto",
+  backpack: "mochila",
+  banana: "banana",
+  "baseball bat": "bate de beisbol",
+  "baseball glove": "guante de beisbol",
+  bear: "oso",
+  bed: "cama",
+  bench: "banco",
   bicycle: "bicicleta",
-  motorcycle: "moto",
-  bus: "bus",
-  truck: "camion",
   bird: "ave",
+  boat: "barco",
+  book: "libro",
+  bottle: "botella",
+  bowl: "cuenco",
+  broccoli: "brocoli",
+  bus: "bus",
+  cake: "torta",
+  car: "auto",
+  carrot: "zanahoria",
   cat: "gato",
+  "cell phone": "celular",
+  chair: "silla",
+  clock: "reloj",
+  couch: "sofa",
+  cow: "vaca",
+  cup: "vaso",
+  diningtable: "mesa",
+  "dining table": "mesa",
   dog: "perro",
+  donut: "dona",
+  elephant: "elefante",
+  "fire hydrant": "hidrante",
+  fork: "tenedor",
+  frisbee: "disco volador",
+  giraffe: "jirafa",
+  "hair drier": "secador de pelo",
+  handbag: "bolso",
+  "hot dog": "pancho",
+  horse: "caballo",
+  keyboard: "teclado",
+  kite: "barrilete",
+  knife: "cuchillo",
+  laptop: "notebook",
+  microwave: "microondas",
+  motorcycle: "moto",
+  mouse: "raton",
+  orange: "naranja",
+  oven: "horno",
+  "parking meter": "parquimetro",
+  person: "persona",
+  pizza: "pizza",
+  "potted plant": "maceta",
+  refrigerator: "heladera",
+  remote: "control remoto",
+  sandwich: "sandwich",
+  scissors: "tijera",
+  sheep: "oveja",
+  sink: "lavatorio",
+  skateboard: "patineta",
+  skis: "esquis",
+  snowboard: "tabla de nieve",
+  spoon: "cuchara",
+  "sports ball": "pelota",
+  "stop sign": "senal de pare",
+  suitcase: "maleta",
+  surfboard: "tabla de surf",
+  "teddy bear": "oso de peluche",
+  "tennis racket": "raqueta",
+  tie: "corbata",
+  toaster: "tostadora",
+  toilet: "inodoro",
+  toothbrush: "cepillo de dientes",
+  "traffic light": "semaforo",
+  train: "tren",
+  truck: "camion",
+  tv: "pantalla",
+  tvmonitor: "pantalla",
+  umbrella: "paraguas",
+  vase: "florero",
+  "wine glass": "copa",
+  zebra: "cebra",
 };
 
 const CONCEPTS = {
@@ -292,6 +341,14 @@ const state = {
     hoverStartedAt: 0,
     hoverProgress: 0,
     lockedUntil: 0,
+    dragTarget: null,
+    lastHandX: null,
+    lastHandY: null,
+    lastMotionAt: 0,
+    motionSpeed: 0,
+    wheelAngle: 0,
+    wheelSpinUntil: 0,
+    wheelLastTriggerAt: 0,
   },
 };
 
@@ -350,6 +407,8 @@ function syncRoute() {
     state.challenge = createObjectLabChallenge();
     state.answered = false;
     state.feedback = null;
+    state.vision.dragTarget = null;
+    state.vision.lockedUntil = 0;
     resetZoneHover();
     return;
   }
@@ -399,7 +458,7 @@ function renderApp() {
             Feria <span>Semana de la Ciencia</span>
           </a>
           <a href="#formas" class="${state.route === "object-lab" ? "active" : ""}">
-            Cursor <span>Prueba mouse</span>
+            Cursor <span>Prueba aerea</span>
           </a>
           <a href="#visionai" class="${state.route === "visionai" ? "active" : ""}">
             VisionAI <span>Objetos</span>
@@ -541,7 +600,7 @@ function renderObjectLabView() {
         <div>
           <p class="eyebrow">Banco de prueba</p>
           <h1>Cursor con la mano</h1>
-          <p>Mueve un dedo o la mano dentro del recuadro. El punto funciona como mouse: apunta una forma y mantenlo un instante.</p>
+          <p>Mueve un dedo o la mano dentro del recuadro. El punto funciona como cursor aereo: apunta una forma y mantenlo un instante.</p>
         </div>
         <div class="game-hud">
           <div><strong>${visionShortLabel()}</strong><span>sensor</span></div>
@@ -576,6 +635,7 @@ function renderObjectLabView() {
 
 function renderVisionAiView() {
   const stats = objectVisionStats();
+  const personStats = objectPersonStats();
   return `
     <main class="vision-ai-view theme-green">
       <nav class="view-tabs" aria-label="Laboratorios">
@@ -591,15 +651,15 @@ function renderVisionAiView() {
 
       <section class="game-view-header vision-ai-header">
         <div>
-          <p class="eyebrow">IA en tiempo real</p>
+          <p class="eyebrow">IA y estadistica en vivo</p>
           <h1>VisionAI con Carlitos</h1>
-          <p>Apunta la camara a objetos cotidianos. La IA dibuja recuadros, muestra confianza y permite conversar sobre datos, sesgo y calidad de imagen.</p>
+          <p>Apunta la camara a personas y objetos del aula. Carlitos convierte la deteccion en datos: cuantas personas hay, altura aproximada, promedio, mediana y moda.</p>
         </div>
         <div class="game-hud">
-          <div><strong id="objectStatTotal">${stats.total}</strong><span>objetos</span></div>
-          <div><strong id="objectStatTypes">${stats.types}</strong><span>tipos</span></div>
-          <div><strong id="objectStatConfidence">${stats.avgConfidence}%</strong><span>confianza</span></div>
-          <div><strong id="objectStatFps">${Math.round(state.objectVision.fps)}</strong><span>fps</span></div>
+          <div><strong id="objectStatPeople">${personStats.count}</strong><span>personas</span></div>
+          <div><strong id="objectStatAvg">${formatHeightCm(personStats.avg)}</strong><span>promedio</span></div>
+          <div><strong id="objectStatMedian">${formatHeightCm(personStats.median)}</strong><span>mediana</span></div>
+          <div><strong id="objectStatMode">${formatHeightCm(personStats.mode)}</strong><span>moda</span></div>
         </div>
       </section>
 
@@ -629,13 +689,13 @@ function renderVisionAiView() {
           </section>
 
           <section class="control-card object-learning-card">
-            <h2>Como usarlo en feria</h2>
-            <p>Primero muestra un objeto claro. Luego cambia luz, distancia o fondo y pregunta al grupo por que la confianza sube o baja.</p>
+            <h2>Mision estadistica en vivo</h2>
+            <p>Formen una fila frente a la camara y observen como cambian las medidas cuando entra o sale una persona. La altura es aproximada y sirve para aprender datos, no para medicion oficial.</p>
             <div class="object-prompt-grid">
-              <span>1. Observar</span>
-              <span>2. Comparar</span>
-              <span>3. Preguntar</span>
-              <span>4. Mejorar datos</span>
+              <span>1. Contar personas</span>
+              <span>2. Comparar alturas</span>
+              <span>3. Buscar el centro</span>
+              <span>4. Ver que se repite</span>
             </div>
           </section>
         </div>
@@ -645,6 +705,17 @@ function renderVisionAiView() {
             <h2>Estado</h2>
             <p><strong id="objectStatus">${escapeHtml(state.objectVision.status)}</strong></p>
             <p class="muted">El video se procesa localmente en el navegador. No se suben imagenes al proyecto.</p>
+          </section>
+
+          <section class="control-card object-height-card">
+            <h2>Alturas y datos</h2>
+            <div class="height-stat-grid">
+              <div><span>Personas</span><strong id="objectPersonCount">${personStats.count}</strong></div>
+              <div><span>Promedio</span><strong id="objectHeightAvg">${formatHeightCm(personStats.avg)}</strong></div>
+              <div><span>Mediana</span><strong id="objectHeightMedian">${formatHeightCm(personStats.median)}</strong></div>
+              <div><span>Moda</span><strong id="objectHeightMode">${formatHeightCm(personStats.mode)}</strong></div>
+            </div>
+            <p class="muted">Estimacion didactica: ajusta distancia y campo visual segun la posicion real de la camara.</p>
           </section>
 
           <section class="control-card object-settings">
@@ -657,6 +728,14 @@ function renderVisionAiView() {
               <span>Tamano maximo <strong id="objectMaxAreaLabel">${Math.round(state.objectVision.maxAreaPercent * 100)}%</strong></span>
               <input type="range" id="objectMaxArea" min="20" max="100" step="5" value="${Math.round(state.objectVision.maxAreaPercent * 100)}">
             </label>
+            <label>
+              <span>Distancia a camara <strong id="objectDistanceLabel">${state.objectVision.cameraDistanceM.toFixed(1)} m</strong></span>
+              <input type="range" id="objectDistance" min="1" max="6" step="0.1" value="${state.objectVision.cameraDistanceM}">
+            </label>
+            <label>
+              <span>Campo visual vertical <strong id="objectFovLabel">${Math.round(state.objectVision.verticalFovDeg)} grados</strong></span>
+              <input type="range" id="objectFov" min="40" max="80" step="1" value="${Math.round(state.objectVision.verticalFovDeg)}">
+            </label>
             <label class="object-check">
               <input type="checkbox" id="objectShowLabels" ${state.objectVision.showLabels ? "checked" : ""}>
               <span>Mostrar etiquetas</span>
@@ -668,7 +747,7 @@ function renderVisionAiView() {
           </section>
 
           <section class="control-card">
-            <h2>Detecciones</h2>
+            <h2>Objetos reconocidos</h2>
             <div class="object-detection-list" id="objectDetectionList">
               ${renderObjectDetectionList()}
             </div>
@@ -699,6 +778,78 @@ function objectVisionStats() {
   };
 }
 
+function objectPersonMeasurements() {
+  return (state.objectVision.predictions || [])
+    .filter((prediction) => prediction.class === "person")
+    .map((prediction) => ({
+      prediction,
+      heightCm: estimatePersonHeightCm(prediction),
+    }))
+    .filter((item) => Number.isFinite(item.heightCm));
+}
+
+function objectPersonStats() {
+  const count = (state.objectVision.predictions || []).filter((prediction) => prediction.class === "person").length;
+  const heights = objectPersonMeasurements().map((item) => item.heightCm).sort((a, b) => a - b);
+  return {
+    count,
+    measuredCount: heights.length,
+    heights,
+    avg: averageNumber(heights),
+    median: medianNumber(heights),
+    mode: modeHeightCm(heights),
+  };
+}
+
+function estimatePersonHeightCm(prediction) {
+  const [, , , bboxHeight] = prediction.bbox || [];
+  const frameHeight = objectCanvasElement?.height || objectVideoElement?.videoHeight || 720;
+  if (!Number.isFinite(bboxHeight) || bboxHeight <= 0 || frameHeight <= 0) return null;
+  const fovRadians = (state.objectVision.verticalFovDeg * Math.PI) / 180;
+  const visibleHeightM = 2 * state.objectVision.cameraDistanceM * Math.tan(fovRadians / 2);
+  const estimatedCm = Math.round(visibleHeightM * (bboxHeight / frameHeight) * 100);
+  return estimatedCm >= 60 && estimatedCm <= 230 ? estimatedCm : null;
+}
+
+function averageNumber(values) {
+  if (!values.length) return null;
+  return Math.round(values.reduce((total, value) => total + value, 0) / values.length);
+}
+
+function medianNumber(values) {
+  if (!values.length) return null;
+  const middle = Math.floor(values.length / 2);
+  if (values.length % 2) return values[middle];
+  return Math.round((values[middle - 1] + values[middle]) / 2);
+}
+
+function modeHeightCm(values) {
+  if (!values.length) return null;
+  const buckets = new Map();
+  values.forEach((value) => {
+    const bucket = Math.round(value / HEIGHT_MODE_BUCKET_CM) * HEIGHT_MODE_BUCKET_CM;
+    buckets.set(bucket, (buckets.get(bucket) || 0) + 1);
+  });
+  let bestBucket = null;
+  let bestCount = -1;
+  buckets.forEach((count, bucket) => {
+    if (count > bestCount) {
+      bestBucket = bucket;
+      bestCount = count;
+    }
+  });
+  return bestBucket;
+}
+
+function formatHeightCm(value) {
+  return Number.isFinite(value) ? `${value} cm` : "-";
+}
+
+function personHeightDetail(prediction) {
+  const height = estimatePersonHeightCm(prediction);
+  return Number.isFinite(height) ? `altura aprox. ${height} cm` : "altura fuera de rango";
+}
+
 function objectVisionOverlayTitle() {
   if (state.objectVision.error) return "Revisar VisionAI";
   if (state.objectVision.loading) return "Preparando IA";
@@ -720,12 +871,13 @@ function renderObjectDetectionList() {
   return predictions.map((prediction) => {
     const confidence = Math.round(prediction.score * 100);
     const color = objectClassColor(prediction.class);
+    const detail = prediction.class === "person" ? personHeightDetail(prediction) : `${confidence}% de confianza`;
     return `
       <article class="object-detection-item" style="--object-color:${color}">
         <span></span>
         <div>
           <strong>${escapeHtml(objectClassLabel(prediction.class))}</strong>
-          <small>${escapeHtml(prediction.class)}</small>
+          <small>${escapeHtml(detail)}</small>
         </div>
         <em>${confidence}%</em>
       </article>
@@ -976,7 +1128,7 @@ function renderOverlayProblem(challenge) {
   } else if (challenge.input === "object-lab") {
     label = "Laboratorio";
     value = "Cursor aereo";
-    detail = "Apunta como mouse";
+    detail = "Apunta como cursor";
   } else if (challenge.input === "zone") {
     label = "Movimiento";
     value = challenge.title;
@@ -1069,6 +1221,7 @@ function renderZonePlayfield(challenge) {
   return `
     <div class="zone-playfield ${playfieldClass} ${interactionClass}">
       ${challenge.conceptKey === "probabilidad" ? renderProbabilityWheel(challenge) : ""}
+      ${challenge.conceptKey === "comparacion" ? renderSeedMover(challenge) : ""}
       ${renderCameraZones(challenge)}
     </div>
   `;
@@ -1115,7 +1268,7 @@ function cursorChoiceStyle(value) {
 function renderProbabilityWheel(challenge) {
   return `
     <div class="probability-wheel-stage">
-      <div class="gesture-wheel live-wheel" style="${wheelStyle(challenge)}">
+      <div class="gesture-wheel live-wheel ${wheelSpinClass()}" style="${wheelStyle(challenge)}">
         <span></span>
       </div>
       <small class="wheel-motion-label">${escapeHtml(wheelMotionLabel())}</small>
@@ -1124,7 +1277,12 @@ function renderProbabilityWheel(challenge) {
 }
 
 function wheelStyle(challenge) {
-  return `--wheel-gradient:${wheelGradient(challenge.options)};--wheel-angle:0deg`;
+  const duration = isWheelSpinning() ? WHEEL_SPIN_MS : 160;
+  return `--wheel-gradient:${wheelGradient(challenge.options)};--wheel-angle:${Math.round(state.vision.wheelAngle || 0)}deg;--wheel-duration:${duration}ms`;
+}
+
+function wheelSpinClass() {
+  return isWheelSpinning() ? "spin hand-spin" : "";
 }
 
 function wheelGradient(options) {
@@ -1141,6 +1299,57 @@ function wheelGradient(options) {
     const color = colors[option.label] || "#63b7d0";
     return `${color} ${start.toFixed(1)}deg ${cursor.toFixed(1)}deg`;
   }).join(", ");
+}
+
+function renderSeedMover(challenge) {
+  const option = seedMoverOption(challenge);
+  const classes = [
+    "hand-object",
+    "seed-object",
+    state.vision.handX === null ? "idle" : "grabbed",
+    state.feedback ? "dropped" : "",
+  ].filter(Boolean).join(" ");
+  return `
+    <div class="${classes}" data-seed-object="true" style="${seedObjectStyle(challenge)}">
+      <div class="seed-basket">${renderSeedDots(seedMoverCount(option))}</div>
+      <em>${escapeHtml(seedObjectLabel())}</em>
+    </div>
+  `;
+}
+
+function seedMoverOption(challenge) {
+  const value = state.feedback?.selected || state.vision.hoverZone || state.vision.zone;
+  return challenge.options?.find((option) => normalizeAnswer(option.value) === normalizeAnswer(value))
+    || challenge.options?.[0]
+    || null;
+}
+
+function seedMoverCount(option) {
+  return clamp(Number(option?.count || 6), 1, 12);
+}
+
+function renderSeedDots(count) {
+  return repeat(seedMoverCount({ count }), () => "<i></i>");
+}
+
+function seedObjectLabel() {
+  if (state.feedback) return "soltado";
+  if (state.vision.handX === null) return "mueve";
+  if (state.vision.hoverZone) return "mantener";
+  return "seguir mano";
+}
+
+function seedObjectStyle(challenge) {
+  if (state.feedback?.selected) return zoneAnchorStyle(challenge, state.feedback.selected);
+  return pointerStyle() || "left:50%;top:54%";
+}
+
+function zoneAnchorStyle(challenge, value) {
+  const options = challenge.options || [];
+  const index = Math.max(0, options.findIndex((option) => normalizeAnswer(option.value) === normalizeAnswer(value)));
+  const total = Math.max(1, options.length);
+  const x = ((index + 0.5) / total) * 100;
+  return `left:${clamp(Math.round(x), 12, 88)}%;top:68%`;
 }
 
 function renderOverlayFeedback(challenge) {
@@ -1174,12 +1383,12 @@ function overlayStatus(challenge) {
   }
   if (challenge.input === "object-lab") {
     if (state.vision.hoverZone) return { kind: "active", title: "Apuntando", detail: `cursor sobre ${state.vision.hoverZone}` };
-    if (state.vision.handX !== null) return { kind: "active", title: "Cursor activo", detail: "mueve la mano como mouse" };
+    if (state.vision.handX !== null) return { kind: "active", title: "Cursor activo", detail: "mueve la mano como cursor" };
     return { kind: "ready", title: "Prueba libre", detail: "entra al recuadro con mano o dedo" };
   }
   if (challenge.conceptKey === "probabilidad") {
     if (state.vision.hoverZone) return { kind: "active", title: "Mantener cursor", detail: "se selecciona al completar la barra" };
-    return { kind: "ready", title: "Apunta un color", detail: "usa la mano como mouse" };
+    return { kind: "ready", title: "Apunta un color", detail: "usa la mano como cursor" };
   }
   if (challenge.input === "zone") {
     if (state.vision.hoverZone) return { kind: "active", title: "Mantener cursor", detail: "respuesta casi lista" };
@@ -1212,7 +1421,7 @@ function renderAiVisionOverlay() {
       </div>
       <div class="ai-question-card">
         <strong>Pregunta cientifica</strong>
-        <span>Â¿La IA generaliza si cambiamos luz, fondo u objetos?</span>
+        <span>La IA generaliza si cambiamos luz, fondo u objetos?</span>
       </div>
     </div>
   `;
@@ -1235,14 +1444,26 @@ function pointerStyle() {
 }
 
 function labShapeStyle(shape, index = 0) {
+  if (
+    state.challenge?.input === "object-lab"
+    && state.vision.handX !== null
+    && normalizeAnswer(state.vision.hoverZone) === normalizeAnswer(shape.id)
+  ) {
+    return pointerStyle();
+  }
   return `left:${shape.x}%;top:${shape.y}%`;
 }
 
 function zoneActionLabel(zone, challenge) {
   if (state.feedback && normalizeAnswer(state.feedback.selected) === normalizeAnswer(zone)) return "elegido";
   if (challenge.conceptKey === "probabilidad") {
+    if (isWheelSpinning()) return "girando";
     if (state.vision.hoverZone === zone) return "mantener";
-    return "apuntar";
+    return "pasar mano";
+  }
+  if (challenge.conceptKey === "comparacion") {
+    if (state.vision.hoverZone === zone) return "soltar aqui";
+    return "llevar aqui";
   }
   if (state.vision.hoverZone === zone) return "mantener";
   return "apuntar";
@@ -1250,8 +1471,33 @@ function zoneActionLabel(zone, challenge) {
 
 function wheelMotionLabel() {
   if (state.feedback) return "respuesta tomada";
-  if (state.vision.handX !== null) return "apunta un color";
-  return "cursor listo";
+  if (isWheelSpinning()) return "girando, espera";
+  if (state.vision.handX === null) return "pasa la mano sobre la rueda";
+  if (cursorOverWheel()) return "movimiento detectado";
+  return "pasa sobre la rueda";
+}
+
+function cursorOverWheel() {
+  if (state.vision.handX === null || state.vision.handY === null) return false;
+  const dx = state.vision.handX - 0.5;
+  const dy = state.vision.handY - 0.42;
+  return Math.hypot(dx, dy) <= 0.29;
+}
+
+function isWheelSpinning() {
+  return Date.now() < (state.vision.wheelSpinUntil || 0);
+}
+
+function triggerCursorWheelSpin(speed = 0.3) {
+  const now = Date.now();
+  if (now - (state.vision.wheelLastTriggerAt || 0) < WHEEL_SPIN_COOLDOWN_MS) return;
+  const extraTurns = clamp(Math.round(speed * 5), 1, 5);
+  const randomOffset = rand(40, 340);
+  state.vision.wheelAngle = (state.vision.wheelAngle || 0) + ((3 + extraTurns) * 360) + randomOffset;
+  state.vision.wheelSpinUntil = now + WHEEL_SPIN_MS;
+  state.vision.wheelLastTriggerAt = now;
+  state.vision.lockedUntil = Math.max(state.vision.lockedUntil, state.vision.wheelSpinUntil + 160);
+  window.setTimeout(updateVisionWidgets, WHEEL_SPIN_MS + 180);
 }
 
 function renderChallengePanel(game) {
@@ -1627,6 +1873,7 @@ function bindEvents() {
   document.querySelector("#objectSwitch")?.addEventListener("click", switchObjectCamera);
   document.querySelector("#objectClear")?.addEventListener("click", () => {
     state.objectVision.predictions = [];
+    state.objectVision.personHeights = [];
     state.objectVision.captures = [];
     state.objectVision.frameCount = 0;
     updateObjectVisionWidgets();
@@ -1644,6 +1891,18 @@ function bindEvents() {
   });
   document.querySelector("#objectMaxArea")?.addEventListener("input", (event) => {
     state.objectVision.maxAreaPercent = Number(event.target.value) / 100;
+    updateObjectVisionWidgets();
+  });
+  document.querySelector("#objectDistance")?.addEventListener("input", (event) => {
+    state.objectVision.cameraDistanceM = Number(event.target.value);
+    state.objectVision.personHeights = objectPersonStats().heights;
+    drawObjectDetections();
+    updateObjectVisionWidgets();
+  });
+  document.querySelector("#objectFov")?.addEventListener("input", (event) => {
+    state.objectVision.verticalFovDeg = Number(event.target.value);
+    state.objectVision.personHeights = objectPersonStats().heights;
+    drawObjectDetections();
     updateObjectVisionWidgets();
   });
   document.querySelector("#objectShowLabels")?.addEventListener("change", (event) => {
@@ -1899,6 +2158,7 @@ async function readObjectVisionFrame(now) {
   try {
     const predictions = await objectVisionModel.detect(objectVideoElement);
     state.objectVision.predictions = filterObjectPredictions(predictions);
+    state.objectVision.personHeights = objectPersonStats().heights;
     state.objectVision.frameCount += 1;
     drawObjectDetections();
     updateObjectVisionWidgets();
@@ -1953,7 +2213,7 @@ function drawObjectDetections() {
     ctx.fill();
 
     if (state.objectVision.showLabels) {
-      const label = `${objectClassLabel(prediction.class)} ${confidence}%`;
+      const label = objectCanvasLabel(prediction, confidence);
       ctx.font = `700 ${Math.max(16, objectCanvasElement.width / 48)}px Segoe UI, Arial`;
       const textWidth = ctx.measureText(label).width;
       const labelHeight = Math.max(30, objectCanvasElement.height / 22);
@@ -1967,17 +2227,33 @@ function drawObjectDetections() {
   });
 }
 
+function objectCanvasLabel(prediction, confidence) {
+  if (prediction.class !== "person") return `${objectClassLabel(prediction.class)} ${confidence}%`;
+  const height = estimatePersonHeightCm(prediction);
+  return Number.isFinite(height)
+    ? `persona ${height} cm`
+    : `persona ${confidence}%`;
+}
+
 function updateObjectVisionWidgets() {
   const stats = objectVisionStats();
+  const personStats = objectPersonStats();
+  state.objectVision.personHeights = personStats.heights;
   const updates = [
-    ["#objectStatTotal", stats.total],
+    ["#objectStatPeople", personStats.count],
+    ["#objectStatAvg", formatHeightCm(personStats.avg)],
+    ["#objectStatMedian", formatHeightCm(personStats.median)],
+    ["#objectStatMode", formatHeightCm(personStats.mode)],
+    ["#objectPersonCount", personStats.count],
+    ["#objectHeightAvg", formatHeightCm(personStats.avg)],
+    ["#objectHeightMedian", formatHeightCm(personStats.median)],
+    ["#objectHeightMode", formatHeightCm(personStats.mode)],
     ["#objectLiveTotal", stats.total],
-    ["#objectStatTypes", stats.types],
-    ["#objectStatConfidence", `${stats.avgConfidence}%`],
-    ["#objectStatFps", Math.round(state.objectVision.fps)],
     ["#objectStatus", state.objectVision.status],
     ["#objectThresholdLabel", `${Math.round(state.objectVision.threshold * 100)}%`],
     ["#objectMaxAreaLabel", `${Math.round(state.objectVision.maxAreaPercent * 100)}%`],
+    ["#objectDistanceLabel", `${state.objectVision.cameraDistanceM.toFixed(1)} m`],
+    ["#objectFovLabel", `${Math.round(state.objectVision.verticalFovDeg)} grados`],
   ];
   updates.forEach(([selector, value]) => {
     const node = document.querySelector(selector);
@@ -2034,6 +2310,7 @@ function stopObjectVision(shouldRender = true) {
   state.objectVision.status = "Detector apagado";
   state.objectVision.error = "";
   state.objectVision.predictions = [];
+  state.objectVision.personHeights = [];
   state.objectVision.fps = 0;
   if (objectCanvasContext && objectCanvasElement) {
     objectCanvasContext.clearRect(0, 0, objectCanvasElement.width, objectCanvasElement.height);
@@ -2058,7 +2335,7 @@ function objectVisionErrorMessage(error) {
 }
 
 function objectClassLabel(className) {
-  return OBJECT_CLASS_LABELS[className] || className;
+  return OBJECT_CLASS_LABELS[className] || "objeto reconocido";
 }
 
 function objectClassColor(className) {
@@ -2260,8 +2537,41 @@ function updateVisionReading(fingers, zone, gesture, confidence = 1) {
   if (state.vision.stableCount >= FINGER_STABLE_FRAMES && fingers !== null && fingers !== undefined) {
     state.vision.stableValue = fingers;
   }
+  updateMotionAssist();
   updateCursorHover();
   updateVisionWidgets();
+}
+
+function updateMotionAssist() {
+  if (state.vision.handX === null || state.vision.handY === null) {
+    state.vision.lastHandX = null;
+    state.vision.lastHandY = null;
+    state.vision.lastMotionAt = 0;
+    state.vision.motionSpeed = 0;
+    return;
+  }
+
+  const now = performance.now();
+  if (state.vision.lastHandX !== null && state.vision.lastHandY !== null && state.vision.lastMotionAt) {
+    const deltaSeconds = Math.max(0.016, (now - state.vision.lastMotionAt) / 1000);
+    state.vision.motionSpeed = Math.hypot(
+      state.vision.handX - state.vision.lastHandX,
+      state.vision.handY - state.vision.lastHandY
+    ) / deltaSeconds;
+  }
+
+  state.vision.lastHandX = state.vision.handX;
+  state.vision.lastHandY = state.vision.handY;
+  state.vision.lastMotionAt = now;
+
+  if (
+    state.challenge?.conceptKey === "probabilidad"
+    && !state.answered
+    && cursorOverWheel()
+    && state.vision.motionSpeed > 0.18
+  ) {
+    triggerCursorWheelSpin(state.vision.motionSpeed);
+  }
 }
 
 function processVisionAnswer(force) {
@@ -2351,17 +2661,31 @@ function updateVisionWidgets() {
     node.style.setProperty("--zone-progress", `${Math.round((isHovering ? state.vision.hoverProgress : 0) * 100)}%`);
   });
   const wheel = document.querySelector(".live-wheel");
-  if (wheel) {
-    wheel.classList.remove("spin", "hand-spin");
-    wheel.style.setProperty("--wheel-angle", "0deg");
+  if (wheel && state.challenge) {
+    wheel.setAttribute("style", wheelStyle(state.challenge));
+    wheel.classList.toggle("spin", isWheelSpinning());
+    wheel.classList.toggle("hand-spin", isWheelSpinning());
   }
   const wheelLabel = document.querySelector(".wheel-motion-label");
   if (wheelLabel) wheelLabel.textContent = wheelMotionLabel();
+  const seedObject = document.querySelector("[data-seed-object]");
+  if (seedObject && state.challenge) {
+    const option = seedMoverOption(state.challenge);
+    seedObject.setAttribute("style", seedObjectStyle(state.challenge));
+    seedObject.classList.toggle("idle", state.vision.handX === null);
+    seedObject.classList.toggle("grabbed", state.vision.handX !== null && !state.feedback);
+    seedObject.classList.toggle("dropped", Boolean(state.feedback));
+    const basket = seedObject.querySelector(".seed-basket");
+    if (basket) basket.innerHTML = renderSeedDots(seedMoverCount(option));
+    const label = seedObject.querySelector("em");
+    if (label) label.textContent = seedObjectLabel();
+  }
   document.querySelectorAll("[data-lab-shape]").forEach((node, index) => {
     const shape = LAB_SHAPES.find((item) => item.id === node.dataset.labShape) || LAB_SHAPES[index % LAB_SHAPES.length];
     node.setAttribute("style", labShapeStyle(shape, index));
-    node.classList.toggle("is-moving", false);
-    node.classList.toggle("is-release", normalizeAnswer(state.vision.hoverZone) === normalizeAnswer(shape.id));
+    const isHovering = normalizeAnswer(state.vision.hoverZone) === normalizeAnswer(shape.id);
+    node.classList.toggle("is-moving", isHovering && state.vision.handX !== null);
+    node.classList.toggle("is-release", isHovering && state.vision.hoverProgress > 0.72);
   });
   const status = document.querySelector("#overlayStatus");
   if (status && state.challenge) {
@@ -2417,7 +2741,11 @@ function cursorTargetValue(challenge) {
     const box = target.getBoundingClientRect();
     return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
   });
-  if (hit?.dataset.cursorAnswer !== undefined) return hit.dataset.cursorAnswer;
+  if (hit?.dataset.cursorAnswer !== undefined) {
+    if (challenge?.input === "object-lab") state.vision.dragTarget = hit.dataset.cursorAnswer;
+    return hit.dataset.cursorAnswer;
+  }
+  if (challenge?.input === "object-lab" && state.vision.dragTarget) return state.vision.dragTarget;
   if (challenge?.input === "zone") return state.vision.zone;
   return null;
 }
@@ -2427,6 +2755,11 @@ function resetHandTracking() {
   state.vision.handY = null;
   state.vision.smoothedHandX = null;
   state.vision.smoothedHandY = null;
+  state.vision.lastHandX = null;
+  state.vision.lastHandY = null;
+  state.vision.lastMotionAt = 0;
+  state.vision.motionSpeed = 0;
+  state.vision.dragTarget = null;
   resetZoneHover();
 }
 
@@ -2434,6 +2767,7 @@ function resetZoneHover() {
   state.vision.hoverZone = null;
   state.vision.hoverStartedAt = 0;
   state.vision.hoverProgress = 0;
+  if (state.challenge?.input !== "object-lab") state.vision.dragTarget = null;
 }
 
 function drawHands(hands) {
@@ -2576,7 +2910,7 @@ function createObjectLabChallenge() {
     prompt: "Mueve un dedo o la mano dentro del recuadro y apunta las formas.",
     hint: "No suma puntos: sirve para calibrar el cursor antes de jugar.",
     strategy: "Usa trayectorias amplias y lentas para verificar si el cursor acompana al participante.",
-    model: "El objetivo es verificar que el punto funcione como un mouse aereo.",
+    model: "El objetivo es verificar que el punto funcione como un cursor aereo.",
     steps: [
       "Entra al recuadro con un dedo o la mano.",
       "Mueve el cursor hacia izquierda, centro y derecha.",
@@ -2784,9 +3118,12 @@ function defaultObjectVision() {
     facingMode: "environment",
     threshold: 0.45,
     maxAreaPercent: 0.72,
+    cameraDistanceM: DEFAULT_CAMERA_DISTANCE_M,
+    verticalFovDeg: DEFAULT_CAMERA_FOV_DEG,
     showLabels: true,
     showMasks: true,
     predictions: [],
+    personHeights: [],
     captures: [],
     frameCount: 0,
     fps: 0,
@@ -3106,6 +3443,7 @@ function newChallenge() {
   state.challenge = createChallenge(state.activeGame);
   state.answered = false;
   state.feedback = null;
+  state.vision.wheelSpinUntil = 0;
   resetZoneHover();
   renderApp();
 }
@@ -3329,7 +3667,7 @@ function cameraPanelTitle() {
 }
 
 function cameraPanelText() {
-  if (state.vision.ready) return "Mueve un dedo o la mano como un mouse y manten el punto sobre una respuesta.";
+  if (state.vision.ready) return "Mueve un dedo o la mano como cursor y manten el punto sobre una respuesta.";
   if (state.vision.enabled && state.vision.loading) return "El escenario ya recibe video. Estamos preparando el detector de manos.";
   if (state.vision.enabled) return "El video funciona. Si el detector no cargo, usa los botones demo mientras tanto.";
   if (state.vision.errorCode === "permission") return "El navegador nego el permiso. Habilitalo y vuelve a tocar Activar camara.";

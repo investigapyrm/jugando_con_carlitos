@@ -1,10 +1,10 @@
-const CACHE_NAME = "jugando-con-carlitos-v0-8-0-visionai";
+const CACHE_NAME = "jugando-con-carlitos-v0-8-1-visionai";
 
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=0.8.0-visionai",
-  "./app.js?v=0.8.0-visionai",
+  "./styles.css?v=0.8.1-visionai",
+  "./app.js?v=0.8.1-visionai",
   "./manifest.webmanifest",
   "./assets/generated/hero_jugando_con_carlitos.png",
   "./assets/generated/carlitos_character_sheet_v01.png",
