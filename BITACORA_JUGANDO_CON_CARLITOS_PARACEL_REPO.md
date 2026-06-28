@@ -2730,8 +2730,12 @@
 * `python -m http.server 8803 --bind 127.0.0.1`
 * `python _tmp_v075_flow_check.py`
 * `git diff --check`
-* Pendiente:
-  * commit, push y verificacion publica
+* `git commit -m "Automatiza flujo y empuje de ruleta"`
+* `git push origin main`
+* Verificacion HTTP publica con `Invoke-WebRequest` sobre:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.7.5`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.7.5`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.7.5`
 
 ### Resultados verificados
 
@@ -2747,7 +2751,12 @@
   * ruleta selecciona por `source: empuje`;
   * ruleta registra giro `323.4` grados;
   * ruleta avanza automaticamente despues de responder.
-* Pendiente de URL publica.
+* Commit funcional generado: `ffb07d2` (`Automatiza flujo y empuje de ruleta`).
+* Push aplicado a `origin/main`.
+* URL publica verificada:
+  * `indexUses075: True`;
+  * `appVersion075: True`;
+  * `serviceWorker075: True`.
 
 ### Pruebas realizadas
 
