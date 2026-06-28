@@ -2956,7 +2956,10 @@
 * `python -m http.server 8805 --bind 127.0.0.1`
 * `python _tmp_v077_cursor_check.py`
 * `git diff --check`
-* Pendiente: commit, push y verificacion publica.
+* `git commit -m "Simplifica interaccion con cursor unico"`
+* `git push origin main`
+* Verificacion HTTP anonima de GitHub Pages para `index.html`, `app.js` y `service-worker.js`.
+* Verificacion publica con Playwright en `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.7.7#formas`.
 
 ### Resultados verificados
 
@@ -2965,12 +2968,19 @@
 * `#formas` renderiza como ruta `object-lab`, muestra el cursor y detecta hover sobre la forma `circulo` sin registrar puntaje.
 * `#dedos` permite responder por cursor; la prueba tomo la respuesta `6` con `source: cursor`.
 * `#azar` permite responder por cursor; en pagina limpia la prueba tomo la opcion correcta `izquierda` con `source: cursor`.
+* La URL publica sirve `index.html` con `app.js?v=0.7.7` y `styles.css?v=0.7.7`.
+* La URL publica sirve `app.js` con `APP_VERSION = "v0.7.7"` y `BUILD_DATE = "2026-06-28"`.
+* La URL publica sirve `service-worker.js` con cache `jugando-con-carlitos-v0-7-7`.
+* La ruta publica `#formas` renderiza como `object-lab`, muestra version `v0.7.7 | 2026-06-28`, cursor visible, hover sobre `circulo`, 4 formas y etiquetas `cursor`, `zona`, `modo`.
+* Commit funcional publicado: `d9c9fc0` (`Simplifica interaccion con cursor unico`).
 
 ### Pruebas realizadas
 
 * Prueba local automatizada con Playwright Python sobre servidor HTTP local.
 * Capturas generadas en `test-results/v077_local_cursor_formas.png`, `test-results/v077_local_cursor_dedos.png` y `test-results/v077_local_cursor_azar.png`.
 * Prueba complementaria aislada de `#azar` para evitar interferencia del bloqueo breve posterior al reto anterior.
+* Verificacion publica HTTP anonima: `indexUses077: True`, `appVersion077: True`, `buildDate: True`, `cursorFunction: True`, `oldPalmPushGone: True`, `swVersion077: True`.
+* Captura publica generada en `test-results/v077_public_cursor_formas.png`.
 * `git diff --check` sin errores de whitespace; solo advertencias esperadas de normalizacion LF/CRLF en Windows.
 
 ### Errores o incidentes
