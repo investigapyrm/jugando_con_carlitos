@@ -137,3 +137,32 @@ Fecha de registro: 2026-06-27
   * giro con palma o pinza;
   * boton demo de palma como contingencia para facilitador.
 * Publicar como `v0.7.4` con cache nuevo.
+
+## Prompt de correccion - flujo automatico, mensajes emergentes y empuje de palma
+
+Fecha de registro: 2026-06-27
+
+> ESTAMOS MEJORANDO, PERO AUN LOS MOVIMIENTOS SE VEN LENTOS Y TORPES, LUEGO EL TOMAR Y SOLTA NO QUEDA CLARO, LOS ELEMETNOS COM MENSAJES D EEXITO O INSTRUCTIVOS SOLAPAN LAS ACCIONES, DEBE SER EMERGENTES, NO QUEDA CLARO CUANDO SE LOGRO ALGO O CUANDO SE DEBE CONTINUAR, LA APP DEBE ESTAR AUTOMATIZADA EN CASI TODO , EN POSAR DE PREGUNTA A PREGUNTA, O DE ACCION EN ACCION .
+> EL GIRO DE LA RULETA NO FUNCIONA O NO SE ENTIENDE. Tal vez se pueda lograr hacer como un clic empujando la palma habierta hacia adelante o algo asi
+
+### Decision de implementacion
+
+* Acelerar el seguimiento:
+  * mayor suavizado reactivo;
+  * lectura de frames mas frecuente;
+  * transiciones CSS mas cortas.
+* Simplificar traslado:
+  * mano visible toma/arrastra automaticamente;
+  * palma abierta suelta;
+  * permanencia corta funciona como respaldo.
+* Evitar solapamiento:
+  * feedback como toast en esquina;
+  * reto como etiqueta compacta;
+  * estado operativo como pastilla pequena.
+* Automatizar el flujo:
+  * despues de responder, se avanza automaticamente al siguiente reto;
+  * el boton manual queda como atajo.
+* Cambiar ruleta:
+  * detectar empuje de palma por aumento rapido de escala de la mano;
+  * usar el empuje como clic de giro/seleccion.
+* Publicar como `v0.7.5` con cache nuevo.

@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.7.4";
+const APP_VERSION = "v0.7.5";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -20,12 +20,16 @@ const HAND_CONNECTIONS = [
   [13, 17], [0, 17], [17, 18], [18, 19], [19, 20],
 ];
 
-const VISION_FRAME_INTERVAL_MS = 33;
+const VISION_FRAME_INTERVAL_MS = 24;
 const FINGER_STABLE_FRAMES = 4;
-const HAND_SMOOTHING = 0.46;
-const ZONE_DWELL_MS = 420;
-const DROP_DWELL_MS = 560;
+const HAND_SMOOTHING = 0.72;
+const ZONE_DWELL_MS = 300;
+const DROP_DWELL_MS = 320;
 const WHEEL_CENTER = { x: 0.5, y: 0.42 };
+const PALM_PUSH_THRESHOLD = 0.012;
+const PALM_PUSH_COOLDOWN_MS = 780;
+const AUTO_NEXT_OK_MS = 1250;
+const AUTO_NEXT_REVIEW_MS = 1900;
 
 const AGE_GROUPS = [
   {
@@ -244,11 +248,16 @@ const state = {
     lastHandAngle: null,
     lastHandX: null,
     lastHandY: null,
+    handScaleValue: null,
+    lastHandScale: null,
+    palmPushUntil: 0,
+    lastPalmPushAt: 0,
     lockedUntil: 0,
   },
 };
 
 let animationFrame = null;
+let autoAdvanceTimer = null;
 let visionModule = null;
 let videoElement = null;
 let canvasElement = null;
@@ -267,6 +276,7 @@ function initApp() {
   registerServiceWorker();
 
   window.addEventListener("hashchange", () => {
+    clearAutoAdvance();
     syncRoute();
     renderApp();
   });
@@ -407,7 +417,7 @@ function renderFairView() {
           <small>${escapeHtml(game.concept)} | ${stats.correct}/${Math.max(1, stats.played)} aciertos</small>
         </div>
         <div class="fair-main-actions">
-          <button type="button" id="newChallenge" class="fair-next-button">Nuevo reto</button>
+          <button type="button" id="newChallenge" class="fair-next-button">Siguiente ahora</button>
           <button type="button" id="toggleFullscreenSecondary" class="mini-button">Pantalla completa</button>
         </div>
         <div class="fair-mission-grid">
@@ -623,7 +633,7 @@ function renderMotionOverlay() {
   const game = getGame(state.activeGame) || GAMES[0];
   const cursorStyle = pointerStyle();
   return `
-    <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}" data-hover-zone="${escapeAttribute(state.vision.hoverZone || "")}" data-dragging="${state.vision.dragging ? "true" : "false"}" data-drop-zone="${escapeAttribute(state.vision.droppedZone || "")}" style="--zone-progress:${Math.round(state.vision.hoverProgress * 100)}%;--drop-progress:${Math.round(state.vision.dropProgress * 100)}%">
+    <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}" data-hover-zone="${escapeAttribute(state.vision.hoverZone || "")}" data-dragging="${state.vision.dragging ? "true" : "false"}" data-drop-zone="${escapeAttribute(state.vision.droppedZone || "")}" data-palm-push="${palmPushActive() ? "true" : "false"}" style="--zone-progress:${Math.round(state.vision.hoverProgress * 100)}%;--drop-progress:${Math.round(state.vision.dropProgress * 100)}%">
       <div class="overlay-grid-lines"></div>
       ${renderOverlayProblem(challenge)}
       ${renderOverlayTargets(game, challenge)}
@@ -631,11 +641,7 @@ function renderMotionOverlay() {
       <div class="hand-cursor ${state.vision.handX === null ? "hidden" : ""}" id="handCursor" style="${cursorStyle}">
         <span id="handCursorValue">${visionNumberLabel()}</span>
       </div>
-      <div class="overlay-instruction">
-        <strong>${escapeHtml(challenge.title)}</strong>
-        <span>${escapeHtml(challenge.prompt)}</span>
-        <em>${escapeHtml(overlayHint(challenge))}</em>
-      </div>
+      ${renderOverlayStatus(challenge)}
     </div>
   `;
 }
@@ -811,11 +817,44 @@ function renderOverlayFeedback(challenge) {
   const answer = answerDisplay(challenge, state.feedback.answer);
   return `
     <div class="overlay-feedback ${state.feedback.ok ? "ok" : "try"}">
-      <span>${state.feedback.ok ? "Portal correcto" : "Revisar"}</span>
+      <span>${state.feedback.ok ? "Logrado" : "Revisar"}</span>
       <strong>${escapeHtml(state.feedback.ok ? "¡Bien!" : "Casi")}</strong>
-      <small>${escapeHtml(selected)}${state.feedback.ok ? "" : ` | esperado: ${answer}`}</small>
+      <small>${escapeHtml(selected)}${state.feedback.ok ? " | sigue automatico" : ` | era: ${answer}`}</small>
     </div>
   `;
+}
+
+function renderOverlayStatus(challenge) {
+  const status = overlayStatus(challenge);
+  return `
+    <div class="overlay-status ${escapeAttribute(status.kind)}" id="overlayStatus">
+      <strong>${escapeHtml(status.title)}</strong>
+      <span>${escapeHtml(status.detail)}</span>
+    </div>
+  `;
+}
+
+function overlayStatus(challenge) {
+  if (state.feedback) {
+    return state.feedback.ok
+      ? { kind: "ok", title: "Listo", detail: "Siguiente reto automatico" }
+      : { kind: "try", title: "Casi", detail: "Carlitos cambia el reto en un momento" };
+  }
+  if (challenge.conceptKey === "probabilidad") {
+    if (palmPushActive()) return { kind: "active", title: "Empuje detectado", detail: "Ruleta girando" };
+    if (wheelIsSpinning()) return { kind: "active", title: "Girando", detail: "deja la mano sobre el color" };
+    return { kind: "ready", title: "Palma abierta", detail: "empuja hacia la camara" };
+  }
+  if (isZoneDragChallenge(challenge)) {
+    if (state.vision.droppedZone) return { kind: "ok", title: "Soltado", detail: "Carlitos toma la respuesta" };
+    if (state.vision.dragging && state.vision.gesture === "palma") return { kind: "active", title: "Soltando", detail: "mantente un instante" };
+    if (state.vision.dragging) return { kind: "active", title: "Llevando", detail: "abre la mano para soltar" };
+    if (state.vision.handX !== null) return { kind: "active", title: "Objeto tomado", detail: "llevalo al canasto" };
+    return { kind: "ready", title: "Entra al recuadro", detail: "el objeto seguira tu mano" };
+  }
+  if (challenge.input === "fingers-option") return { kind: "ready", title: "Dedos", detail: "1 a 4 eligen tarjeta" };
+  if (challenge.input === "fingers-exact") return { kind: "ready", title: "Cuenta", detail: "muestra el resultado" };
+  return { kind: "ready", title: "Juega", detail: overlayHint(challenge) };
 }
 
 function renderAiVisionOverlay() {
@@ -842,8 +881,8 @@ function renderAiVisionOverlay() {
 
 function overlayHint(challenge) {
   if (challenge.input === "ai-trainer") return "Entrena con ejemplos variados y luego prueba la matriz.";
-  if (challenge.conceptKey === "probabilidad") return "Haz girar con la palma y deja la mano sobre el color elegido.";
-  if (isZoneDragChallenge(challenge)) return "Pinza o puno: agarra. Palma abierta: suelta.";
+  if (challenge.conceptKey === "probabilidad") return "Palma abierta: empuja hacia la camara para girar y elegir.";
+  if (isZoneDragChallenge(challenge)) return "El objeto sigue la mano. Abre la palma sobre un canasto para soltar.";
   if (challenge.input === "zone") return "Mantén la mano sobre una zona para seleccionar.";
   if (challenge.input === "fingers-option") return "1 a 4 dedos seleccionan las tarjetas.";
   return "Mano abierta cuenta dedos; OK significa cero.";
@@ -867,7 +906,7 @@ function seedObjectStyle() {
   if (state.feedback?.selected) return zoneAnchorStyle(normalizeAnswer(state.feedback.selected));
   if (state.vision.droppedZone) return zoneAnchorStyle(state.vision.droppedZone);
   if (state.vision.dragging) return movableObjectStyle();
-  if (state.vision.handX !== null && isGrabGesture(state.vision.gesture)) return movableObjectStyle();
+  if (state.vision.handX !== null) return movableObjectStyle();
   return "left:50%;top:48%";
 }
 
@@ -885,6 +924,7 @@ function zoneActionLabel(zone, challenge) {
   if (state.feedback && normalizeAnswer(state.feedback.selected) === normalizeAnswer(zone)) return "soltado";
   if (state.vision.droppedZone === zone) return "soltado";
   if (challenge.conceptKey === "probabilidad") {
+    if (state.vision.hoverZone === zone && palmPushActive()) return "empuje";
     if (state.vision.hoverZone === zone && wheelIsSpinning()) return "girando";
     if (state.vision.hoverZone === zone) return "elegir";
     return "color";
@@ -899,8 +939,8 @@ function seedObjectLabel() {
   if (state.feedback) return "soltado";
   if (state.vision.droppedZone) return "soltado";
   if (state.vision.dragging) return "abre la mano";
-  if (state.vision.handX !== null && isGrabGesture(state.vision.gesture)) return "agarrado";
-  return "haz pinza";
+  if (state.vision.handX !== null) return "siguiendo";
+  return "muestra la mano";
 }
 
 function wheelSpinClass() {
@@ -909,8 +949,9 @@ function wheelSpinClass() {
 
 function wheelMotionLabel() {
   if (state.feedback) return "respuesta tomada";
+  if (palmPushActive()) return "empuje";
   if (wheelIsSpinning()) return "girando";
-  if (state.vision.handX !== null) return "mueve la palma";
+  if (state.vision.handX !== null) return "empuja palma";
   return "rueda lista";
 }
 
@@ -1262,6 +1303,7 @@ function renderConceptCoach(challenge) {
 
 function bindEvents() {
   document.querySelector("#resetProgress")?.addEventListener("click", () => {
+    clearAutoAdvance();
     state.progress = defaultProgress();
     state.activeGame = "dedos";
     state.activeCategory = "ninos";
@@ -1281,6 +1323,7 @@ function bindEvents() {
 
   document.querySelectorAll("[data-fair-game]").forEach((button) => {
     button.addEventListener("click", () => {
+      clearAutoAdvance();
       state.activeGame = button.dataset.fairGame;
       state.activeCategory = categoryForGame(state.activeGame, state.activeCategory).id;
       state.progress.lastGame = state.activeGame;
@@ -1525,6 +1568,7 @@ function handleHandResult(result) {
   const center = smoothHandCenter(displayHandCenter(hands[0]));
   const zone = handZone(center);
   const gesture = detectGesture(hands[0], fingers);
+  updatePalmPush(hands[0], gesture);
   state.vision.handX = center.x;
   state.vision.handY = center.y;
   updateWheelMotion(center, gesture);
@@ -1585,9 +1629,10 @@ function processVisionAnswer(force) {
     }
 
     const selectedByHover = state.vision.hoverProgress >= 1;
+    const selectedByPush = challenge.conceptKey === "probabilidad" && palmPushActive() && state.vision.hoverProgress >= 0.08;
     const selectedByGesture = state.vision.hoverProgress >= 0.35 && (state.vision.gesture === "palma" || state.vision.gesture === "pinza" || wheelIsSpinning());
-    if (force || selectedByHover || selectedByGesture) {
-      submitAnswer(state.vision.zone, wheelIsSpinning() && !force ? "ruleta" : selectedByHover && !force ? "zona" : "mano");
+    if (force || selectedByHover || selectedByGesture || selectedByPush) {
+      submitAnswer(state.vision.zone, selectedByPush && !force ? "empuje" : wheelIsSpinning() && !force ? "ruleta" : selectedByHover && !force ? "zona" : "mano");
     }
   }
 }
@@ -1615,6 +1660,7 @@ function updateVisionWidgets() {
     overlay.dataset.hoverZone = state.vision.hoverZone || "";
     overlay.dataset.dragging = state.vision.dragging ? "true" : "false";
     overlay.dataset.dropZone = state.vision.droppedZone || "";
+    overlay.dataset.palmPush = palmPushActive() ? "true" : "false";
     overlay.style.setProperty("--zone-progress", `${Math.round(state.vision.hoverProgress * 100)}%`);
     overlay.style.setProperty("--drop-progress", `${Math.round(state.vision.dropProgress * 100)}%`);
   }
@@ -1657,6 +1703,13 @@ function updateVisionWidgets() {
   }
   const wheelLabel = document.querySelector(".wheel-motion-label");
   if (wheelLabel) wheelLabel.textContent = wheelMotionLabel();
+  const status = document.querySelector("#overlayStatus");
+  if (status && state.challenge) {
+    const next = overlayStatus(state.challenge);
+    status.className = `overlay-status ${next.kind}`;
+    status.querySelector("strong").textContent = next.title;
+    status.querySelector("span").textContent = next.detail;
+  }
   updateAiLiveWidgets();
 }
 
@@ -1693,10 +1746,9 @@ function updateDragInteraction(challenge, force = false) {
 
   const now = Date.now();
   const zone = state.vision.zone;
-  const grab = isGrabGesture(state.vision.gesture);
-  const release = isReleaseGesture(state.vision.gesture);
+  const release = isReleaseGesture(state.vision.gesture) || palmPushActive();
 
-  if (!state.vision.dragging && grab) {
+  if (!state.vision.dragging && !state.vision.droppedZone) {
     state.vision.dragging = true;
     state.vision.droppedZone = null;
     state.vision.dropZone = zone;
@@ -1722,7 +1774,7 @@ function updateDragInteraction(challenge, force = false) {
     state.vision.dropProgress = clamp((now - state.vision.dropStartedAt) / DROP_DWELL_MS, 0, 1);
   }
 
-  if (release || state.vision.dropProgress >= 1) {
+  if ((release && state.vision.dropProgress >= 0.16) || state.vision.dropProgress >= 1) {
     state.vision.dragging = false;
     state.vision.droppedZone = zone;
     state.vision.dropProgress = 1;
@@ -1743,6 +1795,12 @@ function updateWheelMotion(point, gesture) {
   const hasLast = state.vision.lastHandAngle !== null
     && state.vision.lastHandX !== null
     && state.vision.lastHandY !== null;
+
+  if (palmPushActive()) {
+    const direction = point.x >= WHEEL_CENTER.x ? 1 : -1;
+    state.vision.wheelVelocity = direction * 52;
+    state.vision.spinUntil = Date.now() + 980;
+  }
 
   if (hasLast) {
     const deltaAngle = normalizedRadians(angle - state.vision.lastHandAngle);
@@ -1773,9 +1831,28 @@ function updateWheelMotion(point, gesture) {
 
 function spinWheelByDemo() {
   if (state.challenge?.conceptKey !== "probabilidad" || state.answered) return;
-  state.vision.wheelVelocity = 24;
-  state.vision.wheelAngle = normalizedDegrees(state.vision.wheelAngle + 72);
-  state.vision.spinUntil = Date.now() + 900;
+  triggerPalmPush();
+  state.vision.wheelVelocity = 52;
+  state.vision.wheelAngle = normalizedDegrees(state.vision.wheelAngle + 96);
+  state.vision.spinUntil = Date.now() + 980;
+}
+
+function updatePalmPush(landmarks, gesture) {
+  const scale = handScale(landmarks);
+  const lastScale = state.vision.lastHandScale;
+  state.vision.handScaleValue = scale;
+  state.vision.lastHandScale = scale;
+  if (gesture !== "palma" || lastScale === null) return;
+  const now = Date.now();
+  const scaleDelta = scale - lastScale;
+  if (scaleDelta > PALM_PUSH_THRESHOLD && now - state.vision.lastPalmPushAt > PALM_PUSH_COOLDOWN_MS) {
+    triggerPalmPush(now);
+  }
+}
+
+function triggerPalmPush(now = Date.now()) {
+  state.vision.palmPushUntil = now + 520;
+  state.vision.lastPalmPushAt = now;
 }
 
 function resetHandTracking() {
@@ -1783,6 +1860,9 @@ function resetHandTracking() {
   state.vision.handY = null;
   state.vision.smoothedHandX = null;
   state.vision.smoothedHandY = null;
+  state.vision.handScaleValue = null;
+  state.vision.lastHandScale = null;
+  state.vision.palmPushUntil = 0;
   resetDragInteraction();
   resetWheelTracking(false);
   resetZoneHover();
@@ -1808,6 +1888,7 @@ function resetWheelTracking(resetAngle = true) {
   state.vision.lastHandAngle = null;
   state.vision.lastHandX = null;
   state.vision.lastHandY = null;
+  state.vision.palmPushUntil = 0;
   if (resetAngle) state.vision.wheelAngle = 0;
 }
 
@@ -1825,6 +1906,10 @@ function isReleaseGesture(gesture) {
 
 function wheelIsSpinning() {
   return Date.now() < state.vision.spinUntil || Math.abs(state.vision.wheelVelocity) > 0.35;
+}
+
+function palmPushActive() {
+  return Date.now() < state.vision.palmPushUntil;
 }
 
 function normalizedRadians(value) {
@@ -2031,7 +2116,7 @@ function createSeedGuardianChallenge() {
     input: "zone",
     conceptKey: "comparacion",
     title: "Canasto con mas semillas",
-    prompt: "Haz pinza para agarrar las semillas, llevalas al canasto mayor y abre la mano para soltarlas.",
+    prompt: "Muestra la mano: las semillas te siguen. Abre la palma sobre el canasto mayor para soltarlas.",
     hint: "Tambien puedes tocar el canasto.",
     strategy: "Compara las tres cantidades y busca la mayor.",
     model: `El canasto ${winner.label} tiene ${winner.count}; por eso es el grupo mayor.`,
@@ -2082,7 +2167,7 @@ function createChanceChallenge() {
     input: "zone",
     conceptKey: "probabilidad",
     title: "La rueda decide",
-    prompt: "Gira la rueda con la palma y deja la mano sobre el color con mas sectores.",
+    prompt: "Palma abierta: empuja hacia la camara sobre el color con mas sectores.",
     hint: "Mas sectores significa mas oportunidad.",
     strategy: "Cuenta sectores: la opcion con mas partes aparece mas veces en la rueda.",
     model: `${winner.label} tiene ${winner.count} sectores, asi que tiene mas oportunidades.`,
@@ -2431,6 +2516,7 @@ function aiAccuracyLabel() {
 
 function submitAnswer(value, source) {
   if (state.answered) return;
+  clearAutoAdvance();
   const selected = normalizeAnswer(value);
   const answer = normalizeAnswer(state.challenge.answer);
   const ok = selected === answer;
@@ -2496,9 +2582,11 @@ function submitAnswer(value, source) {
   });
   writeProgress();
   renderApp();
+  scheduleAutoAdvance(ok);
 }
 
 function newChallenge() {
+  clearAutoAdvance();
   state.challenge = createChallenge(state.activeGame);
   state.answered = false;
   state.feedback = null;
@@ -2506,6 +2594,22 @@ function newChallenge() {
   resetDragInteraction();
   resetWheelTracking();
   renderApp();
+}
+
+function scheduleAutoAdvance(ok) {
+  clearAutoAdvance();
+  const delay = ok ? AUTO_NEXT_OK_MS : AUTO_NEXT_REVIEW_MS;
+  autoAdvanceTimer = window.setTimeout(() => {
+    autoAdvanceTimer = null;
+    if (!state.answered || state.activeGame === "ia") return;
+    newChallenge();
+  }, delay);
+}
+
+function clearAutoAdvance() {
+  if (!autoAdvanceTimer) return;
+  window.clearTimeout(autoAdvanceTimer);
+  autoAdvanceTimer = null;
 }
 
 function handleKeyboard(event) {

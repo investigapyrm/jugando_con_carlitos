@@ -12,7 +12,7 @@ URL publica:
 
 ## Estado
 
-Version actual en esta rama: `v0.7.4`
+Version actual en esta rama: `v0.7.5`
 
 La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
 
@@ -27,6 +27,8 @@ La version `v0.7.2` mejora el seguimiento: suaviza el cursor de mano, reduce car
 La version `v0.7.3` corrige la experiencia reportada en prueba real: la zona ya no solo cambia de color, tambien dispara feedback visible dentro del escenario. Agrega objetos movibles que siguen la mano en comparacion de semillas y una rueda real visible para probabilidad.
 
 La version `v0.7.4` ajusta la interaccion gestual fina: suaviza las marcas de reconocimiento para que no tapen los objetos, separa agarre y soltado con pinza/puno y palma abierta, deja el objeto anclado al canasto al soltarlo, y hace que la ruleta gire por movimiento de mano en vez de solo mostrarse animada.
+
+La version `v0.7.5` vuelve el flujo mas automatico para feria: el objeto sigue la mano sin pedir pinza, la palma abierta suelta, el empuje de palma hacia la camara funciona como clic de ruleta, los mensajes pasan a ser toasts en esquina y cada respuesta avanza sola al siguiente reto.
 
 Uso previsto: notebook o computadora conectada a proyector/pantalla grande, con camara integrada o externa apuntando al espacio donde participa el nino. No esta pensada principalmente como experiencia individual de celular.
 
@@ -76,9 +78,10 @@ Incluye:
 * seguimiento suavizado de mano para reducir saltos visuales;
 * seleccion por permanencia sobre zonas en los juegos de comparacion y probabilidad;
 * objetos de juego que siguen la mano dentro del escenario;
-* agarre con pinza o puno y soltado con palma abierta en objetos movibles;
-* rueda visual de probabilidad que gira con el movimiento de la mano;
-* feedback grande dentro del visor cuando una seleccion queda tomada;
+* traslado automatico de objetos con la mano visible y soltado con palma abierta;
+* rueda visual de probabilidad que gira con movimiento o empuje de palma;
+* feedback emergente en esquina cuando una seleccion queda tomada;
+* avance automatico al siguiente reto despues de responder;
 * gesto de cero con pulgar e indice unidos, tipo `OK`;
 * modo demo con botones de dedos, zonas y gesto de palma;
 * historial local por juego;

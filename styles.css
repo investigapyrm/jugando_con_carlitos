@@ -1075,36 +1075,35 @@ h3 {
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(255, 210, 63, 0.72);
   border-radius: 8px;
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
   display: grid;
   gap: 0.12rem;
-  left: 50%;
-  max-width: min(760px, calc(100% - 7rem));
-  min-width: min(520px, calc(100% - 7rem));
-  padding: 0.58rem 0.85rem;
-  place-items: center;
+  left: 0.75rem;
+  max-width: min(360px, calc(100% - 8.6rem));
+  min-width: 0;
+  padding: 0.45rem 0.62rem;
   position: absolute;
-  text-align: center;
+  text-align: left;
   top: 0.72rem;
-  transform: translateX(-50%);
   z-index: 3;
 }
 
 .overlay-feedback {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(5, 39, 25, 0.16);
   border-radius: 8px;
-  box-shadow: 0 18px 40px rgba(5, 39, 25, 0.26);
+  box-shadow: 0 16px 34px rgba(5, 39, 25, 0.24);
   display: grid;
   gap: 0.12rem;
-  left: 50%;
-  min-width: min(420px, calc(100% - 2rem));
-  padding: 0.7rem 1rem;
-  place-items: center;
+  bottom: 0.72rem;
+  left: auto;
+  min-width: 0;
+  max-width: min(360px, calc(100% - 1.4rem));
+  padding: 0.52rem 0.72rem;
+  place-items: start;
   position: absolute;
-  text-align: center;
-  top: 48%;
-  transform: translate(-50%, -50%);
+  right: 0.72rem;
+  text-align: left;
   z-index: 8;
 }
 
@@ -1125,8 +1124,8 @@ h3 {
 
 .overlay-feedback strong {
   color: var(--green-950);
-  font-size: clamp(1.8rem, 5vw, 4rem);
-  line-height: 0.92;
+  font-size: clamp(1.15rem, 3vw, 2rem);
+  line-height: 1;
 }
 
 .overlay-problem span,
@@ -1138,8 +1137,49 @@ h3 {
 
 .overlay-problem strong {
   color: var(--green-950);
-  font-size: clamp(1.55rem, 4.2vw, 3.6rem);
+  font-size: clamp(1rem, 2.5vw, 1.55rem);
   line-height: 0.95;
+}
+
+.overlay-status {
+  background: rgba(5, 39, 25, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  box-shadow: 0 10px 22px rgba(5, 39, 25, 0.18);
+  display: grid;
+  gap: 0.02rem;
+  justify-items: end;
+  max-width: min(310px, calc(100% - 1.5rem));
+  padding: 0.42rem 0.68rem;
+  position: absolute;
+  right: 0.75rem;
+  text-align: right;
+  top: 0.72rem;
+  z-index: 7;
+}
+
+.overlay-status strong {
+  color: var(--yellow);
+  font-size: 0.86rem;
+  line-height: 1;
+}
+
+.overlay-status span {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.overlay-status.ok {
+  background: rgba(19, 122, 77, 0.9);
+}
+
+.overlay-status.try {
+  background: rgba(120, 54, 45, 0.9);
+}
+
+.overlay-status.active {
+  background: rgba(22, 27, 58, 0.88);
 }
 
 .motion-game .vision-preview .overlay-problem {
@@ -1280,7 +1320,7 @@ h3 {
   padding: 0.7rem 0.35rem;
   position: relative;
   text-align: center;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  transition: background 80ms ease, border-color 80ms ease, transform 80ms ease;
 }
 
 .camera-zone::before {
@@ -1292,7 +1332,7 @@ h3 {
   inset-inline: 0;
   opacity: 0.95;
   position: absolute;
-  transition: height 80ms linear;
+  transition: height 45ms linear;
   z-index: 0;
 }
 
@@ -1378,7 +1418,7 @@ h3 {
   border-radius: inherit;
   display: block;
   height: 100%;
-  transition: width 80ms linear;
+  transition: width 45ms linear;
   width: var(--zone-progress, 0%);
 }
 
@@ -1389,7 +1429,7 @@ h3 {
   position: absolute;
   top: 54%;
   transform: translate(-50%, -50%);
-  transition: left 70ms linear, top 70ms linear, opacity 160ms ease, transform 160ms ease;
+  transition: left 28ms linear, top 28ms linear, opacity 100ms ease, transform 100ms ease;
   z-index: 6;
 }
 
@@ -1469,7 +1509,7 @@ h3 {
   min-width: 220px;
   position: relative;
   transform: rotate(var(--wheel-angle, 0deg));
-  transition: transform 70ms linear, filter 120ms ease, box-shadow 120ms ease;
+  transition: transform 34ms linear, filter 90ms ease, box-shadow 90ms ease;
   width: min(28vw, 300px);
 }
 

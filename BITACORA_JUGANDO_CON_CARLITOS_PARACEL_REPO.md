@@ -2666,3 +2666,118 @@
 * Probar la URL con `?v=0.7.4`.
 * En feria, indicar verbalmente: cerrar para agarrar, abrir para soltar.
 * Si se usa pantalla grande, mantener una sola mano participante dentro del recuadro.
+
+## 2026-06-27 21:07
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.7.5`
+
+### Objetivo de la intervencion
+
+* Reducir la sensacion de lentitud y torpeza.
+* Evitar que mensajes de exito o instrucciones tapen las acciones.
+* Automatizar el paso entre retos.
+* Simplificar tomar y soltar objetos.
+* Hacer entendible la ruleta mediante empuje de palma como clic.
+
+### Diagnostico inicial
+
+* El suavizado y las transiciones visuales seguian agregando demora perceptible.
+* La mecanica de pinza/puno para agarrar era un paso adicional dificil de explicar en feria.
+* El feedback grande dentro del centro del visor competia con los objetos.
+* Despues de responder, el usuario todavia dependia del boton de nuevo reto.
+* La ruleta giraba por movimiento, pero el gesto no era obvio para el participante.
+
+### Acciones realizadas
+
+* Se actualizo la version a `v0.7.5`.
+* Se redujo el intervalo de lectura del detector y se aumento la reaccion del suavizado.
+* Se acortaron transiciones de objeto, zona y ruleta.
+* Se simplifico traslado de objetos:
+  * mano visible = objeto siguiendo;
+  * palma abierta = soltar;
+  * permanencia corta = respaldo.
+* Se reemplazo el cartel central por:
+  * toast de feedback en esquina;
+  * etiqueta compacta de reto;
+  * pastilla de estado operativo.
+* Se agrego avance automatico posterior a cada respuesta.
+* Se agrego deteccion de empuje de palma hacia camara usando aumento rapido de escala de mano.
+* Se usa el empuje de palma como clic de ruleta y seleccion de zona.
+* Se actualizo cache-busting y service worker.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `node --check app.js`
+* `node --check service-worker.js`
+* `python -m http.server 8803 --bind 127.0.0.1`
+* `python _tmp_v075_flow_check.py`
+* `git diff --check`
+* Pendiente:
+  * commit, push y verificacion publica
+
+### Resultados verificados
+
+* Sintaxis de `app.js`: valida.
+* Sintaxis de `service-worker.js`: valida.
+* `git diff --check`: sin errores de whitespace; solo avisos LF/CRLF normales de Windows.
+* Prueba Playwright Python con landmarks sinteticos:
+  * `APP_VERSION = "v0.7.5"`;
+  * objeto de semillas en estado `siguiendo`;
+  * soltado en zona correcta con palma;
+  * feedback emergente abajo;
+  * avance automatico al siguiente reto;
+  * ruleta selecciona por `source: empuje`;
+  * ruleta registra giro `323.4` grados;
+  * ruleta avanza automaticamente despues de responder.
+* Pendiente de URL publica.
+
+### Pruebas realizadas
+
+* URL local: `http://127.0.0.1:8803/?v=0.7.5#semillas`
+* URL local: `http://127.0.0.1:8803/?v=0.7.5#azar`
+* Capturas:
+  * `test-results/v075_local_semillas_auto.png`
+  * `test-results/v075_local_azar_push.png`
+
+### Errores o incidentes
+
+* Persisten textos historicos con mojibake en zonas puntuales; esta intervencion evita introducir nuevos textos con acentos no ASCII salvo los ya existentes.
+
+### Soluciones aplicadas
+
+* Flujo mas automatico para uso en feria.
+* Mensajes emergentes y no bloqueantes.
+* Empuje de palma como gesto de clic para ruleta.
+
+### Pendientes
+
+* Validar con camara real y ninos/adolescentes.
+* Ajustar umbral de empuje si la camara real lo detecta demasiado sensible o poco sensible.
+
+### Riesgos
+
+* La deteccion de empuje depende de distancia a camara y encuadre.
+* Si un participante mueve la mano muy cerca de la camara, puede disparar seleccion accidental.
+
+### Recomendaciones
+
+* Probar la URL con `?v=0.7.5`.
+* Indicar en feria: muestra la mano, abre palma para soltar, empuja palma para ruleta.
