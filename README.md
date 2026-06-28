@@ -12,7 +12,7 @@ URL publica:
 
 ## Estado
 
-Version actual en esta rama: `v0.7.3`
+Version actual en esta rama: `v0.7.4`
 
 La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
 
@@ -25,6 +25,8 @@ La version `v0.7.1` ajusta el conteo de dedos: mejora la deteccion de pulgares p
 La version `v0.7.2` mejora el seguimiento: suaviza el cursor de mano, reduce carga del detector limitando lecturas a un ritmo mas estable, corrige la zona visual en video espejado y agrega seleccion por permanencia de la mano sobre una zona.
 
 La version `v0.7.3` corrige la experiencia reportada en prueba real: la zona ya no solo cambia de color, tambien dispara feedback visible dentro del escenario. Agrega objetos movibles que siguen la mano en comparacion de semillas y una rueda real visible para probabilidad.
+
+La version `v0.7.4` ajusta la interaccion gestual fina: suaviza las marcas de reconocimiento para que no tapen los objetos, separa agarre y soltado con pinza/puno y palma abierta, deja el objeto anclado al canasto al soltarlo, y hace que la ruleta gire por movimiento de mano en vez de solo mostrarse animada.
 
 Uso previsto: notebook o computadora conectada a proyector/pantalla grande, con camara integrada o externa apuntando al espacio donde participa el nino. No esta pensada principalmente como experiencia individual de celular.
 
@@ -69,12 +71,13 @@ Incluye:
 * categorias por edad;
 * retos generados dinamicamente;
 * sensor de manos con camara opcional;
-* escenario de camara grande, video velado, puntos de mano destacados y desafios dentro del mismo visor;
+* escenario de camara grande, video velado, marcas de mano tenues y desafios dentro del mismo visor;
 * reconocimiento de dedos y posicion de la mano cuando el navegador lo permite;
 * seguimiento suavizado de mano para reducir saltos visuales;
 * seleccion por permanencia sobre zonas en los juegos de comparacion y probabilidad;
 * objetos de juego que siguen la mano dentro del escenario;
-* rueda visual giratoria para probabilidad;
+* agarre con pinza o puno y soltado con palma abierta en objetos movibles;
+* rueda visual de probabilidad que gira con el movimiento de la mano;
 * feedback grande dentro del visor cuando una seleccion queda tomada;
 * gesto de cero con pulgar e indice unidos, tipo `OK`;
 * modo demo con botones de dedos, zonas y gesto de palma;

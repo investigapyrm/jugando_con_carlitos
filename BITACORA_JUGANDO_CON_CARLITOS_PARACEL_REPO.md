@@ -2543,3 +2543,116 @@
 * Probar la URL con `?v=0.7.3`.
 * Usar una sola persona dentro del recuadro.
 * Mantener `pinza` reservado para agarre en futuras mecanicas de arrastre.
+
+## 2026-06-27 20:41
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.7.4`
+
+### Objetivo de la intervencion
+
+* Corregir tres problemas observados en prueba real:
+  * marcas de reconocimiento demasiado fuertes y superpuestas a objetos;
+  * falta de claridad para soltar o dejar caer objetos;
+  * ruleta que no giraba realmente con la mano.
+
+### Diagnostico inicial
+
+* El canvas de landmarks estaba por encima de la capa de juego y usaba trazos brillantes.
+* El objeto de semillas seguia la mano, pero no tenia estado pedagogico claro de `agarrado` y `soltado`.
+* La ruleta usaba una animacion visual, pero no acumulaba giro a partir del movimiento de la mano.
+
+### Acciones realizadas
+
+* Se actualizo la version a `v0.7.4`.
+* Se redujo brillo, opacidad y grosor de las marcas de mano.
+* Se bajo el canvas de reconocimiento detras de los objetos del juego.
+* Se agrego mecanica de arrastre didactico:
+  * pinza o puno para agarrar;
+  * palma abierta para soltar;
+  * permanencia como respaldo;
+  * objeto anclado al canasto elegido.
+* Se agrego giro real de ruleta:
+  * calculo de angulo de mano alrededor del centro de la rueda;
+  * impulso por desplazamiento lateral/circular;
+  * velocidad con decaimiento;
+  * boton demo `palma` que tambien impulsa la ruleta.
+* Se actualizaron textos de reto, README, prompts, service worker y cache-busting.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `node --check app.js`
+* `node --check service-worker.js`
+* `python -m http.server 8802 --bind 127.0.0.1`
+* `python _tmp_v074_interaction_check.py`
+* `git diff --check`
+* Pendiente de completar en esta misma intervencion:
+  * verificacion HTTP publica posterior al push
+
+### Resultados verificados
+
+* Sintaxis de `app.js`: valida.
+* Sintaxis de `service-worker.js`: valida.
+* `git diff --check`: sin errores de whitespace; solo avisos LF/CRLF normales de Windows.
+* Prueba Playwright Python con landmarks sinteticos:
+  * `APP_VERSION = "v0.7.4"`;
+  * `Guardian de semillas` permite pinza y palma;
+  * el objeto queda en estado `soltado`;
+  * la respuesta se registra con fuente `soltar`;
+  * canvas de landmarks queda con `z-index: 2` y `opacity: 0.38`;
+  * overlay de juego queda con `z-index: 4`;
+  * `Rueda en el aire` cambia de `0` a `264.6` grados;
+  * la rueda queda en estado visual `girando`.
+
+### Pruebas realizadas
+
+* URL local: `http://127.0.0.1:8802/?v=0.7.4#semillas`
+* URL local: `http://127.0.0.1:8802/?v=0.7.4#azar`
+* Capturas:
+  * `test-results/v074_local_semillas_drop.png`
+  * `test-results/v074_local_azar_spin.png`
+
+### Errores o incidentes
+
+* Se encontro mojibake heredado en textos de la app y prompts; se evito introducir nuevos caracteres no ASCII en esta correccion.
+
+### Soluciones aplicadas
+
+* Separar capa de lectura de mano de capa de juego.
+* Cambiar seleccion implicita por una mecanica visual de agarrar y soltar.
+* Reemplazar giro decorativo por transformacion controlada por estado (`wheelAngle`, `wheelVelocity`).
+
+### Pendientes
+
+* Probar con camara fisica en el notebook/proyector.
+* Ajustar sensibilidad de giro si el movimiento real resulta demasiado rapido o demasiado lento.
+* Corregir mojibake historico de textos en una pasada dedicada.
+
+### Riesgos
+
+* La deteccion de `pinza`, `puno` y `palma` depende de luz, distancia y orientacion de la mano.
+* Si el participante entra con la mano abierta desde el inicio, puede requerir una indicacion breve para cerrar pinza y luego soltar.
+* GitHub Pages y service worker pueden tardar en refrescar cache en dispositivos ya usados.
+
+### Recomendaciones
+
+* Probar la URL con `?v=0.7.4`.
+* En feria, indicar verbalmente: cerrar para agarrar, abrir para soltar.
+* Si se usa pantalla grande, mantener una sola mano participante dentro del recuadro.

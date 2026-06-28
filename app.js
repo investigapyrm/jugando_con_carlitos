@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.7.3";
+const APP_VERSION = "v0.7.4";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -24,6 +24,8 @@ const VISION_FRAME_INTERVAL_MS = 33;
 const FINGER_STABLE_FRAMES = 4;
 const HAND_SMOOTHING = 0.46;
 const ZONE_DWELL_MS = 420;
+const DROP_DWELL_MS = 560;
+const WHEEL_CENTER = { x: 0.5, y: 0.42 };
 
 const AGE_GROUPS = [
   {
@@ -231,6 +233,17 @@ const state = {
     hoverZone: null,
     hoverStartedAt: 0,
     hoverProgress: 0,
+    dragging: false,
+    droppedZone: null,
+    dropZone: null,
+    dropStartedAt: 0,
+    dropProgress: 0,
+    wheelAngle: 0,
+    wheelVelocity: 0,
+    spinUntil: 0,
+    lastHandAngle: null,
+    lastHandX: null,
+    lastHandY: null,
     lockedUntil: 0,
   },
 };
@@ -290,6 +303,8 @@ function syncRoute() {
     state.challenge = createChallenge(game.id);
     state.answered = false;
     state.feedback = null;
+    resetDragInteraction();
+    resetWheelTracking();
     writeProgress();
     return;
   }
@@ -608,7 +623,7 @@ function renderMotionOverlay() {
   const game = getGame(state.activeGame) || GAMES[0];
   const cursorStyle = pointerStyle();
   return `
-    <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}" data-hover-zone="${escapeAttribute(state.vision.hoverZone || "")}" style="--zone-progress:${Math.round(state.vision.hoverProgress * 100)}%">
+    <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}" data-hover-zone="${escapeAttribute(state.vision.hoverZone || "")}" data-dragging="${state.vision.dragging ? "true" : "false"}" data-drop-zone="${escapeAttribute(state.vision.droppedZone || "")}" style="--zone-progress:${Math.round(state.vision.hoverProgress * 100)}%;--drop-progress:${Math.round(state.vision.dropProgress * 100)}%">
       <div class="overlay-grid-lines"></div>
       ${renderOverlayProblem(challenge)}
       ${renderOverlayTargets(game, challenge)}
@@ -699,8 +714,9 @@ function renderOverlayTargets(game, challenge) {
 
 function renderZonePlayfield(challenge) {
   const playfieldClass = challenge.conceptKey === "probabilidad" ? "wheel-field" : "seed-field";
+  const interactionClass = state.vision.dragging ? "is-dragging" : state.vision.droppedZone ? "has-drop" : "is-ready";
   return `
-    <div class="zone-playfield ${playfieldClass}">
+    <div class="zone-playfield ${playfieldClass} ${interactionClass}">
       ${challenge.conceptKey === "probabilidad" ? renderProbabilityWheel(challenge) : renderSeedMover(challenge)}
       ${renderCameraZones(challenge)}
     </div>
@@ -718,10 +734,12 @@ function renderCameraZones(challenge) {
 function renderCameraZone(option, challenge) {
   const selected = state.feedback && normalizeAnswer(state.feedback.selected) === normalizeAnswer(option.value);
   const expected = state.feedback && normalizeAnswer(challenge.answer) === normalizeAnswer(option.value);
+  const dropped = state.vision.droppedZone === option.value;
   const classes = [
     "camera-zone",
     state.vision.zone === option.value ? "active" : "",
     state.vision.hoverZone === option.value ? "hovering" : "",
+    dropped ? "dropped" : "",
     selected ? "selected" : "",
     selected && state.feedback?.ok ? "correct" : "",
     selected && !state.feedback?.ok ? "wrong" : "",
@@ -732,7 +750,7 @@ function renderCameraZone(option, challenge) {
     <div class="${classes}" data-camera-zone="${escapeAttribute(option.value)}" style="--zone-progress:${progress}%">
       <small>${escapeHtml(option.label)}</small>
       <strong>${escapeHtml(option.count ?? "")}</strong>
-      <span class="zone-action">${selected ? "tomado" : state.vision.hoverZone === option.value ? "soltar" : "apuntar"}</span>
+      <span class="zone-action">${escapeHtml(zoneActionLabel(option.value, challenge))}</span>
       <span class="zone-hold-meter"><i></i></span>
     </div>
   `;
@@ -740,9 +758,17 @@ function renderCameraZone(option, challenge) {
 
 function renderSeedMover(challenge) {
   const target = challenge.options.find((option) => option.value === state.vision.zone) || challenge.options[1];
+  const classes = [
+    "hand-object",
+    "seed-object",
+    state.vision.handX === null ? "idle" : "",
+    state.vision.dragging ? "grabbed" : "",
+    state.vision.droppedZone ? "dropped" : "",
+  ].filter(Boolean).join(" ");
   return `
-    <div class="hand-object seed-object ${state.vision.handX === null ? "idle" : ""}" style="${movableObjectStyle()}">
+    <div class="${classes}" style="${seedObjectStyle()}">
       <span class="seed-basket">${repeat(Math.min(7, target?.count || 5), () => "<i></i>")}</span>
+      <em>${escapeHtml(seedObjectLabel())}</em>
     </div>
   `;
 }
@@ -750,12 +776,17 @@ function renderSeedMover(challenge) {
 function renderProbabilityWheel(challenge) {
   return `
     <div class="probability-wheel-stage">
-      <div class="gesture-wheel live-wheel ${state.vision.handX !== null && !state.answered ? "spin" : ""}" style="--wheel-gradient:${wheelGradient(challenge.options)}">
+      <div class="gesture-wheel live-wheel ${wheelSpinClass()}" style="${wheelStyle(challenge)}">
         <span></span>
       </div>
-      <div class="wheel-pointer" style="${movableObjectStyle()}"></div>
+      <div class="wheel-pointer ${state.vision.handX === null ? "idle" : ""}" style="${movableObjectStyle()}"></div>
+      <small class="wheel-motion-label">${escapeHtml(wheelMotionLabel())}</small>
     </div>
   `;
+}
+
+function wheelStyle(challenge) {
+  return `--wheel-gradient:${wheelGradient(challenge.options)};--wheel-angle:${state.vision.wheelAngle.toFixed(1)}deg`;
 }
 
 function wheelGradient(options) {
@@ -811,6 +842,8 @@ function renderAiVisionOverlay() {
 
 function overlayHint(challenge) {
   if (challenge.input === "ai-trainer") return "Entrena con ejemplos variados y luego prueba la matriz.";
+  if (challenge.conceptKey === "probabilidad") return "Haz girar con la palma y deja la mano sobre el color elegido.";
+  if (isZoneDragChallenge(challenge)) return "Pinza o puno: agarra. Palma abierta: suelta.";
   if (challenge.input === "zone") return "Mantén la mano sobre una zona para seleccionar.";
   if (challenge.input === "fingers-option") return "1 a 4 dedos seleccionan las tarjetas.";
   return "Mano abierta cuenta dedos; OK significa cero.";
@@ -828,6 +861,57 @@ function movableObjectStyle() {
   const x = clamp(Math.round(state.vision.handX * 100), 9, 91);
   const y = clamp(Math.round(state.vision.handY * 100), 22, 82);
   return `left:${x}%;top:${y}%`;
+}
+
+function seedObjectStyle() {
+  if (state.feedback?.selected) return zoneAnchorStyle(normalizeAnswer(state.feedback.selected));
+  if (state.vision.droppedZone) return zoneAnchorStyle(state.vision.droppedZone);
+  if (state.vision.dragging) return movableObjectStyle();
+  if (state.vision.handX !== null && isGrabGesture(state.vision.gesture)) return movableObjectStyle();
+  return "left:50%;top:48%";
+}
+
+function zoneAnchorStyle(zone) {
+  const anchors = {
+    izquierda: 20,
+    centro: 50,
+    derecha: 80,
+  };
+  const x = anchors[zone] || 50;
+  return `left:${x}%;top:73%`;
+}
+
+function zoneActionLabel(zone, challenge) {
+  if (state.feedback && normalizeAnswer(state.feedback.selected) === normalizeAnswer(zone)) return "soltado";
+  if (state.vision.droppedZone === zone) return "soltado";
+  if (challenge.conceptKey === "probabilidad") {
+    if (state.vision.hoverZone === zone && wheelIsSpinning()) return "girando";
+    if (state.vision.hoverZone === zone) return "elegir";
+    return "color";
+  }
+  if (state.vision.dragging && state.vision.hoverZone === zone) return "abre mano";
+  if (state.vision.dragging) return "llevar";
+  if (state.vision.hoverZone === zone) return "agarra";
+  return "canasto";
+}
+
+function seedObjectLabel() {
+  if (state.feedback) return "soltado";
+  if (state.vision.droppedZone) return "soltado";
+  if (state.vision.dragging) return "abre la mano";
+  if (state.vision.handX !== null && isGrabGesture(state.vision.gesture)) return "agarrado";
+  return "haz pinza";
+}
+
+function wheelSpinClass() {
+  return wheelIsSpinning() ? "spin hand-spin" : "";
+}
+
+function wheelMotionLabel() {
+  if (state.feedback) return "respuesta tomada";
+  if (wheelIsSpinning()) return "girando";
+  if (state.vision.handX !== null) return "mueve la palma";
+  return "rueda lista";
 }
 
 function renderChallengePanel(game) {
@@ -1204,6 +1288,8 @@ function bindEvents() {
       state.challenge = createChallenge(state.activeGame);
       state.feedback = null;
       state.answered = false;
+      resetDragInteraction();
+      resetWheelTracking();
       writeProgress();
       renderApp();
     });
@@ -1253,6 +1339,7 @@ function bindEvents() {
   document.querySelectorAll("[data-sim-gesture]").forEach((button) => {
     button.addEventListener("click", () => {
       state.vision.gesture = button.dataset.simGesture;
+      if (state.vision.gesture === "palma") spinWheelByDemo();
       updateVisionWidgets();
       processVisionAnswer(true);
     });
@@ -1440,6 +1527,7 @@ function handleHandResult(result) {
   const gesture = detectGesture(hands[0], fingers);
   state.vision.handX = center.x;
   state.vision.handY = center.y;
+  updateWheelMotion(center, gesture);
   updateVisionReading(fingers, zone, gesture, Math.min(1, hands.length / 2 + 0.5));
   drawHands(hands);
   processVisionAnswer(false);
@@ -1488,10 +1576,18 @@ function processVisionAnswer(force) {
   }
 
   if (challenge.input === "zone") {
+    if (isZoneDragChallenge(challenge)) {
+      const droppedZone = updateDragInteraction(challenge, force);
+      if (droppedZone) {
+        submitAnswer(droppedZone, "soltar");
+      }
+      return;
+    }
+
     const selectedByHover = state.vision.hoverProgress >= 1;
-    const selectedByGesture = state.vision.hoverProgress >= 0.35 && (state.vision.gesture === "palma" || state.vision.gesture === "pinza");
+    const selectedByGesture = state.vision.hoverProgress >= 0.35 && (state.vision.gesture === "palma" || state.vision.gesture === "pinza" || wheelIsSpinning());
     if (force || selectedByHover || selectedByGesture) {
-      submitAnswer(state.vision.zone, selectedByHover && !force ? "zona" : "mano");
+      submitAnswer(state.vision.zone, wheelIsSpinning() && !force ? "ruleta" : selectedByHover && !force ? "zona" : "mano");
     }
   }
 }
@@ -1517,7 +1613,10 @@ function updateVisionWidgets() {
   if (overlay) {
     overlay.dataset.zone = state.vision.zone;
     overlay.dataset.hoverZone = state.vision.hoverZone || "";
+    overlay.dataset.dragging = state.vision.dragging ? "true" : "false";
+    overlay.dataset.dropZone = state.vision.droppedZone || "";
     overlay.style.setProperty("--zone-progress", `${Math.round(state.vision.hoverProgress * 100)}%`);
+    overlay.style.setProperty("--drop-progress", `${Math.round(state.vision.dropProgress * 100)}%`);
   }
   const cursor = document.querySelector("#handCursor");
   if (cursor) {
@@ -1528,14 +1627,36 @@ function updateVisionWidgets() {
   document.querySelectorAll("[data-camera-zone]").forEach((node) => {
     const isActive = node.dataset.cameraZone === state.vision.zone;
     const isHovering = node.dataset.cameraZone === state.vision.hoverZone;
+    const isDropped = node.dataset.cameraZone === state.vision.droppedZone;
     node.classList.toggle("active", isActive);
     node.classList.toggle("hovering", isHovering);
+    node.classList.toggle("dropped", isDropped);
     node.style.setProperty("--zone-progress", `${Math.round((isHovering ? state.vision.hoverProgress : 0) * 100)}%`);
+    const action = node.querySelector(".zone-action");
+    if (action && state.challenge) action.textContent = zoneActionLabel(node.dataset.cameraZone, state.challenge);
   });
-  document.querySelectorAll(".hand-object, .wheel-pointer").forEach((node) => {
-    node.classList.toggle("idle", state.vision.handX === null);
-    node.setAttribute("style", movableObjectStyle());
-  });
+  const handObject = document.querySelector(".hand-object");
+  if (handObject) {
+    handObject.classList.toggle("idle", state.vision.handX === null);
+    handObject.classList.toggle("grabbed", state.vision.dragging);
+    handObject.classList.toggle("dropped", Boolean(state.vision.droppedZone || state.feedback));
+    handObject.setAttribute("style", seedObjectStyle());
+    const label = handObject.querySelector("em");
+    if (label) label.textContent = seedObjectLabel();
+  }
+  const wheelPointer = document.querySelector(".wheel-pointer");
+  if (wheelPointer) {
+    wheelPointer.classList.toggle("idle", state.vision.handX === null);
+    wheelPointer.setAttribute("style", movableObjectStyle());
+  }
+  const wheel = document.querySelector(".live-wheel");
+  if (wheel) {
+    wheel.classList.toggle("spin", wheelIsSpinning());
+    wheel.classList.toggle("hand-spin", wheelIsSpinning());
+    wheel.style.setProperty("--wheel-angle", `${state.vision.wheelAngle.toFixed(1)}deg`);
+  }
+  const wheelLabel = document.querySelector(".wheel-motion-label");
+  if (wheelLabel) wheelLabel.textContent = wheelMotionLabel();
   updateAiLiveWidgets();
 }
 
@@ -1562,11 +1683,108 @@ function updateZoneHover(zone) {
   state.vision.hoverProgress = clamp((now - state.vision.hoverStartedAt) / ZONE_DWELL_MS, 0, 1);
 }
 
+function updateDragInteraction(challenge, force = false) {
+  if (!isZoneDragChallenge(challenge) || state.answered) return null;
+  if (force) return state.vision.zone;
+  if (state.vision.handX === null || state.vision.handY === null) {
+    resetDragInteraction();
+    return null;
+  }
+
+  const now = Date.now();
+  const zone = state.vision.zone;
+  const grab = isGrabGesture(state.vision.gesture);
+  const release = isReleaseGesture(state.vision.gesture);
+
+  if (!state.vision.dragging && grab) {
+    state.vision.dragging = true;
+    state.vision.droppedZone = null;
+    state.vision.dropZone = zone;
+    state.vision.dropStartedAt = now;
+    state.vision.dropProgress = 0;
+  }
+
+  if (!state.vision.dragging) {
+    if (!state.vision.droppedZone && state.vision.hoverProgress >= 1) {
+      state.vision.droppedZone = zone;
+      state.vision.dropZone = zone;
+      state.vision.dropProgress = 1;
+      return zone;
+    }
+    return null;
+  }
+
+  if (state.vision.dropZone !== zone) {
+    state.vision.dropZone = zone;
+    state.vision.dropStartedAt = now;
+    state.vision.dropProgress = 0;
+  } else {
+    state.vision.dropProgress = clamp((now - state.vision.dropStartedAt) / DROP_DWELL_MS, 0, 1);
+  }
+
+  if (release || state.vision.dropProgress >= 1) {
+    state.vision.dragging = false;
+    state.vision.droppedZone = zone;
+    state.vision.dropProgress = 1;
+    return zone;
+  }
+
+  return null;
+}
+
+function updateWheelMotion(point, gesture) {
+  const challenge = state.challenge;
+  if (!challenge || challenge.conceptKey !== "probabilidad" || state.answered) {
+    resetWheelTracking(false);
+    return;
+  }
+
+  const angle = Math.atan2(point.y - WHEEL_CENTER.y, point.x - WHEEL_CENTER.x);
+  const hasLast = state.vision.lastHandAngle !== null
+    && state.vision.lastHandX !== null
+    && state.vision.lastHandY !== null;
+
+  if (hasLast) {
+    const deltaAngle = normalizedRadians(angle - state.vision.lastHandAngle);
+    const dx = point.x - state.vision.lastHandX;
+    const dy = point.y - state.vision.lastHandY;
+    const gestureBoost = gesture === "palma" || gesture === "pinza" ? 1.55 : 1;
+    const impulse = ((deltaAngle * 110) + (dx * 420) - (dy * 90)) * gestureBoost;
+
+    if (Math.abs(impulse) > 0.7) {
+      state.vision.wheelVelocity = clamp(state.vision.wheelVelocity + impulse, -38, 38);
+      state.vision.spinUntil = Date.now() + 850;
+    }
+  }
+
+  if ((gesture === "palma" || gesture === "pinza") && Math.abs(state.vision.wheelVelocity) < 1.4) {
+    const direction = point.x >= WHEEL_CENTER.x ? 1 : -1;
+    state.vision.wheelVelocity += direction * 1.4;
+    state.vision.spinUntil = Date.now() + 520;
+  }
+
+  state.vision.wheelAngle = normalizedDegrees(state.vision.wheelAngle + state.vision.wheelVelocity);
+  state.vision.wheelVelocity *= 0.84;
+  if (Math.abs(state.vision.wheelVelocity) < 0.04) state.vision.wheelVelocity = 0;
+  state.vision.lastHandAngle = angle;
+  state.vision.lastHandX = point.x;
+  state.vision.lastHandY = point.y;
+}
+
+function spinWheelByDemo() {
+  if (state.challenge?.conceptKey !== "probabilidad" || state.answered) return;
+  state.vision.wheelVelocity = 24;
+  state.vision.wheelAngle = normalizedDegrees(state.vision.wheelAngle + 72);
+  state.vision.spinUntil = Date.now() + 900;
+}
+
 function resetHandTracking() {
   state.vision.handX = null;
   state.vision.handY = null;
   state.vision.smoothedHandX = null;
   state.vision.smoothedHandY = null;
+  resetDragInteraction();
+  resetWheelTracking(false);
   resetZoneHover();
 }
 
@@ -1576,6 +1794,52 @@ function resetZoneHover() {
   state.vision.hoverProgress = 0;
 }
 
+function resetDragInteraction() {
+  state.vision.dragging = false;
+  state.vision.droppedZone = null;
+  state.vision.dropZone = null;
+  state.vision.dropStartedAt = 0;
+  state.vision.dropProgress = 0;
+}
+
+function resetWheelTracking(resetAngle = true) {
+  state.vision.wheelVelocity = 0;
+  state.vision.spinUntil = 0;
+  state.vision.lastHandAngle = null;
+  state.vision.lastHandX = null;
+  state.vision.lastHandY = null;
+  if (resetAngle) state.vision.wheelAngle = 0;
+}
+
+function isZoneDragChallenge(challenge) {
+  return challenge?.input === "zone" && challenge.conceptKey !== "probabilidad";
+}
+
+function isGrabGesture(gesture) {
+  return gesture === "pinza" || gesture === "puno";
+}
+
+function isReleaseGesture(gesture) {
+  return gesture === "palma";
+}
+
+function wheelIsSpinning() {
+  return Date.now() < state.vision.spinUntil || Math.abs(state.vision.wheelVelocity) > 0.35;
+}
+
+function normalizedRadians(value) {
+  let result = value;
+  while (result > Math.PI) result -= Math.PI * 2;
+  while (result < -Math.PI) result += Math.PI * 2;
+  return result;
+}
+
+function normalizedDegrees(value) {
+  let result = value % 360;
+  if (result < 0) result += 360;
+  return result;
+}
+
 function drawHands(hands) {
   if (!canvasElement || !canvasContext || !videoElement) return;
   const width = videoElement.videoWidth || 640;
@@ -1583,13 +1847,15 @@ function drawHands(hands) {
   canvasElement.width = width;
   canvasElement.height = height;
   canvasContext.clearRect(0, 0, width, height);
+  canvasContext.save();
   canvasContext.lineCap = "round";
   canvasContext.lineJoin = "round";
-  canvasContext.shadowColor = "rgba(255, 210, 63, 0.92)";
-  canvasContext.shadowBlur = Math.max(10, width / 60);
-  canvasContext.lineWidth = Math.max(6, width / 105);
-  canvasContext.strokeStyle = "#ffd23f";
-  canvasContext.fillStyle = "#15f59a";
+  canvasContext.globalAlpha = 0.44;
+  canvasContext.shadowColor = "rgba(255, 210, 63, 0.28)";
+  canvasContext.shadowBlur = Math.max(3, width / 180);
+  canvasContext.lineWidth = Math.max(2, width / 220);
+  canvasContext.strokeStyle = "rgba(255, 232, 138, 0.56)";
+  canvasContext.fillStyle = "rgba(61, 245, 143, 0.58)";
   hands.forEach((landmarks) => {
     HAND_CONNECTIONS.forEach(([a, b]) => {
       canvasContext.beginPath();
@@ -1599,17 +1865,19 @@ function drawHands(hands) {
     });
     landmarks.forEach((point) => {
       canvasContext.beginPath();
-      canvasContext.arc(point.x * width, point.y * height, Math.max(6, width / 95), 0, Math.PI * 2);
+      canvasContext.arc(point.x * width, point.y * height, Math.max(3, width / 190), 0, Math.PI * 2);
       canvasContext.fill();
     });
+    canvasContext.globalAlpha = 0.62;
     [4, 8, 12, 16, 20].forEach((index) => {
       const point = landmarks[index];
       canvasContext.beginPath();
-      canvasContext.arc(point.x * width, point.y * height, Math.max(9, width / 70), 0, Math.PI * 2);
+      canvasContext.arc(point.x * width, point.y * height, Math.max(5, width / 150), 0, Math.PI * 2);
       canvasContext.stroke();
     });
+    canvasContext.globalAlpha = 0.44;
   });
-  canvasContext.shadowBlur = 0;
+  canvasContext.restore();
 }
 
 function clearVisionCanvas() {
@@ -1763,7 +2031,7 @@ function createSeedGuardianChallenge() {
     input: "zone",
     conceptKey: "comparacion",
     title: "Canasto con mas semillas",
-    prompt: "Mueve la mano al canasto que tiene mas semillas y abre la palma.",
+    prompt: "Haz pinza para agarrar las semillas, llevalas al canasto mayor y abre la mano para soltarlas.",
     hint: "Tambien puedes tocar el canasto.",
     strategy: "Compara las tres cantidades y busca la mayor.",
     model: `El canasto ${winner.label} tiene ${winner.count}; por eso es el grupo mayor.`,
@@ -1814,7 +2082,7 @@ function createChanceChallenge() {
     input: "zone",
     conceptKey: "probabilidad",
     title: "La rueda decide",
-    prompt: "Mueve la mano sobre el color con mas sectores.",
+    prompt: "Gira la rueda con la palma y deja la mano sobre el color con mas sectores.",
     hint: "Mas sectores significa mas oportunidad.",
     strategy: "Cuenta sectores: la opcion con mas partes aparece mas veces en la rueda.",
     model: `${winner.label} tiene ${winner.count} sectores, asi que tiene mas oportunidades.`,
@@ -2172,6 +2440,13 @@ function submitAnswer(value, source) {
 
   state.answered = true;
   resetZoneHover();
+  if (state.challenge.input === "zone") {
+    state.vision.dragging = false;
+    state.vision.droppedZone = selected;
+    state.vision.dropProgress = 1;
+  } else {
+    resetDragInteraction();
+  }
   state.vision.lockedUntil = Date.now() + 1200;
   state.progress.played += 1;
   stats.played += 1;
@@ -2228,6 +2503,8 @@ function newChallenge() {
   state.answered = false;
   state.feedback = null;
   resetZoneHover();
+  resetDragInteraction();
+  resetWheelTracking();
   renderApp();
 }
 

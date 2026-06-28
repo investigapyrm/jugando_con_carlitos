@@ -111,3 +111,29 @@ Fecha de registro: 2026-06-27
   * permanencia mas corta;
   * gesto de palma o pinza despues de una permanencia minima.
 * Reforzar la estetica de feria con fondo visual, escenario mas inmersivo y objetos de juego.
+
+## Prompt de correccion - marcas de mano, soltar objetos y ruleta real
+
+Fecha de registro: 2026-06-27
+
+> las marcas de reconocimiento de las manos son muy fuertes, muy brillantas, solapan la vistga de los bloques o elementos a mover
+> al mover o trasladar elementos de un lugar a otro no queda claro como soltarlos o dejarlos caer
+> el giro con la mano de la ruleta no funciona
+
+### Decision de implementacion
+
+* Bajar la intensidad visual de landmarks:
+  * menor opacidad;
+  * menor grosor;
+  * menos brillo;
+  * canvas debajo de los objetos del juego.
+* Separar mecanica de agarre y soltado:
+  * pinza o puno para agarrar;
+  * palma abierta para soltar;
+  * permanencia como respaldo operativo;
+  * objeto anclado visualmente en el canasto elegido.
+* Hacer que la ruleta responda al movimiento real:
+  * calculo de angulo y velocidad por desplazamiento de mano;
+  * giro con palma o pinza;
+  * boton demo de palma como contingencia para facilitador.
+* Publicar como `v0.7.4` con cache nuevo.
