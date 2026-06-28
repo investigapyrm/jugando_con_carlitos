@@ -12,7 +12,7 @@ URL publica:
 
 ## Estado
 
-Version actual en esta rama: `v0.7.5`
+Version actual en esta rama: `v0.7.6`
 
 La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
 
@@ -29,6 +29,8 @@ La version `v0.7.3` corrige la experiencia reportada en prueba real: la zona ya 
 La version `v0.7.4` ajusta la interaccion gestual fina: suaviza las marcas de reconocimiento para que no tapen los objetos, separa agarre y soltado con pinza/puno y palma abierta, deja el objeto anclado al canasto al soltarlo, y hace que la ruleta gire por movimiento de mano en vez de solo mostrarse animada.
 
 La version `v0.7.5` vuelve el flujo mas automatico para feria: el objeto sigue la mano sin pedir pinza, la palma abierta suelta, el empuje de palma hacia la camara funciona como clic de ruleta, los mensajes pasan a ser toasts en esquina y cada respuesta avanza sola al siguiente reto.
+
+La version `v0.7.6` hace mas comprensible la accion gestual: la ruleta gira rapido durante unos segundos al pasar la mano por encima y recien toma la respuesta cuando se detiene; ademas agrega la vista `#formas` para probar traslado de objetos geometricos con la mano sin puntaje ni preguntas.
 
 Uso previsto: notebook o computadora conectada a proyector/pantalla grande, con camara integrada o externa apuntando al espacio donde participa el nino. No esta pensada principalmente como experiencia individual de celular.
 
@@ -54,10 +56,12 @@ La app sigue siendo estatica, sin backend obligatorio. El progreso se guarda loc
 * `Laboratorio de datos`: mediana y moda con seleccion por dedos.
 * `Ritmo corporal`: patrones y secuencias respondiendo con dedos.
 * `La Maquina que Aprende`: entrenamiento supervisado local con ejemplos, clasificacion por camara, matriz de confusion y exactitud.
+* `#formas`: banco de prueba para mover figuras con la mano y ajustar traslado/soltado antes de integrarlo en retos.
 
 ## Categorias por edad
 
 * `#feria`: modo principal para stand, proyector y turnos breves.
+* `#formas`: vista de prueba para traslado de formas con reconocimiento de mano.
 * `#peques`: 4 a 7 anos. Conteo con dedos, comparacion visual y patrones simples.
 * `#ninos`: 8 a 12 anos. Suma, multiplicacion, probabilidad y datos con respuestas gestuales.
 * `#mayores`: mayores de 12 anos. Estadistica, probabilidad, patrones y estrategia con lectura de datos.

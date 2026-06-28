@@ -2790,3 +2790,104 @@
 
 * Probar la URL con `?v=0.7.5`.
 * Indicar en feria: muestra la mano, abre palma para soltar, empuja palma para ruleta.
+
+## 2026-06-27 21:38
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Semana de la Ciencia
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.7.6`
+
+### Objetivo de la intervencion
+
+* Hacer mas comprensibles las acciones gestuales.
+* Evitar que la ruleta responda demasiado rapido.
+* Crear una vista aislada para probar traslado de formas con la mano.
+
+### Diagnostico inicial
+
+* La ruleta giraba o respondia demasiado rapido y no quedaba claro el ciclo accion -> giro -> parada -> resultado.
+* El usuario necesitaba que pasar la mano sobre la ruleta fuera suficiente para iniciar el giro.
+* Faltaba una vista sin preguntas ni puntaje para calibrar traslado de objetos geometricos.
+
+### Acciones realizadas
+
+* Se amplio el tiempo de lectura posterior a respuestas automaticas.
+* Se separo la ruleta en fases: cruce de mano, giro rapido prolongado, estabilizacion y respuesta.
+* Se agrego un bucle visual propio para que la ruleta siga girando aunque la mano salga del encuadre.
+* Se creo la ruta `#formas` como banco de prueba para traslado de figuras.
+* Se agregaron formas geometricas movibles y guias visuales de llegada.
+* Se ajustaron los controles demo para mover realmente el cursor a izquierda, centro y derecha.
+* Se actualizo cache-busting y service worker a `v0.7.6`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `node --check app.js`
+* `node --check service-worker.js`
+* `git diff --check`
+* `python -m http.server 8804 --bind 127.0.0.1`
+* `python _tmp_v076_flow_check.py`
+* Pendiente: commit y push a `origin/main`.
+
+### Resultados verificados
+
+* Sintaxis de `app.js`: valida.
+* Sintaxis de `service-worker.js`: valida.
+* `git diff --check`: sin errores de whitespace; solo avisos LF/CRLF normales de Windows.
+* Prueba Playwright local:
+  * `#formas` muestra 4 figuras;
+  * las figuras se mueven con controles demo;
+  * estado de laboratorio: `Trasladando / las formas siguen la mano`;
+  * `#azar` no muestra feedback al segundo 1;
+  * etiqueta de ruleta al segundo 1: `GIRANDO RAPIDO`;
+  * feedback de ruleta aparece despues de 3.94 segundos;
+  * mensaje final sin mojibake: `Logrado / Bien`.
+* Pendiente: validacion publica posterior al push.
+
+### Pruebas realizadas
+
+* URL local: `http://127.0.0.1:8804/?v=0.7.6#formas`
+* URL local: `http://127.0.0.1:8804/?v=0.7.6#azar`
+* Capturas:
+  * `test-results/v076_local_formas_lab.png`
+  * `test-results/v076_local_azar_spin.png`
+
+### Errores o incidentes
+
+* Se detecto que el reseteo de mano podia cortar el giro si el participante retiraba la mano. Se desacoplo el giro de la presencia continua de mano.
+* Se detecto mojibake visible en el toast de exito (`Bien`). Se reemplazo por texto ASCII.
+
+### Soluciones aplicadas
+
+* Ruleta con giro prolongado y respuesta diferida.
+* Laboratorio de formas sin puntaje para calibracion.
+* Demo de zonas con coordenadas sinteticas de mano.
+
+### Pendientes
+
+* Validar con camara real en el espacio de feria.
+* Ajustar sensibilidad del disparo por cruce si se activa demasiado pronto.
+
+### Riesgos
+
+* El reconocimiento real puede variar por luz, fondo y distancia a camara.
+* Si la mano queda sobre la ruleta al terminar un reto, podria disparar giro en el siguiente si no se retira un instante.
+
+### Recomendaciones
+
+* Probar primero `#formas` para calibrar el movimiento con la camara real.
+* En `#azar`, indicar: pasa la mano sobre la ruleta y espera a que pare.

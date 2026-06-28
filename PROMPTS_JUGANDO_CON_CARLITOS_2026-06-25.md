@@ -166,3 +166,25 @@ Fecha de registro: 2026-06-27
   * detectar empuje de palma por aumento rapido de escala de la mano;
   * usar el empuje como clic de giro/seleccion.
 * Publicar como `v0.7.5` con cache nuevo.
+
+## Prompt de correccion - ruleta con giro prolongado y laboratorio de formas
+
+Fecha de registro: 2026-06-27
+
+> las acciones pasan muy rapido, no se entienden, la ruleta deberia girar rapido y un rato hasta que pare, lueg de que l amano pase encima, con eso debe ser suficiente para que gire. Crea una vista solo para ir probando el traslado de objetos com oformas con la mano
+
+### Decision de implementacion
+
+* Separar el gesto de ruleta en fases comprensibles:
+  * pasar la mano sobre la ruleta dispara el giro;
+  * giro rapido durante varios segundos;
+  * pausa de estabilizacion;
+  * respuesta recien cuando la ruleta se detiene.
+* Mantener el giro aunque la mano salga del encuadre.
+* Alargar los tiempos de feedback y autoavance para que el resultado se pueda leer.
+* Crear la ruta `#formas` como laboratorio de traslado:
+  * sin puntaje;
+  * sin preguntas;
+  * con figuras geometricas que siguen la mano;
+  * con controles demo que mueven el cursor por zonas.
+* Publicar como `v0.7.6` con cache nuevo.
