@@ -2420,3 +2420,126 @@
 
 * Abrir la URL publica con `?v=0.7.2`.
 * Si un dispositivo conserva version vieja, recargar y limpiar datos del sitio o esperar a que el service worker tome el cache nuevo.
+
+## 2026-06-27 20:21
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Proyecto Carlitos
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.7.3`
+
+### Objetivo de la intervencion
+
+* Corregir la experiencia reportada por el usuario: la zona cambiaba de color, pero no se percibia efecto de seleccion.
+* Agregar rueda visible y giratoria para probabilidad.
+* Agregar objetos que sigan la mano para que el juego se sienta corporal e interactivo.
+* Mejorar nuevamente el aspecto visual del modo feria.
+
+### Diagnostico inicial
+
+* La seleccion si podia registrarse internamente, pero en modo feria el efecto era pobre: no habia feedback grande dentro del visor.
+* `Rueda en el aire` usaba zonas, pero no mostraba una rueda dentro del escenario de camara.
+* `Guardian de semillas` no tenia un objeto visible que el nino moviera con la mano.
+* La seleccion por permanencia podia sentirse lenta; se requerian ajustes de tolerancia.
+
+### Acciones realizadas
+
+* Se actualizo la version a `v0.7.3`.
+* Se redujo `ZONE_DWELL_MS` de `720 ms` a `420 ms`.
+* Se permitio confirmar con palma o pinza despues de una permanencia minima en zona.
+* Se agrego `overlay-feedback` dentro del visor:
+  * muestra `Portal correcto` o `Revisar`;
+  * marca la opcion seleccionada;
+  * muestra la respuesta esperada si corresponde.
+* Se agrego objeto movible en `Guardian de semillas`:
+  * un conjunto visual de semillas sigue la mano;
+  * se posiciona sobre el portal/zona durante el movimiento.
+* Se agrego rueda real en `Rueda en el aire`:
+  * sectores proporcionales a los conteos;
+  * animacion de giro cuando hay mano detectada;
+  * puntero visual.
+* Se reforzo el aspecto visual:
+  * fondo de feria con imagen generada;
+  * escenario mas inmersivo;
+  * zonas con estado `apuntar`, `soltar` y `tomado`;
+  * feedback de seleccion mas grande.
+* Se actualizo cache-busting:
+  * `styles.css?v=0.7.3`;
+  * `app.js?v=0.7.3`;
+  * cache `jugando-con-carlitos-v0-7-3`.
+* Se actualizo `README.md` y la secuencia de prompts.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `node --check app.js`
+* `node --check service-worker.js`
+* `python -m http.server 8801 --bind 127.0.0.1`
+* `python _tmp_v073_interaction_check.py`
+
+### Resultados verificados
+
+* Sintaxis de `app.js`: valida.
+* Sintaxis de `service-worker.js`: valida.
+* Prueba Playwright Python con landmarks sinteticos:
+  * `#semillas` muestra feedback dentro del visor;
+  * `#semillas` tiene objeto de semillas que sigue la mano;
+  * `#azar` muestra rueda real y puntero;
+  * `#azar` muestra feedback dentro del visor;
+  * `#feria` con mision `semillas` muestra feedback y objeto movible;
+  * modo feria renderiza `v0.7.3` y escenario con fondo visual.
+
+### Pruebas realizadas
+
+* URL local: `http://127.0.0.1:8801/?v=0.7.3#semillas`
+* URL local: `http://127.0.0.1:8801/?v=0.7.3#azar`
+* URL local: `http://127.0.0.1:8801/?v=0.7.3#feria`
+* Capturas:
+  * `test-results/v073_local_semillas_effect.png`
+  * `test-results/v073_local_azar_wheel.png`
+  * `test-results/v073_local_fair_semillas_effect.png`
+  * `test-results/v073_local_fair_visual.png`
+
+### Errores o incidentes
+
+* La validacion con mano real sigue pendiente; la prueba automatizada usa landmarks sinteticos.
+* PowerShell no acepto heredoc estilo Unix para una prueba rapida; se uso script temporal Python.
+
+### Soluciones aplicadas
+
+* Convertir cambio de color en seleccion visible con feedback.
+* Agregar objetos movibles y rueda real dentro del escenario.
+* Ajustar tolerancia temporal de seleccion.
+* Reforzar la apariencia lúdica sin convertir la app en portada.
+
+### Pendientes
+
+* Probar con camara real en notebook/proyector.
+* Ajustar tiempo de permanencia si se detectan selecciones accidentales.
+* Implementar una fase posterior de arrastre real con gesto de pinza para objetos o poligonos.
+
+### Riesgos
+
+* Si hay varias manos en camara, MediaPipe puede tomar una mano no participante.
+* La rueda y objetos mejoran la experiencia, pero no sustituyen una prueba de usabilidad con ninos.
+* El cache del navegador puede conservar `v0.7.2` hasta recarga o limpieza del sitio.
+
+### Recomendaciones
+
+* Probar la URL con `?v=0.7.3`.
+* Usar una sola persona dentro del recuadro.
+* Mantener `pinza` reservado para agarre en futuras mecanicas de arrastre.

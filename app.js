@@ -1,4 +1,4 @@
-const APP_VERSION = "v0.7.2";
+const APP_VERSION = "v0.7.3";
 const BUILD_DATE = "2026-06-27";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -23,7 +23,7 @@ const HAND_CONNECTIONS = [
 const VISION_FRAME_INTERVAL_MS = 33;
 const FINGER_STABLE_FRAMES = 4;
 const HAND_SMOOTHING = 0.46;
-const ZONE_DWELL_MS = 720;
+const ZONE_DWELL_MS = 420;
 
 const AGE_GROUPS = [
   {
@@ -612,6 +612,7 @@ function renderMotionOverlay() {
       <div class="overlay-grid-lines"></div>
       ${renderOverlayProblem(challenge)}
       ${renderOverlayTargets(game, challenge)}
+      ${renderOverlayFeedback(challenge)}
       <div class="hand-cursor ${state.vision.handX === null ? "hidden" : ""}" id="handCursor" style="${cursorStyle}">
         <span id="handCursorValue">${visionNumberLabel()}</span>
       </div>
@@ -671,17 +672,7 @@ function renderOverlayTargets(game, challenge) {
   }
 
   if (challenge.input === "zone") {
-    return `
-      <div class="camera-zones">
-        ${challenge.options.map((option) => `
-          <div class="camera-zone ${state.vision.zone === option.value ? "active" : ""} ${state.vision.hoverZone === option.value ? "hovering" : ""}" data-camera-zone="${escapeAttribute(option.value)}" style="--zone-progress:${Math.round((state.vision.hoverZone === option.value ? state.vision.hoverProgress : 0) * 100)}%">
-            <small>${escapeHtml(option.label)}</small>
-            <strong>${escapeHtml(option.count ?? "")}</strong>
-            <span class="zone-hold-meter"><i></i></span>
-          </div>
-        `).join("")}
-      </div>
-    `;
+    return renderZonePlayfield(challenge);
   }
 
   if (challenge.input === "fingers-option") {
@@ -702,6 +693,96 @@ function renderOverlayTargets(game, challenge) {
       <span>detectado</span>
       <strong id="overlayLiveAnswer">${visionNumberLabel()}</strong>
       <small>${escapeHtml(game.concept)}</small>
+    </div>
+  `;
+}
+
+function renderZonePlayfield(challenge) {
+  const playfieldClass = challenge.conceptKey === "probabilidad" ? "wheel-field" : "seed-field";
+  return `
+    <div class="zone-playfield ${playfieldClass}">
+      ${challenge.conceptKey === "probabilidad" ? renderProbabilityWheel(challenge) : renderSeedMover(challenge)}
+      ${renderCameraZones(challenge)}
+    </div>
+  `;
+}
+
+function renderCameraZones(challenge) {
+  return `
+    <div class="camera-zones">
+      ${challenge.options.map((option) => renderCameraZone(option, challenge)).join("")}
+    </div>
+  `;
+}
+
+function renderCameraZone(option, challenge) {
+  const selected = state.feedback && normalizeAnswer(state.feedback.selected) === normalizeAnswer(option.value);
+  const expected = state.feedback && normalizeAnswer(challenge.answer) === normalizeAnswer(option.value);
+  const classes = [
+    "camera-zone",
+    state.vision.zone === option.value ? "active" : "",
+    state.vision.hoverZone === option.value ? "hovering" : "",
+    selected ? "selected" : "",
+    selected && state.feedback?.ok ? "correct" : "",
+    selected && !state.feedback?.ok ? "wrong" : "",
+    expected && state.feedback && !state.feedback.ok ? "expected" : "",
+  ].filter(Boolean).join(" ");
+  const progress = Math.round((state.vision.hoverZone === option.value ? state.vision.hoverProgress : 0) * 100);
+  return `
+    <div class="${classes}" data-camera-zone="${escapeAttribute(option.value)}" style="--zone-progress:${progress}%">
+      <small>${escapeHtml(option.label)}</small>
+      <strong>${escapeHtml(option.count ?? "")}</strong>
+      <span class="zone-action">${selected ? "tomado" : state.vision.hoverZone === option.value ? "soltar" : "apuntar"}</span>
+      <span class="zone-hold-meter"><i></i></span>
+    </div>
+  `;
+}
+
+function renderSeedMover(challenge) {
+  const target = challenge.options.find((option) => option.value === state.vision.zone) || challenge.options[1];
+  return `
+    <div class="hand-object seed-object ${state.vision.handX === null ? "idle" : ""}" style="${movableObjectStyle()}">
+      <span class="seed-basket">${repeat(Math.min(7, target?.count || 5), () => "<i></i>")}</span>
+    </div>
+  `;
+}
+
+function renderProbabilityWheel(challenge) {
+  return `
+    <div class="probability-wheel-stage">
+      <div class="gesture-wheel live-wheel ${state.vision.handX !== null && !state.answered ? "spin" : ""}" style="--wheel-gradient:${wheelGradient(challenge.options)}">
+        <span></span>
+      </div>
+      <div class="wheel-pointer" style="${movableObjectStyle()}"></div>
+    </div>
+  `;
+}
+
+function wheelGradient(options) {
+  const colors = {
+    verde: "#18a66b",
+    dorado: "#ffd23f",
+    coral: "#ff6b6b",
+  };
+  const total = options.reduce((sum, option) => sum + Number(option.count || 0), 0) || 1;
+  let cursor = 0;
+  return options.map((option) => {
+    const start = cursor;
+    cursor += (Number(option.count || 0) / total) * 360;
+    const color = colors[option.label] || "#63b7d0";
+    return `${color} ${start.toFixed(1)}deg ${cursor.toFixed(1)}deg`;
+  }).join(", ");
+}
+
+function renderOverlayFeedback(challenge) {
+  if (!state.feedback || challenge.input === "ai-trainer") return "";
+  const selected = answerDisplay(challenge, state.feedback.selected);
+  const answer = answerDisplay(challenge, state.feedback.answer);
+  return `
+    <div class="overlay-feedback ${state.feedback.ok ? "ok" : "try"}">
+      <span>${state.feedback.ok ? "Portal correcto" : "Revisar"}</span>
+      <strong>${escapeHtml(state.feedback.ok ? "¡Bien!" : "Casi")}</strong>
+      <small>${escapeHtml(selected)}${state.feedback.ok ? "" : ` | esperado: ${answer}`}</small>
     </div>
   `;
 }
@@ -739,6 +820,13 @@ function pointerStyle() {
   if (state.vision.handX === null || state.vision.handY === null) return "";
   const x = clamp(Math.round(state.vision.handX * 100), 4, 96);
   const y = clamp(Math.round(state.vision.handY * 100), 8, 92);
+  return `left:${x}%;top:${y}%`;
+}
+
+function movableObjectStyle() {
+  if (state.vision.handX === null || state.vision.handY === null) return "left:50%;top:54%";
+  const x = clamp(Math.round(state.vision.handX * 100), 9, 91);
+  const y = clamp(Math.round(state.vision.handY * 100), 22, 82);
   return `left:${x}%;top:${y}%`;
 }
 
@@ -1401,7 +1489,8 @@ function processVisionAnswer(force) {
 
   if (challenge.input === "zone") {
     const selectedByHover = state.vision.hoverProgress >= 1;
-    if (force || selectedByHover) {
+    const selectedByGesture = state.vision.hoverProgress >= 0.35 && (state.vision.gesture === "palma" || state.vision.gesture === "pinza");
+    if (force || selectedByHover || selectedByGesture) {
       submitAnswer(state.vision.zone, selectedByHover && !force ? "zona" : "mano");
     }
   }
@@ -1442,6 +1531,10 @@ function updateVisionWidgets() {
     node.classList.toggle("active", isActive);
     node.classList.toggle("hovering", isHovering);
     node.style.setProperty("--zone-progress", `${Math.round((isHovering ? state.vision.hoverProgress : 0) * 100)}%`);
+  });
+  document.querySelectorAll(".hand-object, .wheel-pointer").forEach((node) => {
+    node.classList.toggle("idle", state.vision.handX === null);
+    node.setAttribute("style", movableObjectStyle());
   });
   updateAiLiveWidgets();
 }
@@ -1721,7 +1814,7 @@ function createChanceChallenge() {
     input: "zone",
     conceptKey: "probabilidad",
     title: "La rueda decide",
-    prompt: "Gira con la palma y elige el color con mas sectores.",
+    prompt: "Mueve la mano sobre el color con mas sectores.",
     hint: "Mas sectores significa mas oportunidad.",
     strategy: "Cuenta sectores: la opcion con mas partes aparece mas veces en la rueda.",
     model: `${winner.label} tiene ${winner.count} sectores, asi que tiene mas oportunidades.`,

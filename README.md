@@ -12,7 +12,7 @@ URL publica:
 
 ## Estado
 
-Version actual en esta rama: `v0.7.2`
+Version actual en esta rama: `v0.7.3`
 
 La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
 
@@ -23,6 +23,8 @@ Tambien conserva el flujo de camara estable de la version anterior: si el navega
 La version `v0.7.1` ajusta el conteo de dedos: mejora la deteccion de pulgares para manos abiertas y reconoce el cero con el gesto tipo `OK`, juntando pulgar e indice.
 
 La version `v0.7.2` mejora el seguimiento: suaviza el cursor de mano, reduce carga del detector limitando lecturas a un ritmo mas estable, corrige la zona visual en video espejado y agrega seleccion por permanencia de la mano sobre una zona.
+
+La version `v0.7.3` corrige la experiencia reportada en prueba real: la zona ya no solo cambia de color, tambien dispara feedback visible dentro del escenario. Agrega objetos movibles que siguen la mano en comparacion de semillas y una rueda real visible para probabilidad.
 
 Uso previsto: notebook o computadora conectada a proyector/pantalla grande, con camara integrada o externa apuntando al espacio donde participa el nino. No esta pensada principalmente como experiencia individual de celular.
 
@@ -71,6 +73,9 @@ Incluye:
 * reconocimiento de dedos y posicion de la mano cuando el navegador lo permite;
 * seguimiento suavizado de mano para reducir saltos visuales;
 * seleccion por permanencia sobre zonas en los juegos de comparacion y probabilidad;
+* objetos de juego que siguen la mano dentro del escenario;
+* rueda visual giratoria para probabilidad;
+* feedback grande dentro del visor cuando una seleccion queda tomada;
 * gesto de cero con pulgar e indice unidos, tipo `OK`;
 * modo demo con botones de dedos, zonas y gesto de palma;
 * historial local por juego;
@@ -89,6 +94,7 @@ Incluye:
 * mecanicas de juego por movimiento:
   * mostrar el total con dedos;
   * mover la mano hacia la opcion correcta;
+  * desplazar un objeto visual con la mano;
   * dejar la mano sobre una zona para seleccionarla;
   * elegir ataque con 1 a 4 dedos;
   * comparar sectores de una rueda;

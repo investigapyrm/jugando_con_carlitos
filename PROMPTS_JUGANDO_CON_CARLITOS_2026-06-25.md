@@ -91,3 +91,23 @@ Fecha de registro: 2026-06-27
 * Se agrega seleccion por permanencia de la mano sobre zonas del escenario.
 * Se deja planteado como siguiente etapa el arrastre o estiramiento de objetos/poligonos con mano y pinza.
 * Se moderniza la interfaz de feria con una estetica mas suave, infantil y educativa.
+
+## Prompt de correccion - seleccion sin efecto, rueda y objetos movibles
+
+Fecha de registro: 2026-06-27
+
+> las selecciones con la mano no funcionan, se nota que cambia de color el bloque pero no hay efecto
+> luego no aparece la rueda qeu gira, no aparecen los objetos que el niño debe poder move con el gesto de la mano, luego el aspecto sigue igual de pobre
+
+### Decision de implementacion
+
+* Convertir el cambio de color de zona en una accion visible:
+  * zona seleccionada marcada como tomada;
+  * feedback grande dentro del visor;
+  * registro de acierto/error.
+* Agregar objeto visual que sigue la mano en `Guardian de semillas`.
+* Agregar rueda real con sectores proporcionales en `Rueda en el aire`.
+* Hacer mas tolerante la seleccion:
+  * permanencia mas corta;
+  * gesto de palma o pinza despues de una permanencia minima.
+* Reforzar la estetica de feria con fondo visual, escenario mas inmersivo y objetos de juego.
