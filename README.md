@@ -12,7 +12,7 @@ URL publica:
 
 ## Estado
 
-Version actual en esta rama: `v0.7.6`
+Version actual en esta rama: `v0.7.7`
 
 La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
 
@@ -32,6 +32,8 @@ La version `v0.7.5` vuelve el flujo mas automatico para feria: el objeto sigue l
 
 La version `v0.7.6` hace mas comprensible la accion gestual: la ruleta gira rapido durante unos segundos al pasar la mano por encima y recien toma la respuesta cuando se detiene; ademas agrega la vista `#formas` para probar traslado de objetos geometricos con la mano sin puntaje ni preguntas.
 
+La version `v0.7.7` simplifica toda la interaccion: el reconocimiento muestra un solo punto tipo cursor, que sigue el dedo indice o la mano y selecciona opciones por permanencia, como un mouse aereo. Se ocultan las marcas tecnicas de landmarks y se eliminan gestos principales de palma, pinza, empuje o arrastre.
+
 Uso previsto: notebook o computadora conectada a proyector/pantalla grande, con camara integrada o externa apuntando al espacio donde participa el nino. No esta pensada principalmente como experiencia individual de celular.
 
 ## Arquitectura
@@ -49,19 +51,19 @@ La app sigue siendo estatica, sin backend obligatorio. El progreso se guarda loc
 
 ## Juegos incluidos
 
-* `Dedos veloces`: suma y conteo respondiendo con dedos.
-* `Guardian de semillas`: comparacion de cantidades moviendo la mano a izquierda, centro o derecha.
-* `Robot gestual`: multiplicacion y estrategia eligiendo ataque con 1 a 4 dedos.
-* `Rueda en el aire`: probabilidad con eleccion gestual por zonas.
-* `Laboratorio de datos`: mediana y moda con seleccion por dedos.
-* `Ritmo corporal`: patrones y secuencias respondiendo con dedos.
+* `Dedos veloces`: suma y conteo apuntando el resultado con el cursor.
+* `Guardian de semillas`: comparacion de cantidades apuntando el canasto correcto.
+* `Robot gestual`: multiplicacion y estrategia apuntando una tarjeta.
+* `Rueda en el aire`: probabilidad apuntando el color con mas sectores.
+* `Laboratorio de datos`: mediana y moda apuntando una tarjeta.
+* `Ritmo corporal`: patrones y secuencias apuntando el siguiente valor.
 * `La Maquina que Aprende`: entrenamiento supervisado local con ejemplos, clasificacion por camara, matriz de confusion y exactitud.
-* `#formas`: banco de prueba para mover figuras con la mano y ajustar traslado/soltado antes de integrarlo en retos.
+* `#formas`: banco de prueba para usar la mano o un dedo como cursor antes de jugar.
 
 ## Categorias por edad
 
 * `#feria`: modo principal para stand, proyector y turnos breves.
-* `#formas`: vista de prueba para traslado de formas con reconocimiento de mano.
+* `#formas`: vista de prueba para cursor aereo con reconocimiento de mano.
 * `#peques`: 4 a 7 anos. Conteo con dedos, comparacion visual y patrones simples.
 * `#ninos`: 8 a 12 anos. Suma, multiplicacion, probabilidad y datos con respuestas gestuales.
 * `#mayores`: mayores de 12 anos. Estadistica, probabilidad, patrones y estrategia con lectura de datos.
@@ -77,21 +79,17 @@ Incluye:
 * categorias por edad;
 * retos generados dinamicamente;
 * sensor de manos con camara opcional;
-* escenario de camara grande, video velado, marcas de mano tenues y desafios dentro del mismo visor;
-* reconocimiento de dedos y posicion de la mano cuando el navegador lo permite;
-* seguimiento suavizado de mano para reducir saltos visuales;
-* seleccion por permanencia sobre zonas en los juegos de comparacion y probabilidad;
-* objetos de juego que siguen la mano dentro del escenario;
-* traslado automatico de objetos con la mano visible y soltado con palma abierta;
-* rueda visual de probabilidad que gira con movimiento o empuje de palma;
+* escenario de camara grande, video velado y desafios dentro del mismo visor;
+* un unico cursor que sigue el dedo indice o la mano;
+* seguimiento suavizado para reducir saltos visuales;
+* seleccion por permanencia sobre respuestas grandes;
 * feedback emergente en esquina cuando una seleccion queda tomada;
 * avance automatico al siguiente reto despues de responder;
-* gesto de cero con pulgar e indice unidos, tipo `OK`;
-* modo demo con botones de dedos, zonas y gesto de palma;
+* modo demo con botones de numeros y cursor por zonas;
 * historial local por juego;
 * retroalimentacion inmediata;
 * avance, puntos, racha, estrellas e insignias;
-* tablero de sensor local con dedos, zona y gesto detectados;
+* tablero de sensor local con cursor, zona y modo detectado;
 * portales conceptuales con estrategia, modelo, pasos y diagnostico;
 * dominio acumulado por concepto: suma, comparacion, multiplicacion, probabilidad, datos, patrones e IA;
 * entrenador de IA local para feria:
@@ -101,15 +99,13 @@ Incluye:
   * pruebas con etiqueta real;
   * matriz Real/Predicho;
   * calculo de exactitud;
-* mecanicas de juego por movimiento:
-  * mostrar el total con dedos;
-  * mover la mano hacia la opcion correcta;
-  * desplazar un objeto visual con la mano;
-  * dejar la mano sobre una zona para seleccionarla;
-  * elegir ataque con 1 a 4 dedos;
+* mecanicas de juego por cursor:
+  * apuntar el resultado de una suma;
+  * apuntar la opcion correcta;
+  * mantener el cursor sobre una respuesta;
   * comparar sectores de una rueda;
   * identificar mediana o moda;
-  * completar patrones corporales;
+  * completar patrones;
 * procesamiento local de video en el navegador;
 * funcionamiento offline basico despues de la primera carga;
 * diseno orientado a feria, aula y proyector;
@@ -121,12 +117,12 @@ La camara se activa solo si el usuario presiona `Activar camara` y acepta el per
 
 El reconocimiento de manos usa MediaPipe Hand Landmarker en el navegador. El video no se envia a un backend del proyecto y la app no guarda imagenes ni videos.
 
-Para reducir exposicion visual en aula o celular, la vista de camara no se muestra como espejo principal: el video queda desenfocado, con baja opacidad y una capa oscura suave. Lo importante en pantalla son los puntos brillantes de la mano, el cursor detectado y los objetos del juego que aparecen sobre ese mismo espacio de movimiento.
+Para reducir exposicion visual en aula o celular, la vista de camara no se muestra como espejo principal: el video queda desenfocado, con baja opacidad y una capa oscura suave. Lo importante en pantalla es un unico punto de cursor y los objetivos grandes de respuesta.
 
 La camara y el detector se tratan como dos estados separados:
 
 * `Video activo`: el nino ya debe verse en el panel.
-* `Manos listas`: el detector de dedos y movimientos esta funcionando.
+* `Manos listas`: el cursor de mano esta funcionando.
 
 Si la camara no esta disponible o falla el permiso, la app cambia a modo demo y sigue funcionando con botones. En ese caso muestra una guia breve para revisar candado/icono de camara, permisos del sitio, recarga y origen HTTPS. Si el video funciona pero no carga el detector, la app mantiene la vista de camara activa y permite jugar con modo demo.
 

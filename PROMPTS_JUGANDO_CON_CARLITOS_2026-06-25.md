@@ -188,3 +188,20 @@ Fecha de registro: 2026-06-27
   * con figuras geometricas que siguen la mano;
   * con controles demo que mueven el cursor por zonas.
 * Publicar como `v0.7.6` con cache nuevo.
+
+## Prompt de simplificacion - cursor unico como mouse aereo
+
+Fecha de registro: 2026-06-28
+
+> mejor simplifiquemos y facilitemos todo , colocando un solo punto que siga la mano tipo cursor, que los niños puedan usar sus manos o un dedo como un mouse
+
+### Decision de implementacion
+
+* Cambiar el modelo de interaccion principal:
+  * un unico punto visible sigue el dedo indice o la mano;
+  * las opciones se seleccionan manteniendo el cursor sobre ellas;
+  * se eliminan como acciones principales palma, pinza, empuje y arrastre.
+* Ocultar las marcas tecnicas de landmarks para que el nino vea solo el cursor.
+* Convertir tambien los retos antes basados en dedos a opciones apuntables dentro del visor.
+* Mantener `#formas` como laboratorio de cursor, con formas fijas para probar precision.
+* Publicar como `v0.7.7` con cache nuevo.

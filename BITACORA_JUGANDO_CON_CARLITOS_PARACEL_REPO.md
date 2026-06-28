@@ -2906,3 +2906,95 @@
 
 * Probar primero `#formas` para calibrar el movimiento con la camara real.
 * En `#azar`, indicar: pasa la mano sobre la ruleta y espera a que pare.
+
+## 2026-06-28 00:59
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Semana de la Ciencia
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Responsable: Codex
+* Version: `v0.7.7`
+
+### Objetivo de la intervencion
+
+* Simplificar toda la experiencia gestual a un solo cursor tipo mouse aereo.
+* Permitir que ninos usen la mano o un dedo para apuntar y seleccionar.
+
+### Diagnostico inicial
+
+* Las mecanicas acumuladas de palma, empuje, arrastre, ruleta y figuras movibles seguian siendo mas complejas de explicar.
+* El usuario pidio volver a un modelo unico: un punto que siga la mano como cursor.
+
+### Acciones realizadas
+
+* Se cambio el cursor visual a un punto unico pequeno.
+* Se oculto la capa tecnica de landmarks para evitar ruido visual.
+* Se cambio la seleccion principal a permanencia del cursor sobre objetivos visuales.
+* Se convirtieron retos de dedos a opciones apuntables dentro del visor.
+* Se desactivo la mecanica principal de arrastre/soltado.
+* Se dejo `#formas` como laboratorio de cursor con formas fijas.
+* Se actualizo cache-busting y service worker a `v0.7.7`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `node --check app.js`
+* `node --check service-worker.js`
+* `python -m http.server 8805 --bind 127.0.0.1`
+* `python _tmp_v077_cursor_check.py`
+* `git diff --check`
+* Pendiente: commit, push y verificacion publica.
+
+### Resultados verificados
+
+* Sintaxis JavaScript valida en `app.js`.
+* Sintaxis JavaScript valida en `service-worker.js`.
+* `#formas` renderiza como ruta `object-lab`, muestra el cursor y detecta hover sobre la forma `circulo` sin registrar puntaje.
+* `#dedos` permite responder por cursor; la prueba tomo la respuesta `6` con `source: cursor`.
+* `#azar` permite responder por cursor; en pagina limpia la prueba tomo la opcion correcta `izquierda` con `source: cursor`.
+
+### Pruebas realizadas
+
+* Prueba local automatizada con Playwright Python sobre servidor HTTP local.
+* Capturas generadas en `test-results/v077_local_cursor_formas.png`, `test-results/v077_local_cursor_dedos.png` y `test-results/v077_local_cursor_azar.png`.
+* Prueba complementaria aislada de `#azar` para evitar interferencia del bloqueo breve posterior al reto anterior.
+* `git diff --check` sin errores de whitespace; solo advertencias esperadas de normalizacion LF/CRLF en Windows.
+
+### Errores o incidentes
+
+* No se detectaron errores sintacticos ni fallos de flujo en la prueba local sintetica.
+
+### Soluciones aplicadas
+
+* Modelo unico de cursor aereo.
+* Objetivos visuales seleccionables por permanencia.
+* Eliminacion visual de landmarks.
+* Limpieza de estado y funciones obsoletas de arrastre, empuje de palma y ruleta cinetica.
+
+### Pendientes
+
+* Validar con camara real y pantalla/proyector.
+* Ajustar tiempo de permanencia si el cursor se siente lento o accidental.
+
+### Riesgos
+
+* Si el cursor tiembla por iluminacion o encuadre, puede costar mantenerlo sobre objetivos pequenos.
+* Los objetivos deben ser suficientemente grandes para ninos pequenos.
+
+### Recomendaciones
+
+* En feria, explicar solo una regla: mueve el punto y mantenlo sobre la respuesta.
+* Usar `#formas` antes de la actividad para revisar luz, encuadre y estabilidad del cursor.

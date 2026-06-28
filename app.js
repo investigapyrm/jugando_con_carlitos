@@ -1,5 +1,5 @@
-﻿const APP_VERSION = "v0.7.6";
-const BUILD_DATE = "2026-06-27";
+﻿const APP_VERSION = "v0.7.7";
+const BUILD_DATE = "2026-06-28";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
 const ASSETS = {
@@ -12,25 +12,10 @@ const VISION_BUNDLE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@
 const VISION_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
 const HAND_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task";
 
-const HAND_CONNECTIONS = [
-  [0, 1], [1, 2], [2, 3], [3, 4],
-  [0, 5], [5, 6], [6, 7], [7, 8],
-  [5, 9], [9, 10], [10, 11], [11, 12],
-  [9, 13], [13, 14], [14, 15], [15, 16],
-  [13, 17], [0, 17], [17, 18], [18, 19], [19, 20],
-];
-
 const VISION_FRAME_INTERVAL_MS = 24;
 const FINGER_STABLE_FRAMES = 4;
 const HAND_SMOOTHING = 0.72;
-const ZONE_DWELL_MS = 300;
-const DROP_DWELL_MS = 320;
-const WHEEL_CENTER = { x: 0.5, y: 0.42 };
-const WHEEL_SPIN_MS = 3100;
-const WHEEL_SETTLE_MS = 360;
-const WHEEL_SPIN_MIN_GAP_MS = 1200;
-const PALM_PUSH_THRESHOLD = 0.012;
-const PALM_PUSH_COOLDOWN_MS = 780;
+const ZONE_DWELL_MS = 420;
 const AUTO_NEXT_OK_MS = 3200;
 const AUTO_NEXT_REVIEW_MS = 4400;
 
@@ -63,7 +48,7 @@ const AGE_GROUPS = [
     label: "12+",
     short: "Mayores",
     title: "Laboratorio de movimiento",
-    subtitle: "Datos, estrategia y lectura visual con gestos mas precisos.",
+    subtitle: "Datos, estrategia y lectura visual usando el cursor.",
     gameIds: ["robots", "azar", "datos", "ritmo", "ia"],
   },
 ];
@@ -77,8 +62,8 @@ const GAMES = [
     level: "Mision 1",
     ages: ["peques", "ninos"],
     color: "gold",
-    gesture: "dedos",
-    prompt: "Responder mostrando dedos",
+    gesture: "cursor",
+    prompt: "Apuntar el resultado",
   },
   {
     id: "semillas",
@@ -88,8 +73,8 @@ const GAMES = [
     level: "Mision 2",
     ages: ["peques", "ninos"],
     color: "green",
-    gesture: "zona",
-    prompt: "Mover la mano al canasto correcto",
+    gesture: "cursor",
+    prompt: "Apuntar el canasto correcto",
   },
   {
     id: "robots",
@@ -99,8 +84,8 @@ const GAMES = [
     level: "Mision 3",
     ages: ["ninos", "mayores"],
     color: "steel",
-    gesture: "dedos",
-    prompt: "Elegir energia con dedos",
+    gesture: "cursor",
+    prompt: "Elegir energia con cursor",
   },
   {
     id: "azar",
@@ -110,8 +95,8 @@ const GAMES = [
     level: "Mision 4",
     ages: ["ninos", "mayores"],
     color: "coral",
-    gesture: "zona",
-    prompt: "Girar y elegir la opcion mas probable",
+    gesture: "cursor",
+    prompt: "Apuntar la opcion mas probable",
   },
   {
     id: "datos",
@@ -121,8 +106,8 @@ const GAMES = [
     level: "Mision 5",
     ages: ["mayores"],
     color: "plum",
-    gesture: "dedos",
-    prompt: "Elegir una tarjeta con dedos",
+    gesture: "cursor",
+    prompt: "Elegir una tarjeta con cursor",
   },
   {
     id: "ritmo",
@@ -132,8 +117,8 @@ const GAMES = [
     level: "Mision 6",
     ages: ["peques", "ninos", "mayores"],
     color: "sky",
-    gesture: "dedos",
-    prompt: "Completar una secuencia con dedos",
+    gesture: "cursor",
+    prompt: "Completar una secuencia con cursor",
   },
   {
     id: "ia",
@@ -212,8 +197,8 @@ const CONCEPTS = {
     label: "Traslado espacial",
     short: "Formas",
     color: "#63b7d0",
-    door: "La mano controla una forma para ensayar traslado, llegada y soltado.",
-    repair: "Prueba movimientos lentos y amplios antes de usarlo en un reto con respuesta.",
+    door: "El cursor permite apuntar formas y ensayar precision antes de jugar.",
+    repair: "Prueba movimientos lentos y amplios antes de usar el cursor en un reto con respuesta.",
   },
 };
 
@@ -254,35 +239,12 @@ const state = {
     hoverZone: null,
     hoverStartedAt: 0,
     hoverProgress: 0,
-    dragging: false,
-    droppedZone: null,
-    dropZone: null,
-    dropStartedAt: 0,
-    dropProgress: 0,
-    wheelAngle: 0,
-    wheelVelocity: 0,
-    spinUntil: 0,
-    wheelSpinStartedAt: 0,
-    wheelSpinEndsAt: 0,
-    wheelPendingZone: null,
-    wheelSettleUntil: 0,
-    lastWheelTriggerAt: 0,
-    lastWheelTickAt: 0,
-    handWasOverWheel: false,
-    lastHandAngle: null,
-    lastHandX: null,
-    lastHandY: null,
-    handScaleValue: null,
-    lastHandScale: null,
-    palmPushUntil: 0,
-    lastPalmPushAt: 0,
     lockedUntil: 0,
   },
 };
 
 let animationFrame = null;
 let autoAdvanceTimer = null;
-let wheelAnimationFrame = null;
 let visionModule = null;
 let videoElement = null;
 let canvasElement = null;
@@ -326,8 +288,7 @@ function syncRoute() {
     state.challenge = createObjectLabChallenge();
     state.answered = false;
     state.feedback = null;
-    resetDragInteraction();
-    resetWheelTracking(false);
+    resetZoneHover();
     return;
   }
 
@@ -348,8 +309,7 @@ function syncRoute() {
     state.challenge = createChallenge(game.id);
     state.answered = false;
     state.feedback = null;
-    resetDragInteraction();
-    resetWheelTracking();
+    resetZoneHover();
     writeProgress();
     return;
   }
@@ -369,7 +329,7 @@ function renderApp() {
             Feria <span>Semana de la Ciencia</span>
           </a>
           <a href="#formas" class="${state.route === "object-lab" ? "active" : ""}">
-            Formas <span>Prueba traslado</span>
+            Cursor <span>Prueba mouse</span>
           </a>
           ${AGE_GROUPS.map((group) => `
             <a href="#${group.id}" class="${state.activeCategory === group.id && state.route !== "home" && state.route !== "fair" && state.route !== "object-lab" ? "active" : ""}">
@@ -410,7 +370,7 @@ function renderHomeView() {
           <div class="hero-actions">
             <a class="hero-button" href="#feria">Abrir modo feria</a>
             <a class="hero-button secondary" href="#ninos">Elegir por edad</a>
-            <a class="hero-button secondary" href="#formas">Probar formas</a>
+            <a class="hero-button secondary" href="#formas">Probar cursor</a>
           </div>
         </div>
         ${renderMascotCard()}
@@ -458,7 +418,7 @@ function renderFairView() {
         <div class="fair-main-actions">
           <button type="button" id="newChallenge" class="fair-next-button">Siguiente ahora</button>
           <button type="button" id="toggleFullscreenSecondary" class="mini-button">Pantalla completa</button>
-          <a href="#formas" class="mini-button lab-link">Probar formas</a>
+          <a href="#formas" class="mini-button lab-link">Probar cursor</a>
         </div>
         <div class="fair-mission-grid">
           ${FAIR_GAME_IDS.map(renderFairMissionButton).join("")}
@@ -493,7 +453,7 @@ function renderObjectLabView() {
     <main class="object-lab-view theme-blue">
       <nav class="view-tabs" aria-label="Laboratorio">
         <a href="#feria">Feria</a>
-        <a href="#formas" class="active"><span>Prueba</span>Traslado de formas</a>
+          <a href="#formas" class="active"><span>Prueba</span>Cursor aereo</a>
         ${GAMES.filter((game) => game.id !== "ia").map((item) => `
           <a href="#${item.id}">
             <span>${escapeHtml(item.level)}</span>${escapeHtml(item.title)}
@@ -504,13 +464,13 @@ function renderObjectLabView() {
       <section class="game-view-header lab-header">
         <div>
           <p class="eyebrow">Banco de prueba</p>
-          <h1>Traslado de formas con la mano</h1>
-          <p>Mueve la mano dentro del recuadro. Las formas siguen el cursor para probar control, velocidad y soltado sin responder un reto.</p>
+          <h1>Cursor con la mano</h1>
+          <p>Mueve un dedo o la mano dentro del recuadro. El punto funciona como mouse: apunta una forma y mantenlo un instante.</p>
         </div>
         <div class="game-hud">
           <div><strong>${visionShortLabel()}</strong><span>sensor</span></div>
           <div><strong>${escapeHtml(state.vision.zone)}</strong><span>zona</span></div>
-          <div><strong>${escapeHtml(state.vision.gesture)}</strong><span>gesto</span></div>
+          <div><strong>${escapeHtml(state.vision.gesture)}</strong><span>modo</span></div>
           <div><strong>${state.vision.handX === null ? "-" : Math.round(state.vision.handX * 100)}</strong><span>x</span></div>
         </div>
       </section>
@@ -520,13 +480,13 @@ function renderObjectLabView() {
         <aside class="side-panel lab-side">
           <section class="control-card">
             <h2>Que probar</h2>
-            <p>Desplazamiento lateral, subida y bajada, llegada a una zona y apertura de palma para simular soltado.</p>
+            <p>Desplazamiento lateral, subida y bajada, precision sobre una forma y permanencia breve para seleccionar.</p>
           </section>
           <section class="control-card">
             <h2>Lectura en vivo</h2>
             <p>Zona: <strong id="sideZone">${escapeHtml(state.vision.zone)}</strong></p>
-            <p>Gesto: <strong id="sideGesture">${escapeHtml(state.vision.gesture)}</strong></p>
-            <p>Estado: <strong id="sideFingers">${visionNumberLabel()}</strong></p>
+            <p>Modo: <strong id="sideGesture">${escapeHtml(state.vision.gesture)}</strong></p>
+            <p>Estado: <strong id="sideFingers">${cursorStateLabel()}</strong></p>
           </section>
           <section class="control-card">
             <h2>Modo demo</h2>
@@ -607,9 +567,9 @@ function renderGameView() {
           </section>
           <section class="control-card">
             <h2>Sensor local</h2>
-            <p>Dedos: <strong id="sideFingers">${visionNumberLabel()}</strong></p>
+            <p>Cursor: <strong id="sideFingers">${cursorStateLabel()}</strong></p>
             <p>Zona: <strong id="sideZone">${escapeHtml(state.vision.zone)}</strong></p>
-            <p>Gesto: <strong id="sideGesture">${escapeHtml(state.vision.gesture)}</strong></p>
+            <p>Modo: <strong id="sideGesture">${escapeHtml(state.vision.gesture)}</strong></p>
           </section>
         </aside>
       </section>
@@ -671,13 +631,12 @@ function renderDemoPad() {
   return `
     <div class="demo-pad">
       <div>
-        <span>Dedos demo</span>
+        <span>Numeros demo</span>
         ${repeat(11, (value) => `<button type="button" data-sim-fingers="${value}">${value}</button>`)}
       </div>
       <div>
-        <span>Movimiento demo</span>
+        <span>Cursor demo</span>
         ${["izquierda", "centro", "derecha"].map((zone) => `<button type="button" data-sim-zone="${zone}">${escapeHtml(zone)}</button>`).join("")}
-        <button type="button" data-sim-gesture="palma">palma</button>
       </div>
     </div>
   `;
@@ -716,9 +675,9 @@ function renderVisionPanel(options = {}) {
         ${renderCameraHelp()}
       </div>
       <div class="sensor-readout">
-        <div><strong id="visionFingers">${visionNumberLabel()}</strong><span>dedos</span></div>
+        <div><strong id="visionFingers">${cursorStateLabel()}</strong><span>cursor</span></div>
         <div><strong id="visionZone">${escapeHtml(state.vision.zone)}</strong><span>zona</span></div>
-        <div><strong id="visionGesture">${escapeHtml(state.vision.gesture)}</strong><span>gesto</span></div>
+        <div><strong id="visionGesture">${escapeHtml(state.vision.gesture)}</strong><span>modo</span></div>
       </div>
       ${renderDemoPad()}
     </section>
@@ -730,13 +689,13 @@ function renderMotionOverlay() {
   const game = getGame(state.activeGame) || GAMES[0];
   const cursorStyle = pointerStyle();
   return `
-    <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}" data-hover-zone="${escapeAttribute(state.vision.hoverZone || "")}" data-dragging="${state.vision.dragging ? "true" : "false"}" data-drop-zone="${escapeAttribute(state.vision.droppedZone || "")}" data-palm-push="${palmPushActive() ? "true" : "false"}" style="--zone-progress:${Math.round(state.vision.hoverProgress * 100)}%;--drop-progress:${Math.round(state.vision.dropProgress * 100)}%">
+    <div class="motion-overlay" id="motionOverlay" data-input="${escapeAttribute(challenge.input)}" data-zone="${escapeAttribute(state.vision.zone)}" data-hover-zone="${escapeAttribute(state.vision.hoverZone || "")}" style="--zone-progress:${Math.round(state.vision.hoverProgress * 100)}%">
       <div class="overlay-grid-lines"></div>
       ${renderOverlayProblem(challenge)}
       ${renderOverlayTargets(game, challenge)}
       ${renderOverlayFeedback(challenge)}
       <div class="hand-cursor ${state.vision.handX === null ? "hidden" : ""}" id="handCursor" style="${cursorStyle}">
-        <span id="handCursorValue">${visionNumberLabel()}</span>
+        <span id="handCursorValue"></span>
       </div>
       ${renderOverlayStatus(challenge)}
     </div>
@@ -756,27 +715,27 @@ function renderOverlayProblem(challenge) {
   } else if (challenge.conceptKey === "suma" && Number.isFinite(challenge.a) && Number.isFinite(challenge.b)) {
     label = "Suma";
     value = `${challenge.a} + ${challenge.b}`;
-    detail = "Muestra el total con dedos";
+    detail = "Apunta el resultado";
   } else if (challenge.conceptKey === "multiplicacion" && Number.isFinite(challenge.a) && Number.isFinite(challenge.b)) {
     label = "Robot";
     value = `${challenge.a} x ${challenge.b}`;
-    detail = "Elige la tarjeta de energia";
+    detail = "Apunta una tarjeta";
   } else if (Array.isArray(challenge.data)) {
     label = challenge.title;
     value = challenge.data.join("  ");
-    detail = "Usa 1 a 4 dedos";
+    detail = "Apunta una opcion";
   } else if (Array.isArray(challenge.sequence)) {
     label = "Patron";
     value = `${challenge.sequence.join("  ")}  ?`;
-    detail = "Completa la secuencia";
+    detail = "Apunta el siguiente valor";
   } else if (challenge.input === "object-lab") {
     label = "Laboratorio";
-    value = "Formas en movimiento";
-    detail = "Prueba traslado sin puntaje";
+    value = "Cursor aereo";
+    detail = "Apunta como mouse";
   } else if (challenge.input === "zone") {
     label = "Movimiento";
     value = challenge.title;
-    detail = "Mueve la mano al portal correcto";
+    detail = "Apunta al portal correcto";
   }
 
   return `
@@ -805,13 +764,18 @@ function renderOverlayTargets(game, challenge) {
     return `
       <div class="camera-choice-ring">
         ${challenge.options.map((option, index) => `
-          <div class="camera-choice">
-            <small>${index + 1} dedo${index ? "s" : ""}</small>
+          <div class="camera-choice" data-cursor-answer="${escapeAttribute(option.value)}" style="${cursorChoiceStyle(option.value)}">
+            <small>opcion ${index + 1}</small>
             <strong>${escapeHtml(option.label)}</strong>
+            <span class="zone-hold-meter"><i></i></span>
           </div>
         `).join("")}
       </div>
     `;
+  }
+
+  if (challenge.input === "fingers-exact") {
+    return renderCursorNumberPad(challenge);
   }
 
   return `
@@ -823,6 +787,21 @@ function renderOverlayTargets(game, challenge) {
   `;
 }
 
+function renderCursorNumberPad(challenge) {
+  const values = Array.from({ length: 11 }, (_, value) => value);
+  return `
+    <div class="cursor-choice-grid">
+      ${values.map((value) => `
+        <div class="cursor-choice" data-cursor-answer="${value}" style="${cursorChoiceStyle(String(value))}">
+          <small>resultado</small>
+          <strong>${value}</strong>
+          <span class="zone-hold-meter"><i></i></span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderShapeLabPlayfield() {
   return `
     <div class="shape-lab-field">
@@ -830,7 +809,7 @@ function renderShapeLabPlayfield() {
       <div class="lab-drop-guide center"><span>centro</span></div>
       <div class="lab-drop-guide right"><span>llegada</span></div>
       ${LAB_SHAPES.map((shape, index) => `
-        <div class="lab-shape ${shape.type} tone-${shape.color}" data-lab-shape="${escapeAttribute(shape.id)}" style="${labShapeStyle(shape, index)}">
+        <div class="lab-shape ${shape.type} tone-${shape.color}" data-lab-shape="${escapeAttribute(shape.id)}" data-cursor-answer="${escapeAttribute(shape.id)}" style="${labShapeStyle(shape, index)}">
           <span>${escapeHtml(shape.label)}</span>
         </div>
       `).join("")}
@@ -841,10 +820,10 @@ function renderShapeLabPlayfield() {
 
 function renderZonePlayfield(challenge) {
   const playfieldClass = challenge.conceptKey === "probabilidad" ? "wheel-field" : "seed-field";
-  const interactionClass = state.vision.dragging ? "is-dragging" : state.vision.droppedZone ? "has-drop" : "is-ready";
+  const interactionClass = state.vision.hoverZone ? "is-pointing" : "is-ready";
   return `
     <div class="zone-playfield ${playfieldClass} ${interactionClass}">
-      ${challenge.conceptKey === "probabilidad" ? renderProbabilityWheel(challenge) : renderSeedMover(challenge)}
+      ${challenge.conceptKey === "probabilidad" ? renderProbabilityWheel(challenge) : ""}
       ${renderCameraZones(challenge)}
     </div>
   `;
@@ -861,12 +840,10 @@ function renderCameraZones(challenge) {
 function renderCameraZone(option, challenge) {
   const selected = state.feedback && normalizeAnswer(state.feedback.selected) === normalizeAnswer(option.value);
   const expected = state.feedback && normalizeAnswer(challenge.answer) === normalizeAnswer(option.value);
-  const dropped = state.vision.droppedZone === option.value;
   const classes = [
     "camera-zone",
     state.vision.zone === option.value ? "active" : "",
     state.vision.hoverZone === option.value ? "hovering" : "",
-    dropped ? "dropped" : "",
     selected ? "selected" : "",
     selected && state.feedback?.ok ? "correct" : "",
     selected && !state.feedback?.ok ? "wrong" : "",
@@ -874,7 +851,7 @@ function renderCameraZone(option, challenge) {
   ].filter(Boolean).join(" ");
   const progress = Math.round((state.vision.hoverZone === option.value ? state.vision.hoverProgress : 0) * 100);
   return `
-    <div class="${classes}" data-camera-zone="${escapeAttribute(option.value)}" style="--zone-progress:${progress}%">
+    <div class="${classes}" data-camera-zone="${escapeAttribute(option.value)}" data-cursor-answer="${escapeAttribute(option.value)}" style="--zone-progress:${progress}%">
       <small>${escapeHtml(option.label)}</small>
       <strong>${escapeHtml(option.count ?? "")}</strong>
       <span class="zone-action">${escapeHtml(zoneActionLabel(option.value, challenge))}</span>
@@ -883,37 +860,26 @@ function renderCameraZone(option, challenge) {
   `;
 }
 
-function renderSeedMover(challenge) {
-  const target = challenge.options.find((option) => option.value === state.vision.zone) || challenge.options[1];
-  const classes = [
-    "hand-object",
-    "seed-object",
-    state.vision.handX === null ? "idle" : "",
-    state.vision.dragging ? "grabbed" : "",
-    state.vision.droppedZone ? "dropped" : "",
-  ].filter(Boolean).join(" ");
-  return `
-    <div class="${classes}" style="${seedObjectStyle()}">
-      <span class="seed-basket">${repeat(Math.min(7, target?.count || 5), () => "<i></i>")}</span>
-      <em>${escapeHtml(seedObjectLabel())}</em>
-    </div>
-  `;
+function cursorChoiceStyle(value) {
+  const progress = state.vision.hoverZone !== null && normalizeAnswer(state.vision.hoverZone) === normalizeAnswer(value)
+    ? Math.round(state.vision.hoverProgress * 100)
+    : 0;
+  return `--zone-progress:${progress}%`;
 }
 
 function renderProbabilityWheel(challenge) {
   return `
     <div class="probability-wheel-stage">
-      <div class="gesture-wheel live-wheel ${wheelSpinClass()}" style="${wheelStyle(challenge)}">
+      <div class="gesture-wheel live-wheel" style="${wheelStyle(challenge)}">
         <span></span>
       </div>
-      <div class="wheel-pointer ${state.vision.handX === null ? "idle" : ""}" style="${movableObjectStyle()}"></div>
       <small class="wheel-motion-label">${escapeHtml(wheelMotionLabel())}</small>
     </div>
   `;
 }
 
 function wheelStyle(challenge) {
-  return `--wheel-gradient:${wheelGradient(challenge.options)};--wheel-angle:${state.vision.wheelAngle.toFixed(1)}deg`;
+  return `--wheel-gradient:${wheelGradient(challenge.options)};--wheel-angle:0deg`;
 }
 
 function wheelGradient(options) {
@@ -962,25 +928,26 @@ function overlayStatus(challenge) {
       : { kind: "try", title: "Casi", detail: "Carlitos cambia el reto en un momento" };
   }
   if (challenge.input === "object-lab") {
-    if (state.vision.handX !== null && state.vision.gesture === "palma") return { kind: "active", title: "Soltando", detail: "palma abierta marca llegada" };
-    if (state.vision.handX !== null) return { kind: "active", title: "Trasladando", detail: "las formas siguen la mano" };
-    return { kind: "ready", title: "Prueba libre", detail: "entra al recuadro con la mano" };
+    if (state.vision.hoverZone) return { kind: "active", title: "Apuntando", detail: `cursor sobre ${state.vision.hoverZone}` };
+    if (state.vision.handX !== null) return { kind: "active", title: "Cursor activo", detail: "mueve la mano como mouse" };
+    return { kind: "ready", title: "Prueba libre", detail: "entra al recuadro con mano o dedo" };
   }
   if (challenge.conceptKey === "probabilidad") {
-    if (wheelReadyToSubmit()) return { kind: "ok", title: "Ruleta detenida", detail: "respuesta tomada enseguida" };
-    if (wheelIsSpinning()) return { kind: "active", title: "Girando rapido", detail: "espera que pare" };
-    if (palmPushActive()) return { kind: "active", title: "Empuje detectado", detail: "ruleta girando" };
-    return { kind: "ready", title: "Pasa la mano", detail: "cruza la ruleta para girar" };
+    if (state.vision.hoverZone) return { kind: "active", title: "Mantener cursor", detail: "se selecciona al completar la barra" };
+    return { kind: "ready", title: "Apunta un color", detail: "usa la mano como mouse" };
   }
-  if (isZoneDragChallenge(challenge)) {
-    if (state.vision.droppedZone) return { kind: "ok", title: "Soltado", detail: "Carlitos toma la respuesta" };
-    if (state.vision.dragging && state.vision.gesture === "palma") return { kind: "active", title: "Soltando", detail: "mantente un instante" };
-    if (state.vision.dragging) return { kind: "active", title: "Llevando", detail: "abre la mano para soltar" };
-    if (state.vision.handX !== null) return { kind: "active", title: "Objeto tomado", detail: "llevalo al canasto" };
-    return { kind: "ready", title: "Entra al recuadro", detail: "el objeto seguira tu mano" };
+  if (challenge.input === "zone") {
+    if (state.vision.hoverZone) return { kind: "active", title: "Mantener cursor", detail: "respuesta casi lista" };
+    return { kind: "ready", title: "Apunta", detail: "mueve el cursor a una zona" };
   }
-  if (challenge.input === "fingers-option") return { kind: "ready", title: "Dedos", detail: "1 a 4 eligen tarjeta" };
-  if (challenge.input === "fingers-exact") return { kind: "ready", title: "Cuenta", detail: "muestra el resultado" };
+  if (challenge.input === "fingers-option") {
+    if (state.vision.hoverZone) return { kind: "active", title: "Mantener cursor", detail: "opcion casi lista" };
+    return { kind: "ready", title: "Apunta", detail: "elige una tarjeta con el cursor" };
+  }
+  if (challenge.input === "fingers-exact") {
+    if (state.vision.hoverZone) return { kind: "active", title: "Mantener cursor", detail: "numero casi listo" };
+    return { kind: "ready", title: "Apunta", detail: "elige el resultado con el cursor" };
+  }
   return { kind: "ready", title: "Juega", detail: overlayHint(challenge) };
 }
 
@@ -1008,12 +975,11 @@ function renderAiVisionOverlay() {
 
 function overlayHint(challenge) {
   if (challenge.input === "ai-trainer") return "Entrena con ejemplos variados y luego prueba la matriz.";
-  if (challenge.input === "object-lab") return "Mueve la mano y observa si las formas llegan donde quieres.";
-  if (challenge.conceptKey === "probabilidad") return "Pasa la mano sobre la ruleta. Gira, se detiene y luego toma la respuesta.";
-  if (isZoneDragChallenge(challenge)) return "El objeto sigue la mano. Abre la palma sobre un canasto para soltar.";
-  if (challenge.input === "zone") return "MantÃ©n la mano sobre una zona para seleccionar.";
-  if (challenge.input === "fingers-option") return "1 a 4 dedos seleccionan las tarjetas.";
-  return "Mano abierta cuenta dedos; OK significa cero.";
+  if (challenge.input === "object-lab") return "Mueve un dedo o la mano como cursor y apunta las formas.";
+  if (challenge.conceptKey === "probabilidad") return "Apunta el color con mas sectores y manten el cursor un instante.";
+  if (challenge.input === "zone") return "Manten el cursor sobre una zona para seleccionar.";
+  if (challenge.input === "fingers-option") return "Apunta una tarjeta con el cursor.";
+  return "Apunta el numero correcto con el cursor.";
 }
 
 function pointerStyle() {
@@ -1023,82 +989,24 @@ function pointerStyle() {
   return `left:${x}%;top:${y}%`;
 }
 
-function movableObjectStyle() {
-  if (state.vision.handX === null || state.vision.handY === null) return "left:50%;top:54%";
-  const x = clamp(Math.round(state.vision.handX * 100), 9, 91);
-  const y = clamp(Math.round(state.vision.handY * 100), 22, 82);
-  return `left:${x}%;top:${y}%`;
-}
-
 function labShapeStyle(shape, index = 0) {
-  if (state.vision.handX === null || state.vision.handY === null) {
-    return `left:${shape.x}%;top:${shape.y}%`;
-  }
-  const offsets = [
-    { x: -9, y: -8 },
-    { x: 9, y: -8 },
-    { x: -8, y: 9 },
-    { x: 9, y: 9 },
-  ];
-  const offset = offsets[index % offsets.length];
-  const x = clamp(Math.round(state.vision.handX * 100) + offset.x, 12, 88);
-  const y = clamp(Math.round(state.vision.handY * 100) + offset.y, 20, 82);
-  return `left:${x}%;top:${y}%`;
-}
-
-function seedObjectStyle() {
-  if (state.feedback?.selected) return zoneAnchorStyle(normalizeAnswer(state.feedback.selected));
-  if (state.vision.droppedZone) return zoneAnchorStyle(state.vision.droppedZone);
-  if (state.vision.dragging) return movableObjectStyle();
-  if (state.vision.handX !== null) return movableObjectStyle();
-  return "left:50%;top:48%";
-}
-
-function zoneAnchorStyle(zone) {
-  const anchors = {
-    izquierda: 20,
-    centro: 50,
-    derecha: 80,
-  };
-  const x = anchors[zone] || 50;
-  return `left:${x}%;top:73%`;
+  return `left:${shape.x}%;top:${shape.y}%`;
 }
 
 function zoneActionLabel(zone, challenge) {
-  if (state.feedback && normalizeAnswer(state.feedback.selected) === normalizeAnswer(zone)) return "soltado";
-  if (state.vision.droppedZone === zone) return "soltado";
+  if (state.feedback && normalizeAnswer(state.feedback.selected) === normalizeAnswer(zone)) return "elegido";
   if (challenge.conceptKey === "probabilidad") {
-    if (state.vision.hoverZone === zone && palmPushActive()) return "empuje";
-    if (state.vision.hoverZone === zone && wheelIsSpinning()) return "girando";
-    if (state.vision.wheelPendingZone === zone && !wheelIsSpinning()) return "tomar";
-    if (state.vision.hoverZone === zone) return "pasar";
-    return "color";
+    if (state.vision.hoverZone === zone) return "mantener";
+    return "apuntar";
   }
-  if (state.vision.dragging && state.vision.hoverZone === zone) return "abre mano";
-  if (state.vision.dragging) return "llevar";
-  if (state.vision.hoverZone === zone) return "agarra";
-  return "canasto";
-}
-
-function seedObjectLabel() {
-  if (state.feedback) return "soltado";
-  if (state.vision.droppedZone) return "soltado";
-  if (state.vision.dragging) return "abre la mano";
-  if (state.vision.handX !== null) return "siguiendo";
-  return "muestra la mano";
-}
-
-function wheelSpinClass() {
-  return wheelIsSpinning() ? "spin hand-spin" : "";
+  if (state.vision.hoverZone === zone) return "mantener";
+  return "apuntar";
 }
 
 function wheelMotionLabel() {
   if (state.feedback) return "respuesta tomada";
-  if (wheelReadyToSubmit()) return "ruleta detenida";
-  if (wheelIsSpinning()) return "girando rapido";
-  if (palmPushActive()) return "empuje";
-  if (state.vision.handX !== null) return "pasa encima";
-  return "rueda lista";
+  if (state.vision.handX !== null) return "apunta un color";
+  return "cursor listo";
 }
 
 function renderChallengePanel(game) {
@@ -1207,7 +1115,7 @@ function renderRobotBoard(challenge) {
       <div class="air-options">
         ${challenge.options.map((option, index) => `
           <button type="button" data-answer="${option.value}">
-            <small>${index + 1} dedo${index ? "s" : ""}</small>
+            <small>opcion ${index + 1}</small>
             <strong>${option.label}</strong>
           </button>
         `).join("")}
@@ -1219,7 +1127,7 @@ function renderRobotBoard(challenge) {
 function renderChanceBoard(challenge) {
   return `
     <div class="wheel-board">
-      <div class="gesture-wheel ${state.vision.gesture === "palma" ? "spin" : ""}"></div>
+      <div class="gesture-wheel"></div>
       <div class="lane-board compact">
         ${challenge.options.map((option) => `
           <button type="button" class="lane-card ${state.vision.zone === option.value ? "active" : ""}" data-answer="${escapeAttribute(option.value)}">
@@ -1241,7 +1149,7 @@ function renderDataBoard(challenge) {
       <div class="air-options">
         ${challenge.options.map((option, index) => `
           <button type="button" data-answer="${option.value}">
-            <small>${index + 1} dedo${index ? "s" : ""}</small>
+            <small>opcion ${index + 1}</small>
             <strong>${option.label}</strong>
           </button>
         `).join("")}
@@ -1252,7 +1160,7 @@ function renderDataBoard(challenge) {
 
 function renderRhythmBoard(challenge) {
   return `
-    <div class="rhythm-board ${state.vision.gesture === "palma" ? "pulse" : ""}">
+    <div class="rhythm-board">
       ${challenge.sequence.map((value) => `<span>${value}</span>`).join("")}
       <b>?</b>
       <div class="beat-bars">${repeat(12, (index) => `<i style="height:${28 + ((index * 17) % 80)}px"></i>`)}</div>
@@ -1477,8 +1385,7 @@ function bindEvents() {
       state.challenge = createChallenge(state.activeGame);
       state.feedback = null;
       state.answered = false;
-      resetDragInteraction();
-      resetWheelTracking();
+      resetZoneHover();
       writeProgress();
       renderApp();
     });
@@ -1526,17 +1433,20 @@ function bindEvents() {
       state.vision.handY = 0.56;
       state.vision.smoothedHandX = state.vision.handX;
       state.vision.smoothedHandY = state.vision.handY;
-      updateVisionReading(state.vision.fingers, button.dataset.simZone, "demo");
+      updateVisionReading(state.vision.fingers, button.dataset.simZone, "cursor");
+      simulateCursorDwell();
     });
   });
 
-  document.querySelectorAll("[data-sim-gesture]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.vision.gesture = button.dataset.simGesture;
-      if (state.vision.gesture === "palma") spinWheelByDemo();
-      updateVisionWidgets();
-      processVisionAnswer(true);
-    });
+}
+
+function simulateCursorDwell() {
+  [180, 380, 620].forEach((delay) => {
+    window.setTimeout(() => {
+      if (!state.challenge || state.answered) return;
+      updateVisionReading(state.vision.fingers, state.vision.zone, "cursor", state.vision.confidence);
+      processVisionAnswer(false);
+    }, delay);
   });
 }
 
@@ -1716,13 +1626,11 @@ function handleHandResult(result) {
   }
 
   const fingers = hands.reduce((total, landmarks) => total + countExtendedFingers(landmarks), 0);
-  const center = smoothHandCenter(displayHandCenter(hands[0]));
-  const zone = handZone(center);
-  const gesture = detectGesture(hands[0], fingers);
-  updatePalmPush(hands[0], gesture);
-  state.vision.handX = center.x;
-  state.vision.handY = center.y;
-  updateWheelMotion(center, gesture);
+  const cursor = smoothHandCenter(displayCursorPoint(hands[0]));
+  const zone = handZone(cursor);
+  const gesture = detectCursorMode(hands[0]);
+  state.vision.handX = cursor.x;
+  state.vision.handY = cursor.y;
   updateVisionReading(fingers, zone, gesture, Math.min(1, hands.length / 2 + 0.5));
   drawHands(hands);
   processVisionAnswer(false);
@@ -1744,7 +1652,7 @@ function updateVisionReading(fingers, zone, gesture, confidence = 1) {
   if (state.vision.stableCount >= FINGER_STABLE_FRAMES && fingers !== null && fingers !== undefined) {
     state.vision.stableValue = fingers;
   }
-  updateZoneHover(state.vision.zone);
+  updateCursorHover();
   updateVisionWidgets();
 }
 
@@ -1757,47 +1665,36 @@ function processVisionAnswer(force) {
   if (challenge.input === "object-lab") return;
 
   if (challenge.input === "fingers-exact") {
+    if (!force && state.vision.hoverProgress >= 1 && state.vision.hoverZone !== null) {
+      submitAnswer(state.vision.hoverZone, "cursor");
+      return;
+    }
     const value = force ? state.vision.fingers : state.vision.stableValue;
-    if (value === null || value === undefined) return;
+    if (!force || value === null || value === undefined) return;
     submitAnswer(String(value), "dedos");
     return;
   }
 
   if (challenge.input === "fingers-option") {
+    if (!force && state.vision.hoverProgress >= 1 && state.vision.hoverZone !== null) {
+      submitAnswer(state.vision.hoverZone, "cursor");
+      return;
+    }
     const value = force ? state.vision.fingers : state.vision.stableValue;
-    if (!Number.isFinite(Number(value))) return;
+    if (!force || !Number.isFinite(Number(value))) return;
     const option = challenge.options[Number(value) - 1];
     if (option) submitAnswer(String(option.value), "dedos");
     return;
   }
 
   if (challenge.input === "zone") {
-    if (challenge.conceptKey === "probabilidad") {
-      if (wheelIsSpinning() || Date.now() < state.vision.wheelSettleUntil) return;
-      if (wheelReadyToSubmit()) {
-        const value = state.vision.wheelPendingZone || state.vision.zone;
-        state.vision.wheelPendingZone = null;
-        submitAnswer(value, "ruleta");
-        return;
-      }
-      if (force) {
-        startWheelSpin(null, "demo");
-        return;
-      }
-    }
-
-    if (isZoneDragChallenge(challenge)) {
-      const droppedZone = updateDragInteraction(challenge, force);
-      if (droppedZone) {
-        submitAnswer(droppedZone, "soltar");
-      }
+    const selectedByHover = state.vision.hoverProgress >= 1 && state.vision.hoverZone !== null;
+    if (selectedByHover) {
+      submitAnswer(state.vision.hoverZone, "cursor");
       return;
     }
-
-    const selectedByHover = state.vision.hoverProgress >= 1;
-    const selectedByGesture = state.vision.hoverProgress >= 0.35 && (state.vision.gesture === "palma" || state.vision.gesture === "pinza");
-    if (force || selectedByHover || selectedByGesture) {
-      submitAnswer(state.vision.zone, selectedByHover && !force ? "zona" : "mano");
+    if (force) {
+      submitAnswer(state.vision.zone, "demo");
     }
   }
 }
@@ -1805,15 +1702,15 @@ function processVisionAnswer(force) {
 function updateVisionWidgets() {
   const updates = [
     ["#visionStatus", state.vision.status],
-    ["#visionFingers", visionNumberLabel()],
+    ["#visionFingers", cursorStateLabel()],
     ["#visionZone", state.vision.zone],
     ["#visionGesture", state.vision.gesture],
-    ["#sideFingers", visionNumberLabel()],
+    ["#sideFingers", cursorStateLabel()],
     ["#sideZone", state.vision.zone],
     ["#sideGesture", state.vision.gesture],
     ["#liveAnswer", visionNumberLabel()],
     ["#overlayLiveAnswer", visionNumberLabel()],
-    ["#handCursorValue", visionNumberLabel()],
+    ["#handCursorValue", ""],
   ];
   updates.forEach(([selector, value]) => {
     const node = document.querySelector(selector);
@@ -1823,11 +1720,7 @@ function updateVisionWidgets() {
   if (overlay) {
     overlay.dataset.zone = state.vision.zone;
     overlay.dataset.hoverZone = state.vision.hoverZone || "";
-    overlay.dataset.dragging = state.vision.dragging ? "true" : "false";
-    overlay.dataset.dropZone = state.vision.droppedZone || "";
-    overlay.dataset.palmPush = palmPushActive() ? "true" : "false";
     overlay.style.setProperty("--zone-progress", `${Math.round(state.vision.hoverProgress * 100)}%`);
-    overlay.style.setProperty("--drop-progress", `${Math.round(state.vision.dropProgress * 100)}%`);
   }
   const cursor = document.querySelector("#handCursor");
   if (cursor) {
@@ -1838,42 +1731,29 @@ function updateVisionWidgets() {
   document.querySelectorAll("[data-camera-zone]").forEach((node) => {
     const isActive = node.dataset.cameraZone === state.vision.zone;
     const isHovering = node.dataset.cameraZone === state.vision.hoverZone;
-    const isDropped = node.dataset.cameraZone === state.vision.droppedZone;
     node.classList.toggle("active", isActive);
     node.classList.toggle("hovering", isHovering);
-    node.classList.toggle("dropped", isDropped);
     node.style.setProperty("--zone-progress", `${Math.round((isHovering ? state.vision.hoverProgress : 0) * 100)}%`);
     const action = node.querySelector(".zone-action");
     if (action && state.challenge) action.textContent = zoneActionLabel(node.dataset.cameraZone, state.challenge);
   });
-  const handObject = document.querySelector(".hand-object");
-  if (handObject) {
-    handObject.classList.toggle("idle", state.vision.handX === null);
-    handObject.classList.toggle("grabbed", state.vision.dragging);
-    handObject.classList.toggle("dropped", Boolean(state.vision.droppedZone || state.feedback));
-    handObject.setAttribute("style", seedObjectStyle());
-    const label = handObject.querySelector("em");
-    if (label) label.textContent = seedObjectLabel();
-  }
-  const wheelPointer = document.querySelector(".wheel-pointer");
-  if (wheelPointer) {
-    wheelPointer.classList.toggle("idle", state.vision.handX === null);
-    wheelPointer.setAttribute("style", movableObjectStyle());
-  }
+  document.querySelectorAll("[data-cursor-answer]").forEach((node) => {
+    const isHovering = normalizeAnswer(node.dataset.cursorAnswer) === normalizeAnswer(state.vision.hoverZone);
+    node.classList.toggle("cursor-hovering", isHovering);
+    node.style.setProperty("--zone-progress", `${Math.round((isHovering ? state.vision.hoverProgress : 0) * 100)}%`);
+  });
   const wheel = document.querySelector(".live-wheel");
   if (wheel) {
-    advanceWheelPhysics();
-    wheel.classList.toggle("spin", wheelIsSpinning());
-    wheel.classList.toggle("hand-spin", wheelIsSpinning());
-    wheel.style.setProperty("--wheel-angle", `${state.vision.wheelAngle.toFixed(1)}deg`);
+    wheel.classList.remove("spin", "hand-spin");
+    wheel.style.setProperty("--wheel-angle", "0deg");
   }
   const wheelLabel = document.querySelector(".wheel-motion-label");
   if (wheelLabel) wheelLabel.textContent = wheelMotionLabel();
   document.querySelectorAll("[data-lab-shape]").forEach((node, index) => {
     const shape = LAB_SHAPES.find((item) => item.id === node.dataset.labShape) || LAB_SHAPES[index % LAB_SHAPES.length];
     node.setAttribute("style", labShapeStyle(shape, index));
-    node.classList.toggle("is-moving", state.vision.handX !== null);
-    node.classList.toggle("is-release", state.vision.gesture === "palma");
+    node.classList.toggle("is-moving", false);
+    node.classList.toggle("is-release", normalizeAnswer(state.vision.hoverZone) === normalizeAnswer(shape.id));
   });
   const status = document.querySelector("#overlayStatus");
   if (status && state.challenge) {
@@ -1885,14 +1765,20 @@ function updateVisionWidgets() {
   updateAiLiveWidgets();
 }
 
-function updateZoneHover(zone) {
+function updateCursorHover() {
   const challenge = state.challenge;
-  const canHoverSelect = challenge?.input === "zone"
+  const canHoverSelect = isCursorSelectableChallenge(challenge)
     && !state.answered
     && state.vision.handX !== null
     && state.vision.handY !== null
     && Date.now() >= state.vision.lockedUntil;
   if (!canHoverSelect) {
+    resetZoneHover();
+    return;
+  }
+
+  const zone = cursorTargetValue(challenge);
+  if (!zone) {
     resetZoneHover();
     return;
   }
@@ -1908,143 +1794,24 @@ function updateZoneHover(zone) {
   state.vision.hoverProgress = clamp((now - state.vision.hoverStartedAt) / ZONE_DWELL_MS, 0, 1);
 }
 
-function updateDragInteraction(challenge, force = false) {
-  if (!isZoneDragChallenge(challenge) || state.answered) return null;
-  if (force) return state.vision.zone;
-  if (state.vision.handX === null || state.vision.handY === null) {
-    resetDragInteraction();
-    return null;
-  }
+function isCursorSelectableChallenge(challenge) {
+  return ["zone", "fingers-exact", "fingers-option", "object-lab"].includes(challenge?.input);
+}
 
-  const now = Date.now();
-  const zone = state.vision.zone;
-  const release = isReleaseGesture(state.vision.gesture) || palmPushActive();
-
-  if (!state.vision.dragging && !state.vision.droppedZone) {
-    state.vision.dragging = true;
-    state.vision.droppedZone = null;
-    state.vision.dropZone = zone;
-    state.vision.dropStartedAt = now;
-    state.vision.dropProgress = 0;
-  }
-
-  if (!state.vision.dragging) {
-    if (!state.vision.droppedZone && state.vision.hoverProgress >= 1) {
-      state.vision.droppedZone = zone;
-      state.vision.dropZone = zone;
-      state.vision.dropProgress = 1;
-      return zone;
-    }
-    return null;
-  }
-
-  if (state.vision.dropZone !== zone) {
-    state.vision.dropZone = zone;
-    state.vision.dropStartedAt = now;
-    state.vision.dropProgress = 0;
-  } else {
-    state.vision.dropProgress = clamp((now - state.vision.dropStartedAt) / DROP_DWELL_MS, 0, 1);
-  }
-
-  if ((release && state.vision.dropProgress >= 0.16) || state.vision.dropProgress >= 1) {
-    state.vision.dragging = false;
-    state.vision.droppedZone = zone;
-    state.vision.dropProgress = 1;
-    return zone;
-  }
-
+function cursorTargetValue(challenge) {
+  const overlay = document.querySelector("#motionOverlay");
+  if (!overlay || state.vision.handX === null || state.vision.handY === null) return null;
+  const rect = overlay.getBoundingClientRect();
+  const x = rect.left + (state.vision.handX * rect.width);
+  const y = rect.top + (state.vision.handY * rect.height);
+  const targets = [...document.querySelectorAll("[data-cursor-answer]")];
+  const hit = targets.find((target) => {
+    const box = target.getBoundingClientRect();
+    return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+  });
+  if (hit?.dataset.cursorAnswer !== undefined) return hit.dataset.cursorAnswer;
+  if (challenge?.input === "zone") return state.vision.zone;
   return null;
-}
-
-function updateWheelMotion(point, gesture) {
-  const challenge = state.challenge;
-  if (!challenge || challenge.conceptKey !== "probabilidad" || state.answered) {
-    resetWheelTracking(false);
-    return;
-  }
-
-  const now = Date.now();
-  const overWheel = handOverWheel(point);
-  if (overWheel && !state.vision.handWasOverWheel && !wheelIsSpinning() && now - state.vision.lastWheelTriggerAt > WHEEL_SPIN_MIN_GAP_MS) {
-    startWheelSpin(point, "paso");
-  }
-  state.vision.handWasOverWheel = overWheel;
-
-  const angle = Math.atan2(point.y - WHEEL_CENTER.y, point.x - WHEEL_CENTER.x);
-  const hasLast = state.vision.lastHandAngle !== null
-    && state.vision.lastHandX !== null
-    && state.vision.lastHandY !== null;
-
-  if (palmPushActive()) {
-    startWheelSpin(point, "empuje");
-  }
-
-  if (!wheelIsSpinning() && hasLast) {
-    const deltaAngle = normalizedRadians(angle - state.vision.lastHandAngle);
-    const dx = point.x - state.vision.lastHandX;
-    const dy = point.y - state.vision.lastHandY;
-    const gestureBoost = gesture === "palma" || gesture === "pinza" ? 1.55 : 1;
-    const impulse = ((deltaAngle * 110) + (dx * 420) - (dy * 90)) * gestureBoost;
-
-    if (Math.abs(impulse) > 2.6) {
-      state.vision.wheelVelocity = clamp(state.vision.wheelVelocity + impulse, -38, 38);
-      state.vision.spinUntil = now + 850;
-    }
-  }
-
-  if (!wheelIsSpinning() && (gesture === "palma" || gesture === "pinza") && Math.abs(state.vision.wheelVelocity) < 1.4) {
-    const direction = point.x >= WHEEL_CENTER.x ? 1 : -1;
-    state.vision.wheelVelocity += direction * 1.4;
-    state.vision.spinUntil = now + 520;
-  }
-
-  advanceWheelPhysics();
-  state.vision.lastHandAngle = angle;
-  state.vision.lastHandX = point.x;
-  state.vision.lastHandY = point.y;
-}
-
-function advanceWheelPhysics() {
-  if (state.challenge?.conceptKey !== "probabilidad") return;
-  const now = Date.now();
-  if (!state.vision.lastWheelTickAt) state.vision.lastWheelTickAt = now;
-  const frames = clamp((now - state.vision.lastWheelTickAt) / 16.67, 0, 3.5);
-  if (frames <= 0) return;
-  if (wheelIsSpinning()) {
-    const activeSpin = now < state.vision.wheelSpinEndsAt;
-    const friction = activeSpin ? Math.pow(0.986, frames) : Math.pow(0.78, frames);
-    state.vision.wheelAngle = normalizedDegrees(state.vision.wheelAngle + (state.vision.wheelVelocity * frames));
-    state.vision.wheelVelocity *= friction;
-    if (now >= state.vision.wheelSpinEndsAt && Math.abs(state.vision.wheelVelocity) < 2.5) {
-      state.vision.wheelVelocity = 0;
-    }
-    if (Math.abs(state.vision.wheelVelocity) < 0.04) state.vision.wheelVelocity = 0;
-  }
-  state.vision.lastWheelTickAt = now;
-}
-
-function spinWheelByDemo() {
-  if (state.challenge?.conceptKey !== "probabilidad" || state.answered) return;
-  triggerPalmPush();
-  startWheelSpin(null, "demo");
-}
-
-function updatePalmPush(landmarks, gesture) {
-  const scale = handScale(landmarks);
-  const lastScale = state.vision.lastHandScale;
-  state.vision.handScaleValue = scale;
-  state.vision.lastHandScale = scale;
-  if (gesture !== "palma" || lastScale === null) return;
-  const now = Date.now();
-  const scaleDelta = scale - lastScale;
-  if (scaleDelta > PALM_PUSH_THRESHOLD && now - state.vision.lastPalmPushAt > PALM_PUSH_COOLDOWN_MS) {
-    triggerPalmPush(now);
-  }
-}
-
-function triggerPalmPush(now = Date.now()) {
-  state.vision.palmPushUntil = now + 520;
-  state.vision.lastPalmPushAt = now;
 }
 
 function resetHandTracking() {
@@ -2052,18 +1819,6 @@ function resetHandTracking() {
   state.vision.handY = null;
   state.vision.smoothedHandX = null;
   state.vision.smoothedHandY = null;
-  state.vision.handScaleValue = null;
-  state.vision.lastHandScale = null;
-  state.vision.palmPushUntil = 0;
-  resetDragInteraction();
-  if (state.challenge?.conceptKey === "probabilidad" && (wheelIsSpinning() || state.vision.wheelPendingZone)) {
-    state.vision.lastHandAngle = null;
-    state.vision.lastHandX = null;
-    state.vision.lastHandY = null;
-    state.vision.handWasOverWheel = false;
-  } else {
-    resetWheelTracking(false);
-  }
   resetZoneHover();
 }
 
@@ -2073,126 +1828,6 @@ function resetZoneHover() {
   state.vision.hoverProgress = 0;
 }
 
-function resetDragInteraction() {
-  state.vision.dragging = false;
-  state.vision.droppedZone = null;
-  state.vision.dropZone = null;
-  state.vision.dropStartedAt = 0;
-  state.vision.dropProgress = 0;
-}
-
-function resetWheelTracking(resetAngle = true) {
-  if (wheelAnimationFrame) {
-    window.cancelAnimationFrame(wheelAnimationFrame);
-    wheelAnimationFrame = null;
-  }
-  state.vision.wheelVelocity = 0;
-  state.vision.spinUntil = 0;
-  state.vision.wheelSpinStartedAt = 0;
-  state.vision.wheelSpinEndsAt = 0;
-  state.vision.wheelPendingZone = null;
-  state.vision.wheelSettleUntil = 0;
-  state.vision.handWasOverWheel = false;
-  state.vision.lastWheelTickAt = 0;
-  state.vision.lastHandAngle = null;
-  state.vision.lastHandX = null;
-  state.vision.lastHandY = null;
-  state.vision.palmPushUntil = 0;
-  if (resetAngle) state.vision.wheelAngle = 0;
-}
-
-function startWheelSpin(point = null, reason = "paso") {
-  if (state.challenge?.conceptKey !== "probabilidad" || state.answered) return;
-  const now = Date.now();
-  if (wheelIsSpinning() && reason !== "demo") return;
-  const zone = point ? handZone(point) : state.vision.hoverZone || state.vision.zone;
-  const direction = point?.x !== undefined
-    ? (point.x >= WHEEL_CENTER.x ? 1 : -1)
-    : (Math.random() > 0.5 ? 1 : -1);
-  state.vision.wheelVelocity = direction * 86;
-  state.vision.wheelSpinStartedAt = now;
-  state.vision.wheelSpinEndsAt = now + WHEEL_SPIN_MS;
-  state.vision.spinUntil = state.vision.wheelSpinEndsAt;
-  state.vision.wheelSettleUntil = state.vision.wheelSpinEndsAt + WHEEL_SETTLE_MS;
-  state.vision.wheelPendingZone = zone || "centro";
-  state.vision.lastWheelTriggerAt = now;
-  state.vision.lastWheelTickAt = now;
-  state.vision.handWasOverWheel = true;
-  startWheelAnimationLoop();
-  window.setTimeout(() => {
-    state.vision.wheelVelocity = 0;
-    if (state.challenge?.conceptKey === "probabilidad" && !state.answered) {
-      processVisionAnswer(false);
-      updateVisionWidgets();
-    }
-  }, WHEEL_SPIN_MS + WHEEL_SETTLE_MS + 40);
-}
-
-function startWheelAnimationLoop() {
-  if (wheelAnimationFrame) return;
-  const tick = () => {
-    wheelAnimationFrame = null;
-    if (state.challenge?.conceptKey !== "probabilidad" || state.answered) return;
-    updateVisionWidgets();
-    if (wheelReadyToSubmit()) {
-      processVisionAnswer(false);
-      updateVisionWidgets();
-      return;
-    }
-    if (wheelIsSpinning() || Date.now() < state.vision.wheelSettleUntil) {
-      wheelAnimationFrame = window.requestAnimationFrame(tick);
-    }
-  };
-  wheelAnimationFrame = window.requestAnimationFrame(tick);
-}
-
-function isZoneDragChallenge(challenge) {
-  return challenge?.input === "zone" && challenge.conceptKey !== "probabilidad";
-}
-
-function isGrabGesture(gesture) {
-  return gesture === "pinza" || gesture === "puno";
-}
-
-function isReleaseGesture(gesture) {
-  return gesture === "palma";
-}
-
-function wheelIsSpinning() {
-  return Date.now() < state.vision.spinUntil || Date.now() < state.vision.wheelSpinEndsAt || Math.abs(state.vision.wheelVelocity) > 0.35;
-}
-
-function wheelReadyToSubmit() {
-  return state.challenge?.conceptKey === "probabilidad"
-    && Boolean(state.vision.wheelPendingZone)
-    && !wheelIsSpinning()
-    && Date.now() >= state.vision.wheelSettleUntil;
-}
-
-function handOverWheel(point) {
-  if (!point) return false;
-  const dx = point.x - WHEEL_CENTER.x;
-  const dy = point.y - WHEEL_CENTER.y;
-  return Math.hypot(dx, dy) < 0.34 && point.y > 0.12 && point.y < 0.74;
-}
-
-function palmPushActive() {
-  return Date.now() < state.vision.palmPushUntil;
-}
-
-function normalizedRadians(value) {
-  let result = value;
-  while (result > Math.PI) result -= Math.PI * 2;
-  while (result < -Math.PI) result += Math.PI * 2;
-  return result;
-}
-
-function normalizedDegrees(value) {
-  let result = value % 360;
-  if (result < 0) result += 360;
-  return result;
-}
-
 function drawHands(hands) {
   if (!canvasElement || !canvasContext || !videoElement) return;
   const width = videoElement.videoWidth || 640;
@@ -2200,37 +1835,6 @@ function drawHands(hands) {
   canvasElement.width = width;
   canvasElement.height = height;
   canvasContext.clearRect(0, 0, width, height);
-  canvasContext.save();
-  canvasContext.lineCap = "round";
-  canvasContext.lineJoin = "round";
-  canvasContext.globalAlpha = 0.44;
-  canvasContext.shadowColor = "rgba(255, 210, 63, 0.28)";
-  canvasContext.shadowBlur = Math.max(3, width / 180);
-  canvasContext.lineWidth = Math.max(2, width / 220);
-  canvasContext.strokeStyle = "rgba(255, 232, 138, 0.56)";
-  canvasContext.fillStyle = "rgba(61, 245, 143, 0.58)";
-  hands.forEach((landmarks) => {
-    HAND_CONNECTIONS.forEach(([a, b]) => {
-      canvasContext.beginPath();
-      canvasContext.moveTo(landmarks[a].x * width, landmarks[a].y * height);
-      canvasContext.lineTo(landmarks[b].x * width, landmarks[b].y * height);
-      canvasContext.stroke();
-    });
-    landmarks.forEach((point) => {
-      canvasContext.beginPath();
-      canvasContext.arc(point.x * width, point.y * height, Math.max(3, width / 190), 0, Math.PI * 2);
-      canvasContext.fill();
-    });
-    canvasContext.globalAlpha = 0.62;
-    [4, 8, 12, 16, 20].forEach((index) => {
-      const point = landmarks[index];
-      canvasContext.beginPath();
-      canvasContext.arc(point.x * width, point.y * height, Math.max(5, width / 150), 0, Math.PI * 2);
-      canvasContext.stroke();
-    });
-    canvasContext.globalAlpha = 0.44;
-  });
-  canvasContext.restore();
 }
 
 function clearVisionCanvas() {
@@ -2318,6 +1922,14 @@ function displayHandCenter(landmarks) {
   };
 }
 
+function displayCursorPoint(landmarks) {
+  const point = landmarks[8] || handCenter(landmarks);
+  return {
+    x: 1 - point.x,
+    y: point.y,
+  };
+}
+
 function smoothHandCenter(point) {
   if (state.vision.smoothedHandX === null || state.vision.smoothedHandY === null) {
     state.vision.smoothedHandX = point.x;
@@ -2333,14 +1945,8 @@ function smoothHandCenter(point) {
   };
 }
 
-function detectGesture(landmarks, fingers) {
-  const pinchDistance = distance(landmarks[4], landmarks[8]);
-  if (isOkZeroGesture(landmarks)) return "cero";
-  if (pinchDistance < 0.055) return "pinza";
-  if (fingers >= 4) return "palma";
-  if (fingers === 0) return "puno";
-  if (fingers === 1) return "apuntar";
-  return "mano";
+function detectCursorMode(landmarks) {
+  return isFingerExtended(landmarks, 8, 6, 5) ? "dedo" : "mano";
 }
 
 function createChallenge(gameId) {
@@ -2358,15 +1964,15 @@ function createObjectLabChallenge() {
   return {
     input: "object-lab",
     conceptKey: "espacial",
-    title: "Traslado de formas",
-    prompt: "Mueve la mano dentro del recuadro y observa como se trasladan las formas.",
-    hint: "No suma puntos: sirve para calibrar movimiento, soltado y claridad visual.",
-    strategy: "Usa trayectorias amplias y lentas para verificar si el seguimiento acompana al participante.",
-    model: "El objetivo es verificar control gestual antes de usar objetos dentro de un reto.",
+    title: "Prueba de cursor",
+    prompt: "Mueve un dedo o la mano dentro del recuadro y apunta las formas.",
+    hint: "No suma puntos: sirve para calibrar el cursor antes de jugar.",
+    strategy: "Usa trayectorias amplias y lentas para verificar si el cursor acompana al participante.",
+    model: "El objetivo es verificar que el punto funcione como un mouse aereo.",
     steps: [
-      "Entra al recuadro con la mano abierta.",
-      "Mueve la mano hacia izquierda, centro y derecha.",
-      "Abre la palma sobre una zona para simular soltado.",
+      "Entra al recuadro con un dedo o la mano.",
+      "Mueve el cursor hacia izquierda, centro y derecha.",
+      "Mantente un instante sobre una forma.",
     ],
     answer: "laboratorio",
   };
@@ -2380,7 +1986,7 @@ function createFingerChallenge() {
     input: "fingers-exact",
     conceptKey: "suma",
     title: "Suma con las manos",
-    prompt: `Muestra ${a} + ${b} con tus dedos.`,
+    prompt: `Apunta el resultado de ${a} + ${b}.`,
     hint: "Si no hay camara, toca el numero de la fila demo.",
     strategy: "Forma el primer grupo, agrega el segundo y cuenta todo junto.",
     model: `${a} semillas y ${b} semillas forman ${answer} semillas.`,
@@ -2403,7 +2009,7 @@ function createSeedGuardianChallenge() {
     input: "zone",
     conceptKey: "comparacion",
     title: "Canasto con mas semillas",
-    prompt: "Muestra la mano: las semillas te siguen. Abre la palma sobre el canasto mayor para soltarlas.",
+    prompt: "Apunta con el cursor al canasto que tiene mas semillas.",
     hint: "Tambien puedes tocar el canasto.",
     strategy: "Compara las tres cantidades y busca la mayor.",
     model: `El canasto ${winner.label} tiene ${winner.count}; por eso es el grupo mayor.`,
@@ -2425,8 +2031,8 @@ function createRobotChallenge() {
     input: "fingers-option",
     conceptKey: "multiplicacion",
     title: "Energia del robot",
-    prompt: `El robot necesita resolver ${a} x ${b}. Muestra 1 a 4 dedos para elegir.`,
-    hint: "Cada cantidad de dedos elige una tarjeta de energia.",
+    prompt: `El robot necesita resolver ${a} x ${b}. Apunta una tarjeta para elegir.`,
+    hint: "Tambien puedes tocar una tarjeta.",
     strategy: "Piensa en grupos iguales: una carta dice cuantas filas y la otra cuantas columnas.",
     model: `${a} grupos de ${b} energia producen ${answer} unidades.`,
     steps: [
@@ -2454,7 +2060,7 @@ function createChanceChallenge() {
     input: "zone",
     conceptKey: "probabilidad",
     title: "La rueda decide",
-    prompt: "Palma abierta: empuja hacia la camara sobre el color con mas sectores.",
+    prompt: "Apunta con el cursor al color con mas sectores.",
     hint: "Mas sectores significa mas oportunidad.",
     strategy: "Cuenta sectores: la opcion con mas partes aparece mas veces en la rueda.",
     model: `${winner.label} tiene ${winner.count} sectores, asi que tiene mas oportunidades.`,
@@ -2478,7 +2084,7 @@ function createDataChallenge() {
     input: "fingers-option",
     conceptKey: "estadistica",
     title: `Encuentra la ${ask}`,
-    prompt: `Muestra 1 a 4 dedos para elegir la tarjeta correcta.`,
+    prompt: `Apunta la tarjeta correcta.`,
     hint: "Ordenar con la mirada ayuda antes de responder.",
     strategy: ask === "mediana"
       ? "Ordena los datos y busca el valor que queda en el centro."
@@ -2514,7 +2120,7 @@ function createRhythmChallenge() {
     input: "fingers-exact",
     conceptKey: "patrones",
     title: "Ritmo secreto",
-    prompt: `Completa ${pattern.sequence.join(", ")}, ? con tus dedos.`,
+    prompt: `Completa ${pattern.sequence.join(", ")}, ? apuntando el resultado.`,
     hint: `Busca el ritmo: ${pattern.rule}.`,
     strategy: "Encuentra que cambia de una ficha a la siguiente y repite esa regla.",
     model: `La regla es ${pattern.rule}; por eso sigue ${pattern.answer}.`,
@@ -2813,13 +2419,6 @@ function submitAnswer(value, source) {
 
   state.answered = true;
   resetZoneHover();
-  if (state.challenge.input === "zone") {
-    state.vision.dragging = false;
-    state.vision.droppedZone = selected;
-    state.vision.dropProgress = 1;
-  } else {
-    resetDragInteraction();
-  }
   state.vision.lockedUntil = Date.now() + 1200;
   state.progress.played += 1;
   stats.played += 1;
@@ -2878,8 +2477,6 @@ function newChallenge() {
   state.answered = false;
   state.feedback = null;
   resetZoneHover();
-  resetDragInteraction();
-  resetWheelTracking();
   renderApp();
 }
 
@@ -3075,9 +2672,14 @@ function visionNumberLabel() {
   return state.vision.fingers === null || state.vision.fingers === undefined ? "-" : String(state.vision.fingers);
 }
 
+function cursorStateLabel() {
+  if (state.vision.handX === null || state.vision.handY === null) return "-";
+  return state.vision.gesture || "cursor";
+}
+
 function cameraCaptureLabel() {
   if (state.activeGame === "ia" && state.vision.enabled) return "Video + IA";
-  if (state.vision.ready) return "Video + manos";
+  if (state.vision.ready) return "Video + cursor";
   if (state.vision.enabled) return "Video activo";
   if (state.vision.loading) return "Esperando permiso";
   if (state.vision.error) return "Permiso o video";
@@ -3085,7 +2687,7 @@ function cameraCaptureLabel() {
 }
 
 function cameraPanelTitle() {
-  if (state.vision.ready) return "La camara esta leyendo movimientos";
+  if (state.vision.ready) return "La camara esta leyendo el cursor";
   if (state.vision.enabled && state.vision.loading) return "La camara ya muestra video";
   if (state.vision.enabled) return "Video activo";
   if (state.vision.errorCode === "permission") return "Permiso de camara bloqueado";
@@ -3097,7 +2699,7 @@ function cameraPanelTitle() {
 }
 
 function cameraPanelText() {
-  if (state.vision.ready) return "Muestra dedos abiertos. Para cero, une pulgar e indice como un OK.";
+  if (state.vision.ready) return "Mueve un dedo o la mano como un mouse y manten el punto sobre una respuesta.";
   if (state.vision.enabled && state.vision.loading) return "El escenario ya recibe video. Estamos preparando el detector de manos.";
   if (state.vision.enabled) return "El video funciona. Si el detector no cargo, usa los botones demo mientras tanto.";
   if (state.vision.errorCode === "permission") return "El navegador nego el permiso. Habilitalo y vuelve a tocar Activar camara.";
