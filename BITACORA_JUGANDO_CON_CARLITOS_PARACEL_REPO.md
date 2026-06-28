@@ -2603,8 +2603,12 @@
 * `python -m http.server 8802 --bind 127.0.0.1`
 * `python _tmp_v074_interaction_check.py`
 * `git diff --check`
-* Pendiente de completar en esta misma intervencion:
-  * verificacion HTTP publica posterior al push
+* `git commit -m "Mejora gestos de soltar y giro"`
+* `git push origin main`
+* Verificacion HTTP publica con `Invoke-WebRequest` sobre:
+  * `https://investigapyrm.github.io/jugando_con_carlitos/?v=0.7.4`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/app.js?v=0.7.4`
+  * `https://investigapyrm.github.io/jugando_con_carlitos/service-worker.js?v=0.7.4`
 
 ### Resultados verificados
 
@@ -2620,6 +2624,12 @@
   * overlay de juego queda con `z-index: 4`;
   * `Rueda en el aire` cambia de `0` a `264.6` grados;
   * la rueda queda en estado visual `girando`.
+* Commit funcional generado: `f129546` (`Mejora gestos de soltar y giro`).
+* Push aplicado a `origin/main`.
+* URL publica verificada:
+  * `indexUses074: True`;
+  * `appVersion074: True`;
+  * `serviceWorker074: True`.
 
 ### Pruebas realizadas
 
