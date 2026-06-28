@@ -12,7 +12,9 @@ URL publica:
 
 ## Estado
 
-Version actual en esta rama: `v0.7.7`
+Version actual en esta rama independiente: `v0.8.0-visionai`
+
+La rama `feature/visionai-laboratorio-carlitos` incorpora una vista experimental `#visionai` inspirada en una app VisionAI de reconocimiento de objetos. El laboratorio carga TensorFlow.js y COCO-SSD bajo demanda, abre la camara, dibuja recuadros de deteccion, muestra confianza, lista objetos reconocidos y permite capturas temporales de sesion.
 
 La rama `feature/maquina-que-aprende-feria` incorpora una mision experimental llamada `La Maquina que Aprende`. En esta experiencia, los ninos entrenan una IA didactica local con ejemplos etiquetados, prueban objetos frente a la camara y observan una matriz Real/Predicho para descubrir errores, sesgo y generalizacion.
 
@@ -59,11 +61,13 @@ La app sigue siendo estatica, sin backend obligatorio. El progreso se guarda loc
 * `Ritmo corporal`: patrones y secuencias apuntando el siguiente valor.
 * `La Maquina que Aprende`: entrenamiento supervisado local con ejemplos, clasificacion por camara, matriz de confusion y exactitud.
 * `#formas`: banco de prueba para usar la mano o un dedo como cursor antes de jugar.
+* `#visionai`: laboratorio experimental de vision artificial con reconocimiento de objetos reales usando COCO-SSD.
 
 ## Categorias por edad
 
 * `#feria`: modo principal para stand, proyector y turnos breves.
 * `#formas`: vista de prueba para cursor aereo con reconocimiento de mano.
+* `#visionai`: vista independiente para probar reconocimiento de objetos con camara.
 * `#peques`: 4 a 7 anos. Conteo con dedos, comparacion visual y patrones simples.
 * `#ninos`: 8 a 12 anos. Suma, multiplicacion, probabilidad y datos con respuestas gestuales.
 * `#mayores`: mayores de 12 anos. Estadistica, probabilidad, patrones y estrategia con lectura de datos.
@@ -99,6 +103,12 @@ Incluye:
   * pruebas con etiqueta real;
   * matriz Real/Predicho;
   * calculo de exactitud;
+* laboratorio `#visionai` en rama independiente:
+  * carga bajo demanda de TensorFlow.js y COCO-SSD;
+  * deteccion de objetos reales en video local;
+  * recuadros sobre canvas, etiquetas y confianza;
+  * filtros de confianza minima y tamano maximo;
+  * captura temporal de frames dentro de la sesion;
 * mecanicas de juego por cursor:
   * apuntar el resultado de una suma;
   * apuntar la opcion correcta;
@@ -116,6 +126,8 @@ Incluye:
 La camara se activa solo si el usuario presiona `Activar camara` y acepta el permiso del navegador.
 
 El reconocimiento de manos usa MediaPipe Hand Landmarker en el navegador. El video no se envia a un backend del proyecto y la app no guarda imagenes ni videos.
+
+En la rama `feature/visionai-laboratorio-carlitos`, la vista `#visionai` usa TensorFlow.js y COCO-SSD en el navegador. El procesamiento tambien ocurre localmente; la primera carga del modelo necesita Internet por CDN. Las capturas de `#visionai` quedan solo en memoria de la sesion del navegador y no se suben al proyecto.
 
 Para reducir exposicion visual en aula o celular, la vista de camara no se muestra como espejo principal: el video queda desenfocado, con baja opacidad y una capa oscura suave. Lo importante en pantalla es un unico punto de cursor y los objetivos grandes de respuesta.
 

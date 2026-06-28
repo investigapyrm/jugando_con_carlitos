@@ -1,4 +1,4 @@
-﻿const APP_VERSION = "v0.7.7";
+﻿const APP_VERSION = "v0.8.0-visionai";
 const BUILD_DATE = "2026-06-28";
 const STORAGE_KEY = "jugando-carlitos:motion-progress:v1";
 
@@ -11,8 +11,11 @@ const MEDIAPIPE_VERSION = "0.10.21";
 const VISION_BUNDLE_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/vision_bundle.mjs`;
 const VISION_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
 const HAND_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task";
+const TFJS_URL = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js";
+const COCO_SSD_URL = "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3";
 
 const VISION_FRAME_INTERVAL_MS = 24;
+const OBJECT_VISION_FRAME_INTERVAL_MS = 140;
 const FINGER_STABLE_FRAMES = 4;
 const HAND_SMOOTHING = 0.72;
 const ZONE_DWELL_MS = 420;
@@ -143,6 +146,47 @@ const AI_CLASSES = [
 
 const AI_MIN_SAMPLES = 2;
 
+const OBJECT_CLASS_LABELS = {
+  person: "persona",
+  backpack: "mochila",
+  umbrella: "paraguas",
+  handbag: "bolso",
+  tie: "corbata",
+  suitcase: "maleta",
+  bottle: "botella",
+  cup: "vaso",
+  fork: "tenedor",
+  knife: "cuchillo",
+  spoon: "cuchara",
+  bowl: "cuenco",
+  banana: "banana",
+  apple: "manzana",
+  orange: "naranja",
+  sandwich: "sandwich",
+  book: "libro",
+  clock: "reloj",
+  vase: "florero",
+  scissors: "tijera",
+  "cell phone": "celular",
+  laptop: "notebook",
+  mouse: "mouse",
+  keyboard: "teclado",
+  remote: "control remoto",
+  chair: "silla",
+  couch: "sofa",
+  "potted plant": "maceta",
+  diningtable: "mesa",
+  tv: "pantalla",
+  car: "auto",
+  bicycle: "bicicleta",
+  motorcycle: "moto",
+  bus: "bus",
+  truck: "camion",
+  bird: "ave",
+  cat: "gato",
+  dog: "perro",
+};
+
 const CONCEPTS = {
   suma: {
     label: "Suma y conteo",
@@ -193,6 +237,13 @@ const CONCEPTS = {
     door: "La IA compara ejemplos etiquetados. Si los datos son pobres, aprende mal.",
     repair: "Agrega ejemplos variados, cambia luz y fondos, y vuelve a probar la matriz.",
   },
+  visionai: {
+    label: "Vision artificial",
+    short: "VisionAI",
+    color: "#137a4d",
+    door: "Una IA compara la imagen de la camara con ejemplos aprendidos previamente.",
+    repair: "Si no reconoce algo, mejora la luz, acerca el objeto o cambia el fondo.",
+  },
   espacial: {
     label: "Traslado espacial",
     short: "Formas",
@@ -211,6 +262,7 @@ const state = {
   challenge: null,
   answered: false,
   aiTrainer: defaultAiTrainer(),
+  objectVision: defaultObjectVision(),
   feedback: null,
   progress: readProgress(),
   vision: {
@@ -246,9 +298,15 @@ const state = {
 let animationFrame = null;
 let autoAdvanceTimer = null;
 let visionModule = null;
+let objectVisionModel = null;
+let objectVisionLoading = false;
+let objectVisionFrame = null;
 let videoElement = null;
 let canvasElement = null;
 let canvasContext = null;
+let objectVideoElement = null;
+let objectCanvasElement = null;
+let objectCanvasContext = null;
 let aiFeatureCanvas = null;
 let aiFeatureContext = null;
 
@@ -268,12 +326,16 @@ function initApp() {
     renderApp();
   });
   window.addEventListener("keydown", handleKeyboard);
-  window.addEventListener("beforeunload", () => stopCamera(false));
+  window.addEventListener("beforeunload", () => {
+    stopCamera(false);
+    stopObjectVision(false);
+  });
 }
 
 function syncRoute() {
   const rawHash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
   const hash = rawHash || "feria";
+  if (state.route === "visionai" && hash !== "visionai") stopObjectVision(false);
   const group = getAgeGroup(hash);
   const game = getGame(hash);
 
@@ -289,6 +351,14 @@ function syncRoute() {
     state.answered = false;
     state.feedback = null;
     resetZoneHover();
+    return;
+  }
+
+  if (hash === "visionai" || hash === "objetos" || hash === "detector") {
+    state.route = "visionai";
+    state.feedback = null;
+    state.answered = false;
+    stopCamera(false);
     return;
   }
 
@@ -331,8 +401,11 @@ function renderApp() {
           <a href="#formas" class="${state.route === "object-lab" ? "active" : ""}">
             Cursor <span>Prueba mouse</span>
           </a>
+          <a href="#visionai" class="${state.route === "visionai" ? "active" : ""}">
+            VisionAI <span>Objetos</span>
+          </a>
           ${AGE_GROUPS.map((group) => `
-            <a href="#${group.id}" class="${state.activeCategory === group.id && state.route !== "home" && state.route !== "fair" && state.route !== "object-lab" ? "active" : ""}">
+            <a href="#${group.id}" class="${state.activeCategory === group.id && !["home", "fair", "object-lab", "visionai"].includes(state.route) ? "active" : ""}">
               ${escapeHtml(group.label)} <span>${escapeHtml(group.short)}</span>
             </a>
           `).join("")}
@@ -347,7 +420,7 @@ function renderApp() {
       </div>
     </header>
 
-    ${state.route === "fair" ? renderFairView() : state.route === "object-lab" ? renderObjectLabView() : state.route === "category" ? renderCategoryView() : state.route === "home" ? renderHomeView() : renderGameView()}
+    ${state.route === "fair" ? renderFairView() : state.route === "object-lab" ? renderObjectLabView() : state.route === "visionai" ? renderVisionAiView() : state.route === "category" ? renderCategoryView() : state.route === "home" ? renderHomeView() : renderGameView()}
 
     <footer class="footer">
       <span>Modo feria. Camara local, proyector y turnos breves. El video se procesa en este navegador y no se guarda.</span>
@@ -357,6 +430,7 @@ function renderApp() {
   app.classList.add("ready");
   bindEvents();
   attachVisionElements();
+  attachObjectVisionElements();
 }
 
 function renderHomeView() {
@@ -371,6 +445,7 @@ function renderHomeView() {
             <a class="hero-button" href="#feria">Abrir modo feria</a>
             <a class="hero-button secondary" href="#ninos">Elegir por edad</a>
             <a class="hero-button secondary" href="#formas">Probar cursor</a>
+            <a class="hero-button secondary" href="#visionai">Laboratorio VisionAI</a>
           </div>
         </div>
         ${renderMascotCard()}
@@ -419,6 +494,7 @@ function renderFairView() {
           <button type="button" id="newChallenge" class="fair-next-button">Siguiente ahora</button>
           <button type="button" id="toggleFullscreenSecondary" class="mini-button">Pantalla completa</button>
           <a href="#formas" class="mini-button lab-link">Probar cursor</a>
+          <a href="#visionai" class="mini-button lab-link">VisionAI objetos</a>
         </div>
         <div class="fair-mission-grid">
           ${FAIR_GAME_IDS.map(renderFairMissionButton).join("")}
@@ -496,6 +572,175 @@ function renderObjectLabView() {
       </section>
     </main>
   `;
+}
+
+function renderVisionAiView() {
+  const stats = objectVisionStats();
+  return `
+    <main class="vision-ai-view theme-green">
+      <nav class="view-tabs" aria-label="Laboratorios">
+        <a href="#feria">Feria</a>
+        <a href="#formas"><span>Prueba</span>Cursor aereo</a>
+        <a href="#visionai" class="active"><span>Laboratorio</span>VisionAI objetos</a>
+        ${GAMES.map((item) => `
+          <a href="#${item.id}">
+            <span>${escapeHtml(item.level)}</span>${escapeHtml(item.title)}
+          </a>
+        `).join("")}
+      </nav>
+
+      <section class="game-view-header vision-ai-header">
+        <div>
+          <p class="eyebrow">IA en tiempo real</p>
+          <h1>VisionAI con Carlitos</h1>
+          <p>Apunta la camara a objetos cotidianos. La IA dibuja recuadros, muestra confianza y permite conversar sobre datos, sesgo y calidad de imagen.</p>
+        </div>
+        <div class="game-hud">
+          <div><strong id="objectStatTotal">${stats.total}</strong><span>objetos</span></div>
+          <div><strong id="objectStatTypes">${stats.types}</strong><span>tipos</span></div>
+          <div><strong id="objectStatConfidence">${stats.avgConfidence}%</strong><span>confianza</span></div>
+          <div><strong id="objectStatFps">${Math.round(state.objectVision.fps)}</strong><span>fps</span></div>
+        </div>
+      </section>
+
+      <section class="vision-ai-layout">
+        <div class="vision-ai-stage">
+          <section class="object-detector-panel ${state.objectVision.enabled ? "on" : ""}">
+            <div class="object-video-frame">
+              <video id="objectVisionVideo" playsinline muted autoplay></video>
+              <canvas id="objectVisionCanvas"></canvas>
+              <div class="object-scan ${state.objectVision.enabled ? "active" : ""}"></div>
+              <div class="object-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+              <div class="object-loading ${state.objectVision.enabled && !state.objectVision.loading ? "hidden" : ""}">
+                <strong>${escapeHtml(objectVisionOverlayTitle())}</strong>
+                <span>${escapeHtml(state.objectVision.error || objectVisionOverlayText())}</span>
+              </div>
+              <div class="object-live-counter ${state.objectVision.enabled ? "show" : ""}">
+                <strong id="objectLiveTotal">${stats.total}</strong>
+                <span>${stats.total === 1 ? "objeto" : "objetos"}</span>
+              </div>
+            </div>
+            <div class="object-controls">
+              <button type="button" id="objectStart">${state.objectVision.enabled ? "Pausar detector" : "Iniciar VisionAI"}</button>
+              <button type="button" id="objectCapture" class="mini-button" ${state.objectVision.enabled ? "" : "disabled"}>Capturar</button>
+              <button type="button" id="objectSwitch" class="mini-button" ${state.objectVision.enabled ? "" : "disabled"}>Cambiar camara</button>
+              <button type="button" id="objectClear" class="mini-button">Limpiar</button>
+            </div>
+          </section>
+
+          <section class="control-card object-learning-card">
+            <h2>Como usarlo en feria</h2>
+            <p>Primero muestra un objeto claro. Luego cambia luz, distancia o fondo y pregunta al grupo por que la confianza sube o baja.</p>
+            <div class="object-prompt-grid">
+              <span>1. Observar</span>
+              <span>2. Comparar</span>
+              <span>3. Preguntar</span>
+              <span>4. Mejorar datos</span>
+            </div>
+          </section>
+        </div>
+
+        <aside class="side-panel vision-ai-side">
+          <section class="control-card">
+            <h2>Estado</h2>
+            <p><strong id="objectStatus">${escapeHtml(state.objectVision.status)}</strong></p>
+            <p class="muted">El video se procesa localmente en el navegador. No se suben imagenes al proyecto.</p>
+          </section>
+
+          <section class="control-card object-settings">
+            <h2>Ajustes</h2>
+            <label>
+              <span>Confianza minima <strong id="objectThresholdLabel">${Math.round(state.objectVision.threshold * 100)}%</strong></span>
+              <input type="range" id="objectThreshold" min="20" max="90" step="5" value="${Math.round(state.objectVision.threshold * 100)}">
+            </label>
+            <label>
+              <span>Tamano maximo <strong id="objectMaxAreaLabel">${Math.round(state.objectVision.maxAreaPercent * 100)}%</strong></span>
+              <input type="range" id="objectMaxArea" min="20" max="100" step="5" value="${Math.round(state.objectVision.maxAreaPercent * 100)}">
+            </label>
+            <label class="object-check">
+              <input type="checkbox" id="objectShowLabels" ${state.objectVision.showLabels ? "checked" : ""}>
+              <span>Mostrar etiquetas</span>
+            </label>
+            <label class="object-check">
+              <input type="checkbox" id="objectShowMasks" ${state.objectVision.showMasks ? "checked" : ""}>
+              <span>Mostrar sombra de objetos</span>
+            </label>
+          </section>
+
+          <section class="control-card">
+            <h2>Detecciones</h2>
+            <div class="object-detection-list" id="objectDetectionList">
+              ${renderObjectDetectionList()}
+            </div>
+          </section>
+
+          <section class="control-card">
+            <h2>Capturas</h2>
+            <div class="object-capture-strip" id="objectCaptureStrip">
+              ${renderObjectCaptureStrip()}
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+  `;
+}
+
+function objectVisionStats() {
+  const predictions = state.objectVision.predictions || [];
+  const types = new Set(predictions.map((item) => item.class)).size;
+  const avgConfidence = predictions.length
+    ? Math.round(predictions.reduce((total, item) => total + item.score, 0) / predictions.length * 100)
+    : 0;
+  return {
+    total: predictions.length,
+    types,
+    avgConfidence,
+  };
+}
+
+function objectVisionOverlayTitle() {
+  if (state.objectVision.error) return "Revisar VisionAI";
+  if (state.objectVision.loading) return "Preparando IA";
+  if (state.objectVision.enabled) return "Detector activo";
+  return "Laboratorio apagado";
+}
+
+function objectVisionOverlayText() {
+  if (state.objectVision.loading) return state.objectVision.status;
+  if (state.objectVision.enabled) return "Muestra un objeto claro frente a la camara.";
+  return "Presiona Iniciar VisionAI para reconocer objetos reales.";
+}
+
+function renderObjectDetectionList() {
+  const predictions = [...(state.objectVision.predictions || [])].sort((a, b) => b.score - a.score);
+  if (!predictions.length) {
+    return `<p class="empty-note">Sin detecciones activas. Prueba con libros, botellas, sillas o celulares bien iluminados.</p>`;
+  }
+  return predictions.map((prediction) => {
+    const confidence = Math.round(prediction.score * 100);
+    const color = objectClassColor(prediction.class);
+    return `
+      <article class="object-detection-item" style="--object-color:${color}">
+        <span></span>
+        <div>
+          <strong>${escapeHtml(objectClassLabel(prediction.class))}</strong>
+          <small>${escapeHtml(prediction.class)}</small>
+        </div>
+        <em>${confidence}%</em>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderObjectCaptureStrip() {
+  const captures = state.objectVision.captures || [];
+  if (!captures.length) return `<p class="empty-note">Las capturas quedan solo en esta sesion del navegador.</p>`;
+  return captures.map((src, index) => `
+    <button type="button" class="object-capture-thumb" data-object-capture="${index}" aria-label="Ver captura ${index + 1}">
+      <img src="${src}" alt="Captura ${index + 1}">
+    </button>
+  `).join("");
 }
 
 function renderCategoryView() {
@@ -1371,6 +1616,44 @@ function bindEvents() {
 
   document.querySelector("#startCamera")?.addEventListener("click", startCamera);
   document.querySelector("#stopCamera")?.addEventListener("click", () => stopCamera());
+  document.querySelector("#objectStart")?.addEventListener("click", () => {
+    if (state.objectVision.enabled) {
+      stopObjectVision();
+    } else {
+      startObjectVision();
+    }
+  });
+  document.querySelector("#objectCapture")?.addEventListener("click", captureObjectVisionFrame);
+  document.querySelector("#objectSwitch")?.addEventListener("click", switchObjectCamera);
+  document.querySelector("#objectClear")?.addEventListener("click", () => {
+    state.objectVision.predictions = [];
+    state.objectVision.captures = [];
+    state.objectVision.frameCount = 0;
+    updateObjectVisionWidgets();
+  });
+  document.querySelector("#objectCaptureStrip")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-object-capture]");
+    if (button) {
+      const src = state.objectVision.captures[Number(button.dataset.objectCapture)];
+      if (src) window.open(src, "_blank", "noopener");
+    }
+  });
+  document.querySelector("#objectThreshold")?.addEventListener("input", (event) => {
+    state.objectVision.threshold = Number(event.target.value) / 100;
+    updateObjectVisionWidgets();
+  });
+  document.querySelector("#objectMaxArea")?.addEventListener("input", (event) => {
+    state.objectVision.maxAreaPercent = Number(event.target.value) / 100;
+    updateObjectVisionWidgets();
+  });
+  document.querySelector("#objectShowLabels")?.addEventListener("change", (event) => {
+    state.objectVision.showLabels = event.target.checked;
+    drawObjectDetections();
+  });
+  document.querySelector("#objectShowMasks")?.addEventListener("change", (event) => {
+    state.objectVision.showMasks = event.target.checked;
+    drawObjectDetections();
+  });
   document.querySelector("#newChallenge")?.addEventListener("click", newChallenge);
   document.querySelector("#toggleFullscreen")?.addEventListener("click", toggleFullscreen);
   document.querySelector("#toggleFullscreenSecondary")?.addEventListener("click", toggleFullscreen);
@@ -1461,6 +1744,331 @@ function attachVisionElements() {
     videoElement.srcObject = state.vision.stream;
     videoElement.play().catch(() => {});
   }
+}
+
+function attachObjectVisionElements() {
+  objectVideoElement = document.querySelector("#objectVisionVideo");
+  objectCanvasElement = document.querySelector("#objectVisionCanvas");
+  objectCanvasContext = objectCanvasElement?.getContext("2d") || null;
+  if (objectVideoElement && state.objectVision.stream) {
+    objectVideoElement.muted = true;
+    objectVideoElement.playsInline = true;
+    objectVideoElement.autoplay = true;
+    objectVideoElement.srcObject = state.objectVision.stream;
+    objectVideoElement.play().catch(() => {});
+  }
+  if (objectCanvasElement && objectVideoElement) resizeObjectCanvas();
+}
+
+async function startObjectVision() {
+  if (state.objectVision.loading) return;
+  stopCamera(false);
+  state.objectVision.loading = true;
+  state.objectVision.error = "";
+  state.objectVision.status = "Cargando modelo COCO-SSD";
+  renderApp();
+  attachObjectVisionElements();
+
+  try {
+    await loadObjectVisionModel();
+    state.objectVision.status = "Solicitando camara";
+    updateObjectVisionWidgets();
+    stopObjectVisionTracks();
+    const stream = await requestObjectVisionStream();
+    state.objectVision.stream = stream;
+    state.objectVision.enabled = true;
+    state.objectVision.ready = true;
+    state.objectVision.loading = false;
+    state.objectVision.status = "VisionAI activo";
+    state.objectVision.error = "";
+    state.objectVision.frameCount = 0;
+    state.objectVision.fps = 0;
+    state.objectVision.lastFrameAt = 0;
+    state.objectVision.lastDetectAt = 0;
+    renderApp();
+    attachObjectVisionElements();
+    startObjectVisionLoop();
+  } catch (error) {
+    state.objectVision.enabled = false;
+    state.objectVision.ready = false;
+    state.objectVision.loading = false;
+    state.objectVision.status = "VisionAI no disponible";
+    state.objectVision.error = objectVisionErrorMessage(error);
+    stopObjectVisionTracks();
+    renderApp();
+  }
+}
+
+async function loadObjectVisionModel() {
+  if (objectVisionModel) return objectVisionModel;
+  if (objectVisionLoading) {
+    while (objectVisionLoading && !objectVisionModel) {
+      await new Promise((resolve) => window.setTimeout(resolve, 120));
+    }
+    if (objectVisionModel) return objectVisionModel;
+  }
+
+  objectVisionLoading = true;
+  try {
+    await loadExternalScript(TFJS_URL, "tfjs-carlitos");
+    await loadExternalScript(COCO_SSD_URL, "coco-ssd-carlitos");
+    if (!window.tf || !window.cocoSsd) {
+      throw new Error("No se cargaron las librerias de TensorFlow o COCO-SSD.");
+    }
+    try {
+      if (window.tf.getBackend && window.tf.getBackend() !== "webgl") {
+        await window.tf.setBackend("webgl");
+      }
+    } catch (error) {
+      // TensorFlow puede usar CPU si WebGL no esta disponible.
+    }
+    await window.tf.ready();
+    objectVisionModel = await window.cocoSsd.load({ base: "lite_mobilenet_v2" });
+    return objectVisionModel;
+  } finally {
+    objectVisionLoading = false;
+  }
+}
+
+function loadExternalScript(src, id) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-loader-id="${id}"]`);
+    if (existing?.dataset.loaded === "true") {
+      resolve();
+      return;
+    }
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error(`No se pudo cargar ${id}.`)), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.dataset.loaderId = id;
+    script.addEventListener("load", () => {
+      script.dataset.loaded = "true";
+      resolve();
+    }, { once: true });
+    script.addEventListener("error", () => reject(new Error(`No se pudo cargar ${id}.`)), { once: true });
+    document.head.appendChild(script);
+  });
+}
+
+async function requestObjectVisionStream() {
+  const constraints = {
+    audio: false,
+    video: {
+      facingMode: { ideal: state.objectVision.facingMode },
+      width: { ideal: 960 },
+      height: { ideal: 720 },
+    },
+  };
+  try {
+    return await navigator.mediaDevices.getUserMedia(constraints);
+  } catch (error) {
+    if (isHardCameraError(error)) throw error;
+    return navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+  }
+}
+
+function startObjectVisionLoop() {
+  if (objectVisionFrame) cancelAnimationFrame(objectVisionFrame);
+  const loop = async () => {
+    if (!state.objectVision.enabled || !objectVisionModel || !objectVideoElement) return;
+    const now = performance.now();
+    if (objectVideoElement.readyState >= 2 && now - state.objectVision.lastDetectAt >= OBJECT_VISION_FRAME_INTERVAL_MS) {
+      state.objectVision.lastDetectAt = now;
+      await readObjectVisionFrame(now);
+    }
+    objectVisionFrame = requestAnimationFrame(loop);
+  };
+  objectVisionFrame = requestAnimationFrame(loop);
+}
+
+async function readObjectVisionFrame(now) {
+  resizeObjectCanvas();
+  if (!objectCanvasElement || !objectVideoElement) return;
+  if (state.objectVision.lastFrameAt > 0) {
+    const delta = now - state.objectVision.lastFrameAt;
+    if (delta > 0) state.objectVision.fps = Math.round(1000 / delta);
+  }
+  state.objectVision.lastFrameAt = now;
+
+  try {
+    const predictions = await objectVisionModel.detect(objectVideoElement);
+    state.objectVision.predictions = filterObjectPredictions(predictions);
+    state.objectVision.frameCount += 1;
+    drawObjectDetections();
+    updateObjectVisionWidgets();
+  } catch (error) {
+    state.objectVision.status = "Error leyendo frame";
+    updateObjectVisionWidgets();
+  }
+}
+
+function filterObjectPredictions(predictions) {
+  const canvasArea = Math.max(1, (objectCanvasElement?.width || 1) * (objectCanvasElement?.height || 1));
+  const maxArea = canvasArea * state.objectVision.maxAreaPercent;
+  return predictions.filter((prediction) => {
+    const [, , width, height] = prediction.bbox;
+    return prediction.score >= state.objectVision.threshold && width * height <= maxArea;
+  });
+}
+
+function resizeObjectCanvas() {
+  if (!objectCanvasElement || !objectVideoElement) return;
+  const width = objectVideoElement.videoWidth || 960;
+  const height = objectVideoElement.videoHeight || 720;
+  if (objectCanvasElement.width !== width || objectCanvasElement.height !== height) {
+    objectCanvasElement.width = width;
+    objectCanvasElement.height = height;
+  }
+}
+
+function drawObjectDetections() {
+  if (!objectCanvasContext || !objectCanvasElement) return;
+  const ctx = objectCanvasContext;
+  ctx.clearRect(0, 0, objectCanvasElement.width, objectCanvasElement.height);
+  state.objectVision.predictions.forEach((prediction) => {
+    const [x, y, width, height] = prediction.bbox;
+    const color = objectClassColor(prediction.class);
+    const confidence = Math.round(prediction.score * 100);
+
+    if (state.objectVision.showMasks) {
+      ctx.fillStyle = `${color}24`;
+      ctx.fillRect(x, y, width, height);
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(3, objectCanvasElement.width / 360);
+    ctx.strokeRect(x, y, width, height);
+
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    if (state.objectVision.showLabels) {
+      const label = `${objectClassLabel(prediction.class)} ${confidence}%`;
+      ctx.font = `700 ${Math.max(16, objectCanvasElement.width / 48)}px Segoe UI, Arial`;
+      const textWidth = ctx.measureText(label).width;
+      const labelHeight = Math.max(30, objectCanvasElement.height / 22);
+      const labelY = y > labelHeight + 8 ? y - labelHeight - 6 : y + 6;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, labelY, Math.min(textWidth + 18, objectCanvasElement.width - x), labelHeight);
+      ctx.fillStyle = "#052719";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, x + 9, labelY + labelHeight / 2);
+    }
+  });
+}
+
+function updateObjectVisionWidgets() {
+  const stats = objectVisionStats();
+  const updates = [
+    ["#objectStatTotal", stats.total],
+    ["#objectLiveTotal", stats.total],
+    ["#objectStatTypes", stats.types],
+    ["#objectStatConfidence", `${stats.avgConfidence}%`],
+    ["#objectStatFps", Math.round(state.objectVision.fps)],
+    ["#objectStatus", state.objectVision.status],
+    ["#objectThresholdLabel", `${Math.round(state.objectVision.threshold * 100)}%`],
+    ["#objectMaxAreaLabel", `${Math.round(state.objectVision.maxAreaPercent * 100)}%`],
+  ];
+  updates.forEach(([selector, value]) => {
+    const node = document.querySelector(selector);
+    if (node) node.textContent = value;
+  });
+  const list = document.querySelector("#objectDetectionList");
+  if (list) list.innerHTML = renderObjectDetectionList();
+  const strip = document.querySelector("#objectCaptureStrip");
+  if (strip) strip.innerHTML = renderObjectCaptureStrip();
+}
+
+function captureObjectVisionFrame() {
+  if (!objectVideoElement || !objectCanvasElement || !objectVideoElement.videoWidth) return;
+  const capture = document.createElement("canvas");
+  capture.width = objectCanvasElement.width;
+  capture.height = objectCanvasElement.height;
+  const ctx = capture.getContext("2d");
+  ctx.drawImage(objectVideoElement, 0, 0, capture.width, capture.height);
+  ctx.drawImage(objectCanvasElement, 0, 0);
+  state.objectVision.captures.unshift(capture.toDataURL("image/png"));
+  state.objectVision.captures = state.objectVision.captures.slice(0, 8);
+  updateObjectVisionWidgets();
+}
+
+async function switchObjectCamera() {
+  state.objectVision.facingMode = state.objectVision.facingMode === "user" ? "environment" : "user";
+  if (!state.objectVision.enabled) return;
+  stopObjectVisionTracks();
+  state.objectVision.loading = true;
+  state.objectVision.status = "Cambiando camara";
+  renderApp();
+  try {
+    state.objectVision.stream = await requestObjectVisionStream();
+    state.objectVision.loading = false;
+    state.objectVision.status = "VisionAI activo";
+    renderApp();
+    attachObjectVisionElements();
+    startObjectVisionLoop();
+  } catch (error) {
+    state.objectVision.loading = false;
+    state.objectVision.error = objectVisionErrorMessage(error);
+    state.objectVision.status = "Camara no disponible";
+    renderApp();
+  }
+}
+
+function stopObjectVision(shouldRender = true) {
+  if (objectVisionFrame) cancelAnimationFrame(objectVisionFrame);
+  objectVisionFrame = null;
+  stopObjectVisionTracks();
+  state.objectVision.enabled = false;
+  state.objectVision.ready = false;
+  state.objectVision.loading = false;
+  state.objectVision.status = "Detector apagado";
+  state.objectVision.error = "";
+  state.objectVision.predictions = [];
+  state.objectVision.fps = 0;
+  if (objectCanvasContext && objectCanvasElement) {
+    objectCanvasContext.clearRect(0, 0, objectCanvasElement.width, objectCanvasElement.height);
+  }
+  if (shouldRender) renderApp();
+}
+
+function stopObjectVisionTracks() {
+  if (state.objectVision.stream) {
+    state.objectVision.stream.getTracks().forEach((track) => track.stop());
+  }
+  state.objectVision.stream = null;
+  if (objectVideoElement) objectVideoElement.srcObject = null;
+}
+
+function objectVisionErrorMessage(error) {
+  if (!navigator.onLine) return "Se necesita conexion para cargar el modelo la primera vez.";
+  const name = error?.name || "";
+  if (name === "NotAllowedError" || name === "PermissionDeniedError") return "Permiso de camara denegado.";
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") return "No se encontro una camara disponible.";
+  return error?.message || "No se pudo iniciar VisionAI.";
+}
+
+function objectClassLabel(className) {
+  return OBJECT_CLASS_LABELS[className] || className;
+}
+
+function objectClassColor(className) {
+  let hash = 0;
+  for (let index = 0; index < className.length; index += 1) {
+    hash = ((hash << 5) - hash) + className.charCodeAt(index);
+    hash |= 0;
+  }
+  const colors = ["#ffd23f", "#63b7d0", "#7be495", "#ff8f70", "#b7a4ff", "#f6c85f"];
+  return colors[Math.abs(hash) % colors.length];
 }
 
 async function startCamera() {
@@ -2162,6 +2770,28 @@ function defaultAiTrainer() {
     prediction: null,
     message: "Elige una etiqueta y captura ejemplos con la camara.",
     demoMode: "balanced",
+  };
+}
+
+function defaultObjectVision() {
+  return {
+    enabled: false,
+    loading: false,
+    ready: false,
+    status: "Detector apagado",
+    error: "",
+    stream: null,
+    facingMode: "environment",
+    threshold: 0.45,
+    maxAreaPercent: 0.72,
+    showLabels: true,
+    showMasks: true,
+    predictions: [],
+    captures: [],
+    frameCount: 0,
+    fps: 0,
+    lastFrameAt: 0,
+    lastDetectAt: 0,
   };
 }
 

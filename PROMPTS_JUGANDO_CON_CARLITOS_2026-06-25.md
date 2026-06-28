@@ -205,3 +205,35 @@ Fecha de registro: 2026-06-28
 * Convertir tambien los retos antes basados en dedos a opciones apuntables dentro del visor.
 * Mantener `#formas` como laboratorio de cursor, con formas fijas para probar precision.
 * Publicar como `v0.7.7` con cache nuevo.
+
+## Prompt de rama independiente - laboratorio VisionAI con objetos
+
+Fecha de registro: 2026-06-28
+
+> implementa esta idea en una rama independiente de la appweb de carlitos
+
+### Contexto de la idea recibida
+
+* El usuario adjunto una app HTML completa tipo `VisionAI`, con:
+  * camara en tiempo real;
+  * TensorFlow.js;
+  * modelo COCO-SSD;
+  * canvas con recuadros de deteccion;
+  * estadisticas, filtros de confianza, capturas y lista de objetos.
+
+### Decision de implementacion
+
+* Crear la rama `feature/visionai-laboratorio-carlitos`.
+* No reemplazar la app estable de juegos ni tocar `main`.
+* Adaptar la idea como ruta independiente `#visionai`.
+* Usar carga bajo demanda de TensorFlow.js y COCO-SSD para no afectar las misiones normales.
+* Mantener estetica de Carlitos, no copiar literalmente el tema oscuro del adjunto.
+* Incluir:
+  * video local;
+  * canvas de detecciones;
+  * recuadros, etiquetas y confianza;
+  * controles de confianza minima, tamano maximo, etiquetas y sombra;
+  * cambio de camara;
+  * capturas temporales de sesion;
+  * panel pedagogico para hablar de datos, sesgo y calidad de imagen.
+* Versionar la rama como `v0.8.0-visionai`.

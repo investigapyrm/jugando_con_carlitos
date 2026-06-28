@@ -3008,3 +3008,112 @@
 
 * En feria, explicar solo una regla: mueve el punto y mantenlo sobre la respuesta.
 * Usar `#formas` antes de la actividad para revisar luz, encuadre y estabilidad del cursor.
+
+## 2026-06-28 11:40
+
+### Proyecto
+
+* Nombre: Jugando con Carlitos
+* Cliente o institucion: PARACEL / Semana de la Ciencia
+* Ruta local: `C:\Users\Diego\OneDrive - PARACEL S.A\MONITOREO_IMPACTO_SOCIAL_PARACEL\PROYECTO_CARLITOS\jugando_con_carlitos`
+* Repositorio: `https://github.com/investigapyrm/jugando_con_carlitos.git`
+* URL publica estable: `https://investigapyrm.github.io/jugando_con_carlitos/`
+* Rama de trabajo: `feature/visionai-laboratorio-carlitos`
+* Responsable: Codex
+* Version de rama: `v0.8.0-visionai`
+
+### Objetivo de la intervencion
+
+* Implementar en una rama independiente la idea adjunta de una app `VisionAI` con reconocimiento de objetos en tiempo real.
+* Mantener intacta la version estable publicada en `main`.
+
+### Diagnostico inicial
+
+* El adjunto era un HTML autonomo con TensorFlow.js, COCO-SSD, camara, canvas, estadisticas, capturas y filtros.
+* La app Carlitos ya tenia una mision de IA didactica, pero no reconocimiento real de objetos con un modelo externo.
+* La integracion debia evitar sobrecargar las misiones normales y cargar el modelo solo en la vista experimental.
+
+### Acciones realizadas
+
+* Se creo la rama `feature/visionai-laboratorio-carlitos`.
+* Se agrego la ruta independiente `#visionai`.
+* Se integro carga bajo demanda de TensorFlow.js y COCO-SSD.
+* Se agrego camara independiente para VisionAI, separada del sensor de manos.
+* Se agrego canvas de detecciones, recuadros, etiquetas traducidas y confianza.
+* Se agregaron controles de confianza minima, tamano maximo, etiquetas y sombra.
+* Se agrego cambio de camara, captura temporal de frames y lista de detecciones.
+* Se adapto el diseno al lenguaje visual de Carlitos, no al tema oscuro original del adjunto.
+* Se actualizo cache-busting y service worker a `v0.8.0-visionai`.
+
+### Archivos modificados
+
+* `app.js`
+* `styles.css`
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `PROMPTS_JUGANDO_CON_CARLITOS_2026-06-25.md`
+* `BITACORA_JUGANDO_CON_CARLITOS_PARACEL_REPO.md`
+
+### Comandos o scripts ejecutados
+
+* `git switch -c feature/visionai-laboratorio-carlitos`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `Invoke-WebRequest -Uri "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"`
+* `python -m http.server 8810 --bind 127.0.0.1`
+* Pruebas Playwright locales de `#visionai`.
+* Prueba Playwright con camara simulada de Chromium.
+* Prueba Playwright de rutas `#feria`, `#formas` y `#visionai`.
+
+### Resultados verificados
+
+* `#visionai` renderiza como ruta `visionai`.
+* La version visible es `v0.8.0-visionai | 2026-06-28`.
+* La vista contiene video, canvas, 4 tarjetas KPI, navegacion activa y cache-busting correcto.
+* TensorFlow.js carga correctamente.
+* COCO-SSD carga correctamente.
+* El modelo queda disponible en navegador.
+* Con camara simulada: `VisionAI activo`, stream presente, canvas `960x720`, boton en estado `Pausar detector`.
+* La deteccion sintetica de la camara simulada genero recuadro, etiqueta y lista de deteccion.
+* Las rutas `#feria`, `#formas` y `#visionai` renderizan sin errores de pagina.
+
+### Pruebas realizadas
+
+* Sintaxis JavaScript local.
+* Verificacion HTTP del CDN de COCO-SSD.
+* Playwright local sin camara para render de interfaz.
+* Playwright local con carga de modelo.
+* Playwright local con camara simulada.
+* Captura generada en `test-results/v080_visionai_branch_local.png`.
+
+### Errores o incidentes
+
+* En la primera captura el encabezado global sticky se superponia sobre la vista `#visionai`.
+* Se corrigio ocultando `.app-top` solo para `data-route="visionai"`, manteniendo la navegacion propia de la vista.
+
+### Soluciones aplicadas
+
+* Laboratorio `#visionai` aislado por ruta y por rama.
+* Carga bajo demanda de librerias externas.
+* Separacion entre sensor de manos y detector de objetos.
+* UI educativa con foco en observacion, comparacion, pregunta y mejora de datos.
+
+### Pendientes
+
+* Validar con camara real, objetos reales y buena iluminacion.
+* Definir si se fusionara a `main` o quedara como rama experimental.
+* Si se publica desde esta rama, configurar despliegue especifico o hacer merge controlado.
+
+### Riesgos
+
+* La primera carga del modelo depende de CDN e Internet.
+* COCO-SSD reconoce clases generales; no es un modelo entrenado para objetos locales especificos.
+* La exactitud depende de luz, fondo, distancia y camara.
+* En modo offline, el laboratorio funciona solo si el modelo ya quedo disponible en cache del navegador/CDN.
+
+### Recomendaciones
+
+* Usar `#visionai` para explicar vision artificial, confianza, sesgo y calidad de datos.
+* No reemplazar con esto la mision didactica `Maquina que Aprende`; son experiencias complementarias.
+* Validar con objetos de aula: botella, libro, mochila, silla, celular y maceta.
